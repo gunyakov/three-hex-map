@@ -1,0 +1,34 @@
+{
+  "name": "three-hex-map",
+  "version": "0.0.1",
+  "description": "A civ like 3D hexagonal terrain map based on three.js.",
+  "main": "index.js",
+  "scripts": {
+    "start:build": "./node_modules/.bin/tsc -w",
+    "start:run": "./node_modules/.bin/nodemon build/app.js",
+    "start": "./node_modules/.bin/concurrently npm:start:*"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gunyakov/three-hex-map.git"
+  },
+  "keywords": [
+    "civilizatio",
+    "hex map",
+    "game map"
+  ],
+  "author": "Oleg Gunyakov",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/gunyakov/three-hex-map/issues"
+  },
+  "homepage": "https://github.com/gunyakov/three-hex-map#readme",
+  "devDependencies": {
+    "concurrently": "^7.6.0",
+    "nodemon": "^2.0.20",
+    "typescript": "^4.9.4"
+  },
+  "dependencies": {
+    "three": "^0.148.0"
+  }
+}
