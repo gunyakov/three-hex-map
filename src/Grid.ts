@@ -1,77 +1,67 @@
 import { HEX } from "./Hex";
-import { Group, Shape, ShapeGeometry, Mesh, MeshBasicMaterial, Vector2} from "three";
+import { ColorRepresentation, Group, Mesh, Scene} from "three";
 import { TOP } from "./interfaces";
 
-
 export class Grid {
+    private scene:Scene;       //Store link to scene
     private type_top:TOP       //Type of HEX: flat top or point top
-
+    private ring:boolean;
     private x:number;           //Map size in X direction
     private y:number;           //Map size in Y direction
-
+    private color:ColorRepresentation;
     private width:number;       //Width of 1 HEX
     private height:number;      //Height of 1 HEX
     private horiz:number;       //Horizontal spaicing between HEXES
     private vert:number;        //Vertical spacing between HEXES
     private size: number;       //Size of 1 HEX (main size)
+    private hexGrid:Group;      //GRID groupe to store hexes
 
-    private hexGrid:Group = new Group();      //GRID groupe to store hexes
-
-    constructor(x:number = 4, y:number = 5, size:number = 6, type_top:TOP = TOP.flat) {
-
+    constructor(x:number = 5, y:number = 5, size:number = 6, ring:boolean = false,  color:ColorRepresentation = 0x84aa53) {
+        this.ring = ring;
         this.x = x;
         this.y = y;
         this.size = size;
-        this.type_top = type_top;
+        this.color = color;
 
         //Calculaion of main HEX dimensions
-        if(type_top == TOP.flat) {
-            this.width = 2 * size;
-            this.height = Math.sqrt(3) * size;
-            this.horiz = 3/2 * size;
-            this.vert = this.height;
-        }
-        else {
-            this.width = Math.sqrt(3) * size;
-            this.height = 2 * size;
-            this.horiz = this.width;
-            this.vert = 3/2 * size;
-        }
+        this.width = 2 * size;
+        this.height = Math.sqrt(3) * size;
+        this.horiz = 3/2 * size;
+        this.vert = this.height;
 
+        this.hexGrid = new Group();
     }
 
-    getGrid():Group {
+    public getGrid():Mesh[] {
 
-        const line_material = new MeshBasicMaterial({ color:0x000000, wireframe: true });
+        let arrHex:Mesh[] = [];
           
         for(let x = 0; x < this.x; x++) {
-            let space = 0;
-            if(x % 2 == 0) {
-                if(this.type_top == TOP.flat) {
-                    space = this.height / 2;
-                }
-                else {
-                    space = this.width / 2;
-                }
-            }
-            else {
-                space = 0;
-            }
-            console.log(space);
             for(let y = 0; y < this.y; y++) {
-                let hexMesh:Shape;
-                if(this.type_top == TOP.flat) {
-                    hexMesh = new Shape(HEX(this.horiz * x, this.vert * y + space));
-                }
-                else {
-                    hexMesh = new Shape(HEX(this.horiz * x, this.vert * y, TOP.point));
-                }
-                const geometry = new ShapeGeometry( hexMesh );
-                const mesh = new Mesh( geometry, line_material ) ;
-                this.hexGrid.add(mesh);
+                let hexMesh:Mesh = HEX(x, y, this.size, this.ring, this.color);
+                arrHex.push(hexMesh);
             }
         }
+        return arrHex;
+    }
 
-        return this.hexGrid;
+    public set visible(vis:boolean) {
+        this.hexGrid.visible = vis;
+    }
+
+    public get visible():boolean {
+        return this.hexGrid.visible;
+    }
+
+    public addTo(scene:Scene):void {
+        this.scene = scene;
+        this.hexGrid = new Group();
+
+        let arrHex:Mesh[] = this.getGrid();
+
+        for(let i = 0; i < arrHex.length; i++) {
+            this.hexGrid.add(arrHex[i]);
+        }
+        scene.add(this.hexGrid);
     }
 }
