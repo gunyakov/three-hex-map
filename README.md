@@ -1,6 +1,6 @@
 # three-hex-map
 
-A civ like 3D hexagonal terrain map based on three.js. See the [demo](http://gunyakov.github.io/three-hex-map/public/index.html).
+A civ like 3D hexagonal terrain map based on three.js. See the [demo](https://gunyakov.github.io/three-hex-map/public/index.html).
 
 ![Screenshot](public/main.png)
 
