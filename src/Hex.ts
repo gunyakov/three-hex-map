@@ -1,4 +1,4 @@
-import { Mesh, CircleGeometry, MeshBasicMaterial, RingGeometry, BufferGeometry, ColorRepresentation, TextureLoader, MeshPhongMaterial, Material} from "three";
+import { Mesh, CircleGeometry, MeshBasicMaterial, RingGeometry, BufferGeometry, ColorRepresentation, TextureLoader, MeshStandardMaterial, Material} from "three";
 
 export function HEX(x:number = 0, y:number = 0, size:number = 6, ring:boolean = false, color:ColorRepresentation = 0x84aa53):Mesh {
 
@@ -35,12 +35,15 @@ export function HEX(x:number = 0, y:number = 0, size:number = 6, ring:boolean = 
         geometry = new CircleGeometry( size, 6);
         var textureLoader = new TextureLoader();
         let crateTexture = textureLoader.load("textures/grass.png");
-        material = new MeshPhongMaterial({
+        let lightMap = textureLoader.load("textures/clouds.jpg");
+        material = new MeshStandardMaterial({
             color: color,
             
-            map:crateTexture
-            //bumpMap:crateBumpMap,
-            //normalMap:crateNormalMap
+            //map:crateTexture,
+            //displacementMap: lightMap,
+            //displacementScale: 0.5,
+            //bumpMap: lightMap
+            //normalMap: lightMap
         });
     }
     

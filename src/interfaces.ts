@@ -1,8 +1,8 @@
-export enum TOP {flat, point};
-
 export enum MapCallbackType {
     cellClick = "cellClick",
-    unitMove = "unitMove"
+    unitMove = "unitMove",
+    geometryAdd = "geometryAdd",
+    mousemove = "mousemove"
 }
 
 export interface myCallbackType { (myArgument: object): void }
