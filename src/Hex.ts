@@ -1,61 +1,74 @@
-import { Mesh, CircleGeometry, MeshBasicMaterial, RingGeometry, BufferGeometry, ColorRepresentation, TextureLoader, MeshStandardMaterial, Material} from "three";
+import { Mesh, MeshPhongMaterial, RingGeometry, Shape, ExtrudeGeometry, MeshBasicMaterial, Group, ColorRepresentation, CircleGeometry} from "three";
+import { HEXPolygon } from "./helpers";
+import { LandColor, TileInfo } from "./interfaces";
+import { WOOD } from "./objects/tree";
 
-export function HEX(x:number = 0, y:number = 0, size:number = 6, ring:boolean = false, color:ColorRepresentation = 0x84aa53):Mesh {
+export function HEX(TileInfo:TileInfo, size:number = 6, x:number = 0, y:number = 0):Group {
 
-    // let points:Vector2[] = [];
+    let hexGrope = new Group();
+    //Color for tile from interfaces
+    let color = LandColor[TileInfo.type];
+    let arrPoints = HEXPolygon({x: 0, y: 0}, size);
 
-    // for(let i = 0; i < 6; i++) {
-    //     let angle_deg = top == TOP.flat ? 60 * i : 60 * i + 30;
-    //     var angle_rad = Math.PI / 180 * angle_deg;
-    //     let point = new Vector2(x + size * Math.cos(angle_rad), y + size * Math.sin(angle_rad));
-    //     points.push(point);
-    // }
+    const materialTop = new MeshPhongMaterial( { color: color} );
+    const materialSides = new MeshPhongMaterial( { color: 0xb47a7e});
 
-    // let hexMesh:Shape;
-    // if(this.type_top == TOP.flat) {
-    //     hexMesh = new Shape(HEX(this.horiz * x, this.vert * y + space));
-    // }
-    // else {
-    //     hexMesh = new Shape(HEX(this.horiz * x, this.vert * y, TOP.point));
-    // }
-    // const geometry = new ShapeGeometry( hexMesh );
-    let space = 0;
-    if(x % 2 == 0) {
-        space = size * Math.sqrt(3) / 2;
+    let materials = [
+        materialTop, 
+        materialSides, 
+        materialSides, 
+        materialSides, 
+        materialSides, 
+        materialSides, 
+        materialSides, 
+        materialSides
+    ]
+
+    const hexShape = new Shape();
+    hexShape.moveTo(arrPoints[0]['x'], arrPoints[0]["y"]);
+    for(let i = 1; i < arrPoints.length; i++) {
+        hexShape.lineTo(arrPoints[i]['x'], arrPoints[i]["y"]);
+    }
+    hexShape.lineTo(arrPoints[0]['x'], arrPoints[0]["y"]);
+
+    let geometry = new ExtrudeGeometry(hexShape, {depth: Math.round(size / 10)});
+    geometry.rotateX(-90 * (Math.PI / 180));
+    let mesh = new Mesh( geometry, materials ) ;
+    mesh.userData = {
+        x: x,
+        y: y,
+        type: "tile"
+    }
+    hexGrope.add(mesh);
+    //Generate wood for tile
+    if(TileInfo.wood) {
+        hexGrope.add(WOOD(size, 20));
     }
 
-    let geometry:BufferGeometry;
-    let material:Material;
+    return hexGrope;
+}
 
-    if(ring) {
-        geometry = new RingGeometry(size * 0.98, size, 6, 2);
-        material = new MeshBasicMaterial( { color: color } );
-    }
-    else {
-        geometry = new CircleGeometry( size, 6);
-        var textureLoader = new TextureLoader();
-        let crateTexture = textureLoader.load("textures/grass.png");
-        let lightMap = textureLoader.load("textures/clouds.jpg");
-        material = new MeshStandardMaterial({
-            color: color,
-            
-            //map:crateTexture,
-            //displacementMap: lightMap,
-            //displacementScale: 0.5,
-            //bumpMap: lightMap
-            //normalMap: lightMap
-        });
-    }
+export function GRID (x:number, y:number, size:number, color:ColorRepresentation):Mesh {
+
+    // let arrPoints = HEXPolygon({x: 0, y: 0}, size);
+    // const material = new LineBasicMaterial( { color: color, linewidth: 5 } );
+    // const points = [];
+    // for(let i=0; i < arrPoints.length; i++) {
+    //     points.push( new Vector3( arrPoints[i]['x'], 0, arrPoints[i]["y"] ) );
+    // }
+    // points.push( new Vector3( arrPoints[0]['x'], 0, arrPoints[0]["y"] ));
+
+    // const geometry = new BufferGeometry().setFromPoints( points );
+    // const line = new Line( geometry, material );
+
+    const geometry = new RingGeometry(0.97 * size, size, 6, 2);
+    const material = new MeshBasicMaterial({
+        color: color
+    });
+
+    let gridHex:Mesh = new Mesh(geometry, material);
+    gridHex.rotateX(-90 * (Math.PI/180));
     
-    const mesh = new Mesh( geometry, material );
-
-    let type = ring ? 'mesh' : "tile";
-
-    mesh.userData = {x:x, y:y, type: type};
-    mesh.position.setX(x * size * 1.5);
-    mesh.position.setY(ring == false ? 0 : 0.005);
-    mesh.position.setZ(y * size * Math.sqrt(3) + space);
-    mesh.rotateX(-90 * (Math.PI/180));
-    return mesh;
+    return gridHex;
     
 }

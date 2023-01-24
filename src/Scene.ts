@@ -26,6 +26,7 @@ export class Scene {
     this.setLights();
     this.setControls();
     this.setAxes();
+    this.setStone();
     this.handleResize();
 
     // start RAF
@@ -117,6 +118,23 @@ export class Scene {
     this.scene.add(this.camera)
   }
 
+  setStone():void {
+    var geo_stone = new THREE.DodecahedronGeometry(10, 0);
+    var mat_stone = new THREE.MeshLambertMaterial({ color: 0x9eaeac });
+    var stone = [];
+    for (var i = 0; i < 2; i++) {
+      stone[i] = new THREE.Mesh(geo_stone, mat_stone);
+      this.scene.add(stone[i]);
+      stone[i].castShadow = true;
+    }
+    stone[0].rotation.set(0, 12, Math.PI / 2);
+    stone[0].scale.set(3, 1, 1);
+    stone[0].position.set(400, 1, 400);
+
+    stone[1].rotation.set(0, 0, Math.PI / 2);
+    stone[1].scale.set(1, 1, 1);
+    stone[1].position.set(300, 0.7, 300);
+  }
   /**
    * Threejs controls to have controls on our scene
    * https://threejs.org/docs/?q=orbi#examples/en/controls/OrbitControls
@@ -200,7 +218,7 @@ export class Scene {
       if(tile.userData?.type == "tile") {
         this.Callback[MapCallbackType.mousemove](tile);
           if(event.type == "click") {
-              this.Callback[MapCallbackType.cellClick](tile);
+            this.Callback[MapCallbackType.cellClick](tile);
           }
       }
     }

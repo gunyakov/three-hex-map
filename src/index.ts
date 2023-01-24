@@ -26,11 +26,10 @@ function init() {
     //REGISTER CALLBACK FOR MOVEMENT OF POINTER
     //---------------------------------------------------------------------------------------------
     GameScene.on(MapCallbackType.cellClick, function (Tile:THREE.Object3D) {
-        console.log(Tile.userData);
-        Map.moveSelector(Tile);
+        Map.moveSelector({ x: Tile.userData.x, y: Tile.userData.y});
     });
     GameScene.on(MapCallbackType.mousemove, function (Tile:THREE.Object3D) {
-       Map.movePointer(Tile); 
+       Map.movePointer({ x: Tile.userData.x, y: Tile.userData.y}); 
     });
     //Additional controls for testing purposes
     const gui = new dat.GUI();

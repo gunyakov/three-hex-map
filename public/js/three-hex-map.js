@@ -5,30 +5,29 @@ exports.Grid = void 0;
 const Hex_1 = require("./Hex");
 const three_1 = require("three");
 class Grid {
-    constructor(x = 5, y = 5, size = 6, ring = false, color = 0x84aa53) {
-        this.ring = ring;
+    ;
+    constructor(x = 5, y = 5, size = 6, color = 0x000000) {
         this.x = x;
         this.y = y;
         this.size = size;
         this.color = color;
         //Calculaion of main HEX dimensions
-        this.width = 2 * size;
-        this.height = Math.sqrt(3) * size;
-        this.horiz = 3 / 2 * size;
-        this.vert = this.height;
         this.hexGrid = new three_1.Group();
     }
     getGrid() {
-        let arrHex = [];
-        for (let x = 0; x < this.x; x++) {
-            for (let y = 0; y < this.y; y++) {
-                let hexMesh = (0, Hex_1.HEX)(x, y, this.size, this.ring, this.color);
-                arrHex.push(hexMesh);
-            }
-        }
         this.hexGrid = new three_1.Group();
-        for (let i = 0; i < arrHex.length; i++) {
-            this.hexGrid.add(arrHex[i]);
+        for (let x = 0; x < this.x; x++) {
+            let space = 0;
+            if (x % 2 == 0) {
+                space = this.size * Math.sqrt(3) / 2;
+            }
+            for (let y = 0; y < this.y; y++) {
+                let hexMesh = (0, Hex_1.GRID)(x, y, this.size, this.color);
+                hexMesh.position.setX(x * this.size * 1.5);
+                hexMesh.position.setY(this.size / 10 + 1.1);
+                hexMesh.position.setZ(y * this.size * Math.sqrt(3) + space);
+                this.hexGrid.add(hexMesh);
+            }
         }
         return this.hexGrid;
     }
@@ -41,63 +40,74 @@ class Grid {
 }
 exports.Grid = Grid;
 
-},{"./Hex":2,"three":56}],2:[function(require,module,exports){
+},{"./Hex":2,"three":63}],2:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.HEX = void 0;
+exports.GRID = exports.HEX = void 0;
 const three_1 = require("three");
-function HEX(x = 0, y = 0, size = 6, ring = false, color = 0x84aa53) {
-    // let points:Vector2[] = [];
-    // for(let i = 0; i < 6; i++) {
-    //     let angle_deg = top == TOP.flat ? 60 * i : 60 * i + 30;
-    //     var angle_rad = Math.PI / 180 * angle_deg;
-    //     let point = new Vector2(x + size * Math.cos(angle_rad), y + size * Math.sin(angle_rad));
-    //     points.push(point);
-    // }
-    // let hexMesh:Shape;
-    // if(this.type_top == TOP.flat) {
-    //     hexMesh = new Shape(HEX(this.horiz * x, this.vert * y + space));
-    // }
-    // else {
-    //     hexMesh = new Shape(HEX(this.horiz * x, this.vert * y, TOP.point));
-    // }
-    // const geometry = new ShapeGeometry( hexMesh );
-    let space = 0;
-    if (x % 2 == 0) {
-        space = size * Math.sqrt(3) / 2;
+const helpers_1 = require("./helpers");
+const interfaces_1 = require("./interfaces");
+const tree_1 = require("./objects/tree");
+function HEX(TileInfo, size = 6, x = 0, y = 0) {
+    let hexGrope = new three_1.Group();
+    //Color for tile from interfaces
+    let color = interfaces_1.LandColor[TileInfo.type];
+    let arrPoints = (0, helpers_1.HEXPolygon)({ x: 0, y: 0 }, size);
+    const materialTop = new three_1.MeshPhongMaterial({ color: color });
+    const materialSides = new three_1.MeshPhongMaterial({ color: 0xb47a7e });
+    let materials = [
+        materialTop,
+        materialSides,
+        materialSides,
+        materialSides,
+        materialSides,
+        materialSides,
+        materialSides,
+        materialSides
+    ];
+    const hexShape = new three_1.Shape();
+    hexShape.moveTo(arrPoints[0]['x'], arrPoints[0]["y"]);
+    for (let i = 1; i < arrPoints.length; i++) {
+        hexShape.lineTo(arrPoints[i]['x'], arrPoints[i]["y"]);
     }
-    let geometry;
-    let material;
-    if (ring) {
-        geometry = new three_1.RingGeometry(size * 0.98, size, 6, 2);
-        material = new three_1.MeshBasicMaterial({ color: color });
+    hexShape.lineTo(arrPoints[0]['x'], arrPoints[0]["y"]);
+    let geometry = new three_1.ExtrudeGeometry(hexShape, { depth: Math.round(size / 10) });
+    geometry.rotateX(-90 * (Math.PI / 180));
+    let mesh = new three_1.Mesh(geometry, materials);
+    mesh.userData = {
+        x: x,
+        y: y,
+        type: "tile"
+    };
+    hexGrope.add(mesh);
+    //Generate wood for tile
+    if (TileInfo.wood) {
+        hexGrope.add((0, tree_1.WOOD)(size, 20));
     }
-    else {
-        geometry = new three_1.CircleGeometry(size, 6);
-        var textureLoader = new three_1.TextureLoader();
-        let crateTexture = textureLoader.load("textures/grass.png");
-        let lightMap = textureLoader.load("textures/clouds.jpg");
-        material = new three_1.MeshStandardMaterial({
-            color: color,
-            //map:crateTexture,
-            //displacementMap: lightMap,
-            //displacementScale: 0.5,
-            //bumpMap: lightMap
-            //normalMap: lightMap
-        });
-    }
-    const mesh = new three_1.Mesh(geometry, material);
-    let type = ring ? 'mesh' : "tile";
-    mesh.userData = { x: x, y: y, type: type };
-    mesh.position.setX(x * size * 1.5);
-    mesh.position.setY(ring == false ? 0 : 0.005);
-    mesh.position.setZ(y * size * Math.sqrt(3) + space);
-    mesh.rotateX(-90 * (Math.PI / 180));
-    return mesh;
+    return hexGrope;
 }
 exports.HEX = HEX;
+function GRID(x, y, size, color) {
+    // let arrPoints = HEXPolygon({x: 0, y: 0}, size);
+    // const material = new LineBasicMaterial( { color: color, linewidth: 5 } );
+    // const points = [];
+    // for(let i=0; i < arrPoints.length; i++) {
+    //     points.push( new Vector3( arrPoints[i]['x'], 0, arrPoints[i]["y"] ) );
+    // }
+    // points.push( new Vector3( arrPoints[0]['x'], 0, arrPoints[0]["y"] ));
+    // const geometry = new BufferGeometry().setFromPoints( points );
+    // const line = new Line( geometry, material );
+    const geometry = new three_1.RingGeometry(0.97 * size, size, 6, 2);
+    const material = new three_1.MeshBasicMaterial({
+        color: color
+    });
+    let gridHex = new three_1.Mesh(geometry, material);
+    gridHex.rotateX(-90 * (Math.PI / 180));
+    return gridHex;
+}
+exports.GRID = GRID;
 
-},{"three":56}],3:[function(require,module,exports){
+},{"./helpers":4,"./interfaces":6,"./objects/tree":8,"three":63}],3:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Scene = void 0;
@@ -167,6 +177,7 @@ class Scene {
         this.setLights();
         this.setControls();
         this.setAxes();
+        this.setStone();
         this.handleResize();
         // start RAF
         this.events();
@@ -237,6 +248,22 @@ class Scene {
         this.camera.position.set(900, 500, 1000);
         this.scene.add(this.camera);
     }
+    setStone() {
+        var geo_stone = new THREE.DodecahedronGeometry(10, 0);
+        var mat_stone = new THREE.MeshLambertMaterial({ color: 0x9eaeac });
+        var stone = [];
+        for (var i = 0; i < 2; i++) {
+            stone[i] = new THREE.Mesh(geo_stone, mat_stone);
+            this.scene.add(stone[i]);
+            stone[i].castShadow = true;
+        }
+        stone[0].rotation.set(0, 12, Math.PI / 2);
+        stone[0].scale.set(3, 1, 1);
+        stone[0].position.set(400, 1, 400);
+        stone[1].rotation.set(0, 0, Math.PI / 2);
+        stone[1].scale.set(1, 1, 1);
+        stone[1].position.set(300, 0.7, 300);
+    }
     /**
      * Threejs controls to have controls on our scene
      * https://threejs.org/docs/?q=orbi#examples/en/controls/OrbitControls
@@ -274,7 +301,46 @@ class Scene {
 }
 exports.Scene = Scene;
 
-},{"./interfaces":5,"three":56,"three/examples/jsm/controls/OrbitControls.js":57}],4:[function(require,module,exports){
+},{"./interfaces":6,"three":63,"three/examples/jsm/controls/OrbitControls.js":64}],4:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.getHexCenter = exports.HEXPolygon = exports.pointy_hex_corner = exports.getRandomInt = void 0;
+//Ger random int include min and max values
+function getRandomInt(min, max) {
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+exports.getRandomInt = getRandomInt;
+//Get HEX point according number
+function pointy_hex_corner(center, size, i) {
+    let angle_deg = 60 * i;
+    let angle_rad = Math.PI / 180 * angle_deg;
+    return {
+        "x": Math.round(center.x + size * Math.cos(angle_rad)),
+        "y": Math.round(center.y + size * Math.sin(angle_rad))
+    };
+}
+exports.pointy_hex_corner = pointy_hex_corner;
+//Get all points for HEX
+function HEXPolygon(center = { x: 0, y: 0 }, size = 1) {
+    let arrPoints = [];
+    for (let i = 1; i <= 6; i++) {
+        arrPoints.push(pointy_hex_corner(center, size, i));
+    }
+    return arrPoints;
+}
+exports.HEXPolygon = HEXPolygon;
+function getHexCenter(x, y, size) {
+    let space = 0;
+    if (x % 2 == 0) {
+        space = size * Math.sqrt(3) / 2;
+    }
+    return { x: x * size * 1.5, y: y * size * Math.sqrt(3) + space };
+}
+exports.getHexCenter = getHexCenter;
+
+},{}],5:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const interfaces_1 = require("./interfaces");
@@ -304,11 +370,10 @@ function init() {
     //REGISTER CALLBACK FOR MOVEMENT OF POINTER
     //---------------------------------------------------------------------------------------------
     GameScene.on(interfaces_1.MapCallbackType.cellClick, function (Tile) {
-        console.log(Tile.userData);
-        Map.moveSelector(Tile);
+        Map.moveSelector({ x: Tile.userData.x, y: Tile.userData.y });
     });
     GameScene.on(interfaces_1.MapCallbackType.mousemove, function (Tile) {
-        Map.movePointer(Tile);
+        Map.movePointer({ x: Tile.userData.x, y: Tile.userData.y });
     });
     //Additional controls for testing purposes
     const gui = new dat.GUI();
@@ -317,10 +382,10 @@ function init() {
 }
 window.onload = init;
 
-},{"./Scene":3,"./interfaces":5,"./map":6,"axios":8,"dat.gui":53}],5:[function(require,module,exports){
+},{"./Scene":3,"./interfaces":6,"./map":7,"axios":10,"dat.gui":55}],6:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.MapCallbackType = void 0;
+exports.LandColor = exports.Land = exports.MapCallbackType = void 0;
 var MapCallbackType;
 (function (MapCallbackType) {
     MapCallbackType["cellClick"] = "cellClick";
@@ -328,8 +393,25 @@ var MapCallbackType;
     MapCallbackType["geometryAdd"] = "geometryAdd";
     MapCallbackType["mousemove"] = "mousemove";
 })(MapCallbackType = exports.MapCallbackType || (exports.MapCallbackType = {}));
+var Land;
+(function (Land) {
+    Land["sea"] = "sea";
+    Land["shore"] = "shore";
+    Land["land"] = "land";
+    Land["sand"] = "sand";
+    Land["tundra"] = "tundra";
+    Land["snow"] = "snow";
+})(Land = exports.Land || (exports.Land = {}));
+exports.LandColor = {
+    [Land.land]: 0x84aa53,
+    [Land.shore]: 0x4f6c80,
+    [Land.sea]: 0x2a368c,
+    [Land.sand]: 0xaea765,
+    [Land.tundra]: 0xffffff,
+    [Land.snow]: 0xffffff
+};
 
-},{}],6:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.HexMap = void 0;
@@ -337,6 +419,7 @@ const THREE = require("three");
 const Grid_1 = require("./Grid");
 const interfaces_1 = require("./interfaces");
 const Hex_1 = require("./Hex");
+const helpers_1 = require("./helpers");
 let { setOptions } = require("./setoptions.js");
 class HexMap {
     constructor(options = {}) {
@@ -357,7 +440,7 @@ class HexMap {
         this.Callback[interfaces_1.MapCallbackType.geometryAdd] = function () { };
     }
     makeMap() {
-        let gridHex = new THREE.Group();
+        let mapHex = new THREE.Group();
         //@ts-ignore
         this.options.width = this.map.w;
         //@ts-ignore
@@ -366,32 +449,20 @@ class HexMap {
         for (let x = 0; x < this.map.w; x++) {
             //@ts-ignore
             for (let y = 0; y < this.map.h; y++) {
-                let color = 0x84aa53;
-                //@ts-ignore
-                if (this.map[x][y] == "w") {
-                    color = 0x6d95b2;
-                }
-                //@ts-ignore
-                if (this.map[x][y] == "t") {
-                    color = 0xf2e98c;
-                }
-                let hex = (0, Hex_1.HEX)(x, y, this.options.size, false, color);
-                hex.userData = {
-                    x: x,
-                    y: y,
-                    type: "tile",
-                    //@ts-ignore
-                    land: this.map[x][y]
-                };
-                gridHex.add(hex);
+                let tileInfo = this.map[x][y];
+                let hex = (0, Hex_1.HEX)(tileInfo, this.options.size, x, y);
+                let position = (0, helpers_1.getHexCenter)(x, y, this.options.size);
+                hex.position.setX(position.x);
+                hex.position.setZ(position.y);
+                mapHex.add(hex);
             }
         }
         // Hexes for map
-        this.Callback[interfaces_1.MapCallbackType.geometryAdd](gridHex);
-        return gridHex;
+        this.Callback[interfaces_1.MapCallbackType.geometryAdd](mapHex);
+        return mapHex;
     }
     makeGrid() {
-        this.grid = new Grid_1.Grid(this.options.width, this.options.height, this.options.size, true, this.options.gridColor);
+        this.grid = new Grid_1.Grid(this.options.width, this.options.height, this.options.size, this.options.gridColor);
         this.grid.visible = this.options.gridVisible;
         this.Callback[interfaces_1.MapCallbackType.geometryAdd](this.grid.getGrid());
         return this.grid;
@@ -410,15 +481,18 @@ class HexMap {
         });
         let selector = new THREE.Mesh(geometry, material);
         selector.rotateX(-90 * (Math.PI / 180));
-        selector.position.setY(0.01);
+        selector.position.setY(this.options.size / 10 + 1.1);
         selector.visible = false;
         this.selector = selector;
         this.Callback[interfaces_1.MapCallbackType.geometryAdd](selector);
         return selector;
     }
-    moveSelector(Tile) {
+    moveSelector(userData) {
+        let position = (0, helpers_1.getHexCenter)(userData.x, userData.y, this.options.size);
+        console.log(userData, this.map[userData.x][userData.y]);
         this.selector.visible = true;
-        this.selector.position.set(Tile.position.x, this.selector.position.y, Tile.position.z);
+        this.selector.position.setX(position.x);
+        this.selector.position.setZ(position.y);
     }
     makePointer() {
         const geometry = new THREE.RingGeometry(0.97 * this.options.size, this.options.size, 6, 2);
@@ -427,15 +501,17 @@ class HexMap {
         });
         let pointer = new THREE.Mesh(geometry, material);
         pointer.rotateX(-90 * (Math.PI / 180));
-        pointer.position.setY(0.05);
+        pointer.position.setY(this.options.size / 10 + 1.1);
         pointer.visible = false;
         this.pointer = pointer;
         this.Callback[interfaces_1.MapCallbackType.geometryAdd](pointer);
         return pointer;
     }
-    movePointer(Tile) {
+    movePointer(userData) {
+        let position = (0, helpers_1.getHexCenter)(userData.x, userData.y, this.options.size);
         this.pointer.visible = true;
-        this.pointer.position.set(Tile.position.x, this.pointer.position.y, Tile.position.z);
+        this.pointer.position.setX(position.x);
+        this.pointer.position.setZ(position.y);
     }
     //----------------------------------------------------------------------------------------------------
     // INTI MAP
@@ -460,7 +536,67 @@ class HexMap {
 }
 exports.HexMap = HexMap;
 
-},{"./Grid":1,"./Hex":2,"./interfaces":5,"./setoptions.js":7,"three":56}],7:[function(require,module,exports){
+},{"./Grid":1,"./Hex":2,"./helpers":4,"./interfaces":6,"./setoptions.js":9,"three":63}],8:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.WOOD = exports.TREE = void 0;
+const three_1 = require("three");
+const helpers_1 = require("../helpers");
+//------------------------------------------------------------------------------
+//Checker point inside polygon or not
+//------------------------------------------------------------------------------
+let pointInPolygon = require('robust-point-in-polygon');
+//Gen 1 tree
+function TREE(size = 1, color = 0x0b633c) {
+    //Gen cone geometry with random height from 2 to 5 times more than size randomly
+    const geometry = new three_1.ConeGeometry(size, size * (0, helpers_1.getRandomInt)(2, 5), 6);
+    const material = new three_1.MeshLambertMaterial({ color: color });
+    return new three_1.Mesh(geometry, material);
+}
+exports.TREE = TREE;
+//Gen wood using tree function
+function WOOD(size = 1, trees = 1, color = 0x0b633c) {
+    let treeSize = Math.round(size / 10);
+    let polygon = (0, helpers_1.HEXPolygon)({ x: 0, y: 0 }, size - treeSize);
+    let normalPolygon = [];
+    for (let i = 0; i < polygon.length; i++) {
+        normalPolygon.push([polygon[i]['x'], polygon[i]['y']]);
+    }
+    let wood = new three_1.Group();
+    let treeCounter = 0;
+    let treePoint = [];
+    //Go while dont put all trees
+    while (treeCounter < trees) {
+        //Get random X and Y from plain square
+        let x = (0, helpers_1.getRandomInt)(-size, size);
+        let y = (0, helpers_1.getRandomInt)(-size, size);
+        //Check if point inside tile boundary
+        if (pointInPolygon(normalPolygon, [x, y]) === -1) {
+            //Check that trees isn crossing each other
+            let treeCross = false;
+            for (let i = 0; i < treePoint.length; i++) {
+                if (Math.abs(treePoint[i]['x'] - x) < treeSize && Math.abs(treePoint[i]['y'] - y) < treeSize) {
+                    treeCross = true;
+                    break;
+                }
+            }
+            //If tree dont cross any other trees in groupe
+            if (!treeCross) {
+                //Add tree to the scene
+                let tree = TREE(treeSize);
+                tree.geometry.computeBoundingBox();
+                tree.position.set(x, Math.round(treeSize) + tree.geometry.boundingBox.max.y, y);
+                wood.add(tree);
+                treeCounter++;
+                treePoint.push({ x: x, y: y });
+            }
+        }
+    }
+    return wood;
+}
+exports.WOOD = WOOD;
+
+},{"../helpers":4,"robust-point-in-polygon":59,"three":63}],9:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.setOptions = void 0;
@@ -476,7 +612,7 @@ function setOptions(obj, options) {
 }
 exports.setOptions = setOptions;
 
-},{}],8:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -528,7 +664,7 @@ exports.CanceledError = CanceledError;
 exports.AxiosError = AxiosError;
 exports.Axios = Axios;
 
-},{"./lib/axios.js":11}],9:[function(require,module,exports){
+},{"./lib/axios.js":13}],11:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -587,7 +723,7 @@ var _default = {
 };
 exports.default = _default;
 
-},{"../core/AxiosError.js":16,"../utils.js":50,"./http.js":38,"./xhr.js":10}],10:[function(require,module,exports){
+},{"../core/AxiosError.js":18,"../utils.js":52,"./http.js":40,"./xhr.js":12}],12:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -814,7 +950,7 @@ var _default = isXHRAdapterSupported && function (config) {
 };
 exports.default = _default;
 
-},{"../cancel/CanceledError.js":13,"../core/AxiosError.js":16,"../core/AxiosHeaders.js":17,"../core/buildFullPath.js":19,"../defaults/transitional.js":25,"../helpers/parseProtocol.js":40,"../helpers/speedometer.js":41,"../platform/index.js":49,"./../core/settle.js":22,"./../helpers/buildURL.js":31,"./../helpers/cookies.js":33,"./../helpers/isURLSameOrigin.js":37,"./../utils.js":50}],11:[function(require,module,exports){
+},{"../cancel/CanceledError.js":15,"../core/AxiosError.js":18,"../core/AxiosHeaders.js":19,"../core/buildFullPath.js":21,"../defaults/transitional.js":27,"../helpers/parseProtocol.js":42,"../helpers/speedometer.js":43,"../platform/index.js":51,"./../core/settle.js":24,"./../helpers/buildURL.js":33,"./../helpers/cookies.js":35,"./../helpers/isURLSameOrigin.js":39,"./../utils.js":52}],13:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -905,7 +1041,7 @@ axios.default = axios;
 var _default = axios;
 exports.default = _default;
 
-},{"./cancel/CancelToken.js":12,"./cancel/CanceledError.js":13,"./cancel/isCancel.js":14,"./core/Axios.js":15,"./core/AxiosError.js":16,"./core/AxiosHeaders.js":17,"./core/mergeConfig.js":21,"./defaults/index.js":24,"./env/data.js":27,"./helpers/HttpStatusCode.js":29,"./helpers/bind.js":30,"./helpers/formDataToJSON.js":34,"./helpers/isAxiosError.js":36,"./helpers/spread.js":42,"./helpers/toFormData.js":43,"./utils.js":50}],12:[function(require,module,exports){
+},{"./cancel/CancelToken.js":14,"./cancel/CanceledError.js":15,"./cancel/isCancel.js":16,"./core/Axios.js":17,"./core/AxiosError.js":18,"./core/AxiosHeaders.js":19,"./core/mergeConfig.js":23,"./defaults/index.js":26,"./env/data.js":29,"./helpers/HttpStatusCode.js":31,"./helpers/bind.js":32,"./helpers/formDataToJSON.js":36,"./helpers/isAxiosError.js":38,"./helpers/spread.js":44,"./helpers/toFormData.js":45,"./utils.js":52}],14:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -1022,7 +1158,7 @@ class CancelToken {
 var _default = CancelToken;
 exports.default = _default;
 
-},{"./CanceledError.js":13}],13:[function(require,module,exports){
+},{"./CanceledError.js":15}],15:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -1052,7 +1188,7 @@ _utils.default.inherits(CanceledError, _AxiosError.default, {
 var _default = CanceledError;
 exports.default = _default;
 
-},{"../core/AxiosError.js":16,"../utils.js":50}],14:[function(require,module,exports){
+},{"../core/AxiosError.js":18,"../utils.js":52}],16:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -1063,7 +1199,7 @@ function isCancel(value) {
   return !!(value && value.__CANCEL__);
 }
 
-},{}],15:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -1237,7 +1373,7 @@ _utils.default.forEach(['post', 'put', 'patch'], function forEachMethodWithData(
 var _default = Axios;
 exports.default = _default;
 
-},{"../helpers/buildURL.js":31,"../helpers/validator.js":45,"./../utils.js":50,"./AxiosHeaders.js":17,"./InterceptorManager.js":18,"./buildFullPath.js":19,"./dispatchRequest.js":20,"./mergeConfig.js":21}],16:[function(require,module,exports){
+},{"../helpers/buildURL.js":33,"../helpers/validator.js":47,"./../utils.js":52,"./AxiosHeaders.js":19,"./InterceptorManager.js":20,"./buildFullPath.js":21,"./dispatchRequest.js":22,"./mergeConfig.js":23}],18:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -1323,7 +1459,7 @@ AxiosError.from = (error, code, config, request, response, customProps) => {
 var _default = AxiosError;
 exports.default = _default;
 
-},{"../utils.js":50}],17:[function(require,module,exports){
+},{"../utils.js":52}],19:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -1531,7 +1667,7 @@ _utils.default.freezeMethods(AxiosHeaders);
 var _default = AxiosHeaders;
 exports.default = _default;
 
-},{"../helpers/parseHeaders.js":39,"../utils.js":50}],18:[function(require,module,exports){
+},{"../helpers/parseHeaders.js":41,"../utils.js":52}],20:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -1608,7 +1744,7 @@ class InterceptorManager {
 var _default = InterceptorManager;
 exports.default = _default;
 
-},{"./../utils.js":50}],19:[function(require,module,exports){
+},{"./../utils.js":52}],21:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -1635,7 +1771,7 @@ function buildFullPath(baseURL, requestedURL) {
   return requestedURL;
 }
 
-},{"../helpers/combineURLs.js":32,"../helpers/isAbsoluteURL.js":35}],20:[function(require,module,exports){
+},{"../helpers/combineURLs.js":34,"../helpers/isAbsoluteURL.js":37}],22:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -1703,7 +1839,7 @@ function dispatchRequest(config) {
   });
 }
 
-},{"../adapters/adapters.js":9,"../cancel/CanceledError.js":13,"../cancel/isCancel.js":14,"../core/AxiosHeaders.js":17,"../defaults/index.js":24,"./transformData.js":23}],21:[function(require,module,exports){
+},{"../adapters/adapters.js":11,"../cancel/CanceledError.js":15,"../cancel/isCancel.js":16,"../core/AxiosHeaders.js":19,"../defaults/index.js":26,"./transformData.js":25}],23:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -1812,7 +1948,7 @@ function mergeConfig(config1, config2) {
   return config;
 }
 
-},{"../utils.js":50,"./AxiosHeaders.js":17}],22:[function(require,module,exports){
+},{"../utils.js":52,"./AxiosHeaders.js":19}],24:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -1839,7 +1975,7 @@ function settle(resolve, reject, response) {
   }
 }
 
-},{"./AxiosError.js":16}],23:[function(require,module,exports){
+},{"./AxiosError.js":18}],25:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -1870,7 +2006,7 @@ function transformData(fns, response) {
   return data;
 }
 
-},{"../core/AxiosHeaders.js":17,"../defaults/index.js":24,"./../utils.js":50}],24:[function(require,module,exports){
+},{"../core/AxiosHeaders.js":19,"../defaults/index.js":26,"./../utils.js":52}],26:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -2008,7 +2144,7 @@ _utils.default.forEach(['post', 'put', 'patch'], function forEachMethodWithData(
 var _default = defaults;
 exports.default = _default;
 
-},{"../core/AxiosError.js":16,"../helpers/formDataToJSON.js":34,"../helpers/toFormData.js":43,"../helpers/toURLEncodedForm.js":44,"../platform/index.js":49,"../utils.js":50,"./transitional.js":25}],25:[function(require,module,exports){
+},{"../core/AxiosError.js":18,"../helpers/formDataToJSON.js":36,"../helpers/toFormData.js":45,"../helpers/toURLEncodedForm.js":46,"../platform/index.js":51,"../utils.js":52,"./transitional.js":27}],27:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -2022,7 +2158,7 @@ var _default = {
 };
 exports.default = _default;
 
-},{}],26:[function(require,module,exports){
+},{}],28:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -2034,7 +2170,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 var _default = _formData.default;
 exports.default = _default;
 
-},{"form-data":54}],27:[function(require,module,exports){
+},{"form-data":56}],29:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -2044,7 +2180,7 @@ exports.VERSION = void 0;
 const VERSION = "1.2.3";
 exports.VERSION = VERSION;
 
-},{}],28:[function(require,module,exports){
+},{}],30:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -2103,7 +2239,7 @@ prototype.toString = function toString(encoder) {
 var _default = AxiosURLSearchParams;
 exports.default = _default;
 
-},{"./toFormData.js":43}],29:[function(require,module,exports){
+},{"./toFormData.js":45}],31:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -2181,7 +2317,7 @@ Object.entries(HttpStatusCode).forEach(([key, value]) => {
 var _default = HttpStatusCode;
 exports.default = _default;
 
-},{}],30:[function(require,module,exports){
+},{}],32:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -2194,7 +2330,7 @@ function bind(fn, thisArg) {
   };
 }
 
-},{}],31:[function(require,module,exports){
+},{}],33:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -2248,7 +2384,7 @@ function buildURL(url, params, options) {
   return url;
 }
 
-},{"../helpers/AxiosURLSearchParams.js":28,"../utils.js":50}],32:[function(require,module,exports){
+},{"../helpers/AxiosURLSearchParams.js":30,"../utils.js":52}],34:[function(require,module,exports){
 'use strict';
 
 /**
@@ -2267,7 +2403,7 @@ function combineURLs(baseURL, relativeURL) {
   return relativeURL ? baseURL.replace(/\/+$/, '') + '/' + relativeURL.replace(/^\/+/, '') : baseURL;
 }
 
-},{}],33:[function(require,module,exports){
+},{}],35:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -2319,7 +2455,7 @@ function nonStandardBrowserEnv() {
 }();
 exports.default = _default;
 
-},{"../platform/index.js":49,"./../utils.js":50}],34:[function(require,module,exports){
+},{"../platform/index.js":51,"./../utils.js":52}],36:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -2407,7 +2543,7 @@ function formDataToJSON(formData) {
 var _default = formDataToJSON;
 exports.default = _default;
 
-},{"../utils.js":50}],35:[function(require,module,exports){
+},{"../utils.js":52}],37:[function(require,module,exports){
 'use strict';
 
 /**
@@ -2428,7 +2564,7 @@ function isAbsoluteURL(url) {
   return /^([a-z][a-z\d+\-.]*:)?\/\//i.test(url);
 }
 
-},{}],36:[function(require,module,exports){
+},{}],38:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -2448,7 +2584,7 @@ function isAxiosError(payload) {
   return _utils.default.isObject(payload) && payload.isAxiosError === true;
 }
 
-},{"./../utils.js":50}],37:[function(require,module,exports){
+},{"./../utils.js":52}],39:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -2514,7 +2650,7 @@ function nonStandardBrowserEnv() {
 }();
 exports.default = _default;
 
-},{"../platform/index.js":49,"./../utils.js":50}],38:[function(require,module,exports){
+},{"../platform/index.js":51,"./../utils.js":52}],40:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -2525,7 +2661,7 @@ exports.default = void 0;
 var _default = null;
 exports.default = _default;
 
-},{}],39:[function(require,module,exports){
+},{}],41:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -2578,7 +2714,7 @@ var _default = rawHeaders => {
 };
 exports.default = _default;
 
-},{"./../utils.js":50}],40:[function(require,module,exports){
+},{"./../utils.js":52}],42:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -2590,7 +2726,7 @@ function parseProtocol(url) {
   return match && match[1] || '';
 }
 
-},{}],41:[function(require,module,exports){
+},{}],43:[function(require,module,exports){
 'use strict';
 
 /**
@@ -2639,7 +2775,7 @@ function speedometer(samplesCount, min) {
 var _default = speedometer;
 exports.default = _default;
 
-},{}],42:[function(require,module,exports){
+},{}],44:[function(require,module,exports){
 'use strict';
 
 /**
@@ -2673,7 +2809,7 @@ function spread(callback) {
   };
 }
 
-},{}],43:[function(require,module,exports){
+},{}],45:[function(require,module,exports){
 (function (Buffer){(function (){
 'use strict';
 
@@ -2879,7 +3015,7 @@ var _default = toFormData;
 exports.default = _default;
 
 }).call(this)}).call(this,require("buffer").Buffer)
-},{"../core/AxiosError.js":16,"../env/classes/FormData.js":26,"../utils.js":50,"buffer":52}],44:[function(require,module,exports){
+},{"../core/AxiosError.js":18,"../env/classes/FormData.js":28,"../utils.js":52,"buffer":54}],46:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -2902,7 +3038,7 @@ function toURLEncodedForm(data, options) {
   }, options));
 }
 
-},{"../platform/index.js":49,"../utils.js":50,"./toFormData.js":43}],45:[function(require,module,exports){
+},{"../platform/index.js":51,"../utils.js":52,"./toFormData.js":45}],47:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -2988,7 +3124,7 @@ var _default = {
 };
 exports.default = _default;
 
-},{"../core/AxiosError.js":16,"../env/data.js":27}],46:[function(require,module,exports){
+},{"../core/AxiosError.js":18,"../env/data.js":29}],48:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -2998,7 +3134,7 @@ exports.default = void 0;
 var _default = FormData;
 exports.default = _default;
 
-},{}],47:[function(require,module,exports){
+},{}],49:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -3010,7 +3146,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 var _default = typeof URLSearchParams !== 'undefined' ? URLSearchParams : _AxiosURLSearchParams.default;
 exports.default = _default;
 
-},{"../../../helpers/AxiosURLSearchParams.js":28}],48:[function(require,module,exports){
+},{"../../../helpers/AxiosURLSearchParams.js":30}],50:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -3072,7 +3208,7 @@ var _default = {
 };
 exports.default = _default;
 
-},{"./classes/FormData.js":46,"./classes/URLSearchParams.js":47}],49:[function(require,module,exports){
+},{"./classes/FormData.js":48,"./classes/URLSearchParams.js":49}],51:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -3087,7 +3223,7 @@ Object.defineProperty(exports, "default", {
 var _index = _interopRequireDefault(require("./node/index.js"));
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-},{"./node/index.js":48}],50:[function(require,module,exports){
+},{"./node/index.js":50}],52:[function(require,module,exports){
 (function (global){(function (){
 'use strict';
 
@@ -3737,7 +3873,7 @@ var _default = {
 exports.default = _default;
 
 }).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./helpers/bind.js":30}],51:[function(require,module,exports){
+},{"./helpers/bind.js":32}],53:[function(require,module,exports){
 'use strict'
 
 exports.byteLength = byteLength
@@ -3889,7 +4025,7 @@ function fromByteArray (uint8) {
   return parts.join('')
 }
 
-},{}],52:[function(require,module,exports){
+},{}],54:[function(require,module,exports){
 (function (Buffer){(function (){
 /*!
  * The buffer module from node.js, for the browser.
@@ -5670,7 +5806,7 @@ function numberIsNaN (obj) {
 }
 
 }).call(this)}).call(this,require("buffer").Buffer)
-},{"base64-js":51,"buffer":52,"ieee754":55}],53:[function(require,module,exports){
+},{"base64-js":53,"buffer":54,"ieee754":57}],55:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -8152,11 +8288,11 @@ var index = {
 var _default = index;
 exports.default = _default;
 
-},{}],54:[function(require,module,exports){
+},{}],56:[function(require,module,exports){
 /* eslint-env browser */
 module.exports = typeof self == 'object' ? self.FormData : window.FormData;
 
-},{}],55:[function(require,module,exports){
+},{}],57:[function(require,module,exports){
 /*! ieee754. BSD-3-Clause License. Feross Aboukhadijeh <https://feross.org/opensource> */
 exports.read = function (buffer, offset, isLE, mLen, nBytes) {
   var e, m
@@ -8243,7 +8379,630 @@ exports.write = function (buffer, value, offset, isLE, mLen, nBytes) {
   buffer[offset + i - d] |= s * 128
 }
 
-},{}],56:[function(require,module,exports){
+},{}],58:[function(require,module,exports){
+"use strict"
+
+var twoProduct = require("two-product")
+var robustSum = require("robust-sum")
+var robustScale = require("robust-scale")
+var robustSubtract = require("robust-subtract")
+
+var NUM_EXPAND = 5
+
+var EPSILON     = 1.1102230246251565e-16
+var ERRBOUND3   = (3.0 + 16.0 * EPSILON) * EPSILON
+var ERRBOUND4   = (7.0 + 56.0 * EPSILON) * EPSILON
+
+function orientation_3(sum, prod, scale, sub) {
+  return function orientation3Exact(m0, m1, m2) {
+    var p = sum(sum(prod(m1[1], m2[0]), prod(-m2[1], m1[0])), sum(prod(m0[1], m1[0]), prod(-m1[1], m0[0])))
+    var n = sum(prod(m0[1], m2[0]), prod(-m2[1], m0[0]))
+    var d = sub(p, n)
+    return d[d.length - 1]
+  }
+}
+
+function orientation_4(sum, prod, scale, sub) {
+  return function orientation4Exact(m0, m1, m2, m3) {
+    var p = sum(sum(scale(sum(prod(m2[1], m3[0]), prod(-m3[1], m2[0])), m1[2]), sum(scale(sum(prod(m1[1], m3[0]), prod(-m3[1], m1[0])), -m2[2]), scale(sum(prod(m1[1], m2[0]), prod(-m2[1], m1[0])), m3[2]))), sum(scale(sum(prod(m1[1], m3[0]), prod(-m3[1], m1[0])), m0[2]), sum(scale(sum(prod(m0[1], m3[0]), prod(-m3[1], m0[0])), -m1[2]), scale(sum(prod(m0[1], m1[0]), prod(-m1[1], m0[0])), m3[2]))))
+    var n = sum(sum(scale(sum(prod(m2[1], m3[0]), prod(-m3[1], m2[0])), m0[2]), sum(scale(sum(prod(m0[1], m3[0]), prod(-m3[1], m0[0])), -m2[2]), scale(sum(prod(m0[1], m2[0]), prod(-m2[1], m0[0])), m3[2]))), sum(scale(sum(prod(m1[1], m2[0]), prod(-m2[1], m1[0])), m0[2]), sum(scale(sum(prod(m0[1], m2[0]), prod(-m2[1], m0[0])), -m1[2]), scale(sum(prod(m0[1], m1[0]), prod(-m1[1], m0[0])), m2[2]))))
+    var d = sub(p, n)
+    return d[d.length - 1]
+  }
+}
+
+function orientation_5(sum, prod, scale, sub) {
+  return function orientation5Exact(m0, m1, m2, m3, m4) {
+    var p = sum(sum(sum(scale(sum(scale(sum(prod(m3[1], m4[0]), prod(-m4[1], m3[0])), m2[2]), sum(scale(sum(prod(m2[1], m4[0]), prod(-m4[1], m2[0])), -m3[2]), scale(sum(prod(m2[1], m3[0]), prod(-m3[1], m2[0])), m4[2]))), m1[3]), sum(scale(sum(scale(sum(prod(m3[1], m4[0]), prod(-m4[1], m3[0])), m1[2]), sum(scale(sum(prod(m1[1], m4[0]), prod(-m4[1], m1[0])), -m3[2]), scale(sum(prod(m1[1], m3[0]), prod(-m3[1], m1[0])), m4[2]))), -m2[3]), scale(sum(scale(sum(prod(m2[1], m4[0]), prod(-m4[1], m2[0])), m1[2]), sum(scale(sum(prod(m1[1], m4[0]), prod(-m4[1], m1[0])), -m2[2]), scale(sum(prod(m1[1], m2[0]), prod(-m2[1], m1[0])), m4[2]))), m3[3]))), sum(scale(sum(scale(sum(prod(m2[1], m3[0]), prod(-m3[1], m2[0])), m1[2]), sum(scale(sum(prod(m1[1], m3[0]), prod(-m3[1], m1[0])), -m2[2]), scale(sum(prod(m1[1], m2[0]), prod(-m2[1], m1[0])), m3[2]))), -m4[3]), sum(scale(sum(scale(sum(prod(m3[1], m4[0]), prod(-m4[1], m3[0])), m1[2]), sum(scale(sum(prod(m1[1], m4[0]), prod(-m4[1], m1[0])), -m3[2]), scale(sum(prod(m1[1], m3[0]), prod(-m3[1], m1[0])), m4[2]))), m0[3]), scale(sum(scale(sum(prod(m3[1], m4[0]), prod(-m4[1], m3[0])), m0[2]), sum(scale(sum(prod(m0[1], m4[0]), prod(-m4[1], m0[0])), -m3[2]), scale(sum(prod(m0[1], m3[0]), prod(-m3[1], m0[0])), m4[2]))), -m1[3])))), sum(sum(scale(sum(scale(sum(prod(m1[1], m4[0]), prod(-m4[1], m1[0])), m0[2]), sum(scale(sum(prod(m0[1], m4[0]), prod(-m4[1], m0[0])), -m1[2]), scale(sum(prod(m0[1], m1[0]), prod(-m1[1], m0[0])), m4[2]))), m3[3]), sum(scale(sum(scale(sum(prod(m1[1], m3[0]), prod(-m3[1], m1[0])), m0[2]), sum(scale(sum(prod(m0[1], m3[0]), prod(-m3[1], m0[0])), -m1[2]), scale(sum(prod(m0[1], m1[0]), prod(-m1[1], m0[0])), m3[2]))), -m4[3]), scale(sum(scale(sum(prod(m2[1], m3[0]), prod(-m3[1], m2[0])), m1[2]), sum(scale(sum(prod(m1[1], m3[0]), prod(-m3[1], m1[0])), -m2[2]), scale(sum(prod(m1[1], m2[0]), prod(-m2[1], m1[0])), m3[2]))), m0[3]))), sum(scale(sum(scale(sum(prod(m2[1], m3[0]), prod(-m3[1], m2[0])), m0[2]), sum(scale(sum(prod(m0[1], m3[0]), prod(-m3[1], m0[0])), -m2[2]), scale(sum(prod(m0[1], m2[0]), prod(-m2[1], m0[0])), m3[2]))), -m1[3]), sum(scale(sum(scale(sum(prod(m1[1], m3[0]), prod(-m3[1], m1[0])), m0[2]), sum(scale(sum(prod(m0[1], m3[0]), prod(-m3[1], m0[0])), -m1[2]), scale(sum(prod(m0[1], m1[0]), prod(-m1[1], m0[0])), m3[2]))), m2[3]), scale(sum(scale(sum(prod(m1[1], m2[0]), prod(-m2[1], m1[0])), m0[2]), sum(scale(sum(prod(m0[1], m2[0]), prod(-m2[1], m0[0])), -m1[2]), scale(sum(prod(m0[1], m1[0]), prod(-m1[1], m0[0])), m2[2]))), -m3[3])))))
+    var n = sum(sum(sum(scale(sum(scale(sum(prod(m3[1], m4[0]), prod(-m4[1], m3[0])), m2[2]), sum(scale(sum(prod(m2[1], m4[0]), prod(-m4[1], m2[0])), -m3[2]), scale(sum(prod(m2[1], m3[0]), prod(-m3[1], m2[0])), m4[2]))), m0[3]), scale(sum(scale(sum(prod(m3[1], m4[0]), prod(-m4[1], m3[0])), m0[2]), sum(scale(sum(prod(m0[1], m4[0]), prod(-m4[1], m0[0])), -m3[2]), scale(sum(prod(m0[1], m3[0]), prod(-m3[1], m0[0])), m4[2]))), -m2[3])), sum(scale(sum(scale(sum(prod(m2[1], m4[0]), prod(-m4[1], m2[0])), m0[2]), sum(scale(sum(prod(m0[1], m4[0]), prod(-m4[1], m0[0])), -m2[2]), scale(sum(prod(m0[1], m2[0]), prod(-m2[1], m0[0])), m4[2]))), m3[3]), scale(sum(scale(sum(prod(m2[1], m3[0]), prod(-m3[1], m2[0])), m0[2]), sum(scale(sum(prod(m0[1], m3[0]), prod(-m3[1], m0[0])), -m2[2]), scale(sum(prod(m0[1], m2[0]), prod(-m2[1], m0[0])), m3[2]))), -m4[3]))), sum(sum(scale(sum(scale(sum(prod(m2[1], m4[0]), prod(-m4[1], m2[0])), m1[2]), sum(scale(sum(prod(m1[1], m4[0]), prod(-m4[1], m1[0])), -m2[2]), scale(sum(prod(m1[1], m2[0]), prod(-m2[1], m1[0])), m4[2]))), m0[3]), scale(sum(scale(sum(prod(m2[1], m4[0]), prod(-m4[1], m2[0])), m0[2]), sum(scale(sum(prod(m0[1], m4[0]), prod(-m4[1], m0[0])), -m2[2]), scale(sum(prod(m0[1], m2[0]), prod(-m2[1], m0[0])), m4[2]))), -m1[3])), sum(scale(sum(scale(sum(prod(m1[1], m4[0]), prod(-m4[1], m1[0])), m0[2]), sum(scale(sum(prod(m0[1], m4[0]), prod(-m4[1], m0[0])), -m1[2]), scale(sum(prod(m0[1], m1[0]), prod(-m1[1], m0[0])), m4[2]))), m2[3]), scale(sum(scale(sum(prod(m1[1], m2[0]), prod(-m2[1], m1[0])), m0[2]), sum(scale(sum(prod(m0[1], m2[0]), prod(-m2[1], m0[0])), -m1[2]), scale(sum(prod(m0[1], m1[0]), prod(-m1[1], m0[0])), m2[2]))), -m4[3]))))
+    var d = sub(p, n)
+    return d[d.length - 1]
+  }
+}
+
+function orientation(n) {
+  var fn =
+    n === 3 ? orientation_3 :
+    n === 4 ? orientation_4 : orientation_5
+
+  return fn(robustSum, twoProduct, robustScale, robustSubtract)
+}
+
+var orientation3Exact = orientation(3)
+var orientation4Exact = orientation(4)
+
+var CACHED = [
+  function orientation0() { return 0 },
+  function orientation1() { return 0 },
+  function orientation2(a, b) {
+    return b[0] - a[0]
+  },
+  function orientation3(a, b, c) {
+    var l = (a[1] - c[1]) * (b[0] - c[0])
+    var r = (a[0] - c[0]) * (b[1] - c[1])
+    var det = l - r
+    var s
+    if(l > 0) {
+      if(r <= 0) {
+        return det
+      } else {
+        s = l + r
+      }
+    } else if(l < 0) {
+      if(r >= 0) {
+        return det
+      } else {
+        s = -(l + r)
+      }
+    } else {
+      return det
+    }
+    var tol = ERRBOUND3 * s
+    if(det >= tol || det <= -tol) {
+      return det
+    }
+    return orientation3Exact(a, b, c)
+  },
+  function orientation4(a,b,c,d) {
+    var adx = a[0] - d[0]
+    var bdx = b[0] - d[0]
+    var cdx = c[0] - d[0]
+    var ady = a[1] - d[1]
+    var bdy = b[1] - d[1]
+    var cdy = c[1] - d[1]
+    var adz = a[2] - d[2]
+    var bdz = b[2] - d[2]
+    var cdz = c[2] - d[2]
+    var bdxcdy = bdx * cdy
+    var cdxbdy = cdx * bdy
+    var cdxady = cdx * ady
+    var adxcdy = adx * cdy
+    var adxbdy = adx * bdy
+    var bdxady = bdx * ady
+    var det = adz * (bdxcdy - cdxbdy)
+            + bdz * (cdxady - adxcdy)
+            + cdz * (adxbdy - bdxady)
+    var permanent = (Math.abs(bdxcdy) + Math.abs(cdxbdy)) * Math.abs(adz)
+                  + (Math.abs(cdxady) + Math.abs(adxcdy)) * Math.abs(bdz)
+                  + (Math.abs(adxbdy) + Math.abs(bdxady)) * Math.abs(cdz)
+    var tol = ERRBOUND4 * permanent
+    if ((det > tol) || (-det > tol)) {
+      return det
+    }
+    return orientation4Exact(a,b,c,d)
+  }
+]
+
+function slowOrient(args) {
+  var proc = CACHED[args.length]
+  if(!proc) {
+    proc = CACHED[args.length] = orientation(args.length)
+  }
+  return proc.apply(undefined, args)
+}
+
+function proc (slow, o0, o1, o2, o3, o4, o5) {
+  return function getOrientation(a0, a1, a2, a3, a4) {
+    switch (arguments.length) {
+      case 0:
+      case 1:
+        return 0;
+      case 2:
+        return o2(a0, a1)
+      case 3:
+        return o3(a0, a1, a2)
+      case 4:
+        return o4(a0, a1, a2, a3)
+      case 5:
+        return o5(a0, a1, a2, a3, a4)
+    }
+
+    var s = new Array(arguments.length)
+    for (var i = 0; i < arguments.length; ++i) {
+      s[i] = arguments[i]
+    }
+    return slow(s)
+  }
+}
+
+function generateOrientationProc() {
+  while(CACHED.length <= NUM_EXPAND) {
+    CACHED.push(orientation(CACHED.length))
+  }
+  module.exports = proc.apply(undefined, [slowOrient].concat(CACHED))
+  for(var i=0; i<=NUM_EXPAND; ++i) {
+    module.exports[i] = CACHED[i]
+  }
+}
+
+generateOrientationProc()
+},{"robust-scale":60,"robust-subtract":61,"robust-sum":62,"two-product":65}],59:[function(require,module,exports){
+module.exports = robustPointInPolygon
+
+var orient = require('robust-orientation')
+
+function robustPointInPolygon(vs, point) {
+  var x = point[0]
+  var y = point[1]
+  var n = vs.length
+  var inside = 1
+  var lim = n
+  for(var i = 0, j = n-1; i<lim; j=i++) {
+    var a = vs[i]
+    var b = vs[j]
+    var yi = a[1]
+    var yj = b[1]
+    if(yj < yi) {
+      if(yj < y && y < yi) {
+        var s = orient(a, b, point)
+        if(s === 0) {
+          return 0
+        } else {
+          inside ^= (0 < s)|0
+        }
+      } else if(y === yi) {
+        var c = vs[(i+1)%n]
+        var yk = c[1]
+        if(yi < yk) {
+          var s = orient(a, b, point)
+          if(s === 0) {
+            return 0
+          } else {
+            inside ^= (0 < s)|0
+          }
+        }
+      }
+    } else if(yi < yj) {
+      if(yi < y && y < yj) {
+        var s = orient(a, b, point)
+        if(s === 0) {
+          return 0
+        } else {
+          inside ^= (s < 0)|0
+        }
+      } else if(y === yi) {
+        var c = vs[(i+1)%n]
+        var yk = c[1]
+        if(yk < yi) {
+          var s = orient(a, b, point)
+          if(s === 0) {
+            return 0
+          } else {
+            inside ^= (s < 0)|0
+          }
+        }
+      }
+    } else if(y === yi) {
+      var x0 = Math.min(a[0], b[0])
+      var x1 = Math.max(a[0], b[0])
+      if(i === 0) {
+        while(j>0) {
+          var k = (j+n-1)%n
+          var p = vs[k]
+          if(p[1] !== y) {
+            break
+          }
+          var px = p[0]
+          x0 = Math.min(x0, px)
+          x1 = Math.max(x1, px)
+          j = k
+        }
+        if(j === 0) {
+          if(x0 <= x && x <= x1) {
+            return 0
+          }
+          return 1 
+        }
+        lim = j+1
+      }
+      var y0 = vs[(j+n-1)%n][1]
+      while(i+1<lim) {
+        var p = vs[i+1]
+        if(p[1] !== y) {
+          break
+        }
+        var px = p[0]
+        x0 = Math.min(x0, px)
+        x1 = Math.max(x1, px)
+        i += 1
+      }
+      if(x0 <= x && x <= x1) {
+        return 0
+      }
+      var y1 = vs[(i+1)%n][1]
+      if(x < x0 && (y0 < y !== y1 < y)) {
+        inside ^= 1
+      }
+    }
+  }
+  return 2 * inside - 1
+}
+},{"robust-orientation":58}],60:[function(require,module,exports){
+"use strict"
+
+var twoProduct = require("two-product")
+var twoSum = require("two-sum")
+
+module.exports = scaleLinearExpansion
+
+function scaleLinearExpansion(e, scale) {
+  var n = e.length
+  if(n === 1) {
+    var ts = twoProduct(e[0], scale)
+    if(ts[0]) {
+      return ts
+    }
+    return [ ts[1] ]
+  }
+  var g = new Array(2 * n)
+  var q = [0.1, 0.1]
+  var t = [0.1, 0.1]
+  var count = 0
+  twoProduct(e[0], scale, q)
+  if(q[0]) {
+    g[count++] = q[0]
+  }
+  for(var i=1; i<n; ++i) {
+    twoProduct(e[i], scale, t)
+    var pq = q[1]
+    twoSum(pq, t[0], q)
+    if(q[0]) {
+      g[count++] = q[0]
+    }
+    var a = t[1]
+    var b = q[1]
+    var x = a + b
+    var bv = x - a
+    var y = b - bv
+    q[1] = x
+    if(y) {
+      g[count++] = y
+    }
+  }
+  if(q[1]) {
+    g[count++] = q[1]
+  }
+  if(count === 0) {
+    g[count++] = 0.0
+  }
+  g.length = count
+  return g
+}
+},{"two-product":65,"two-sum":66}],61:[function(require,module,exports){
+"use strict"
+
+module.exports = robustSubtract
+
+//Easy case: Add two scalars
+function scalarScalar(a, b) {
+  var x = a + b
+  var bv = x - a
+  var av = x - bv
+  var br = b - bv
+  var ar = a - av
+  var y = ar + br
+  if(y) {
+    return [y, x]
+  }
+  return [x]
+}
+
+function robustSubtract(e, f) {
+  var ne = e.length|0
+  var nf = f.length|0
+  if(ne === 1 && nf === 1) {
+    return scalarScalar(e[0], -f[0])
+  }
+  var n = ne + nf
+  var g = new Array(n)
+  var count = 0
+  var eptr = 0
+  var fptr = 0
+  var abs = Math.abs
+  var ei = e[eptr]
+  var ea = abs(ei)
+  var fi = -f[fptr]
+  var fa = abs(fi)
+  var a, b
+  if(ea < fa) {
+    b = ei
+    eptr += 1
+    if(eptr < ne) {
+      ei = e[eptr]
+      ea = abs(ei)
+    }
+  } else {
+    b = fi
+    fptr += 1
+    if(fptr < nf) {
+      fi = -f[fptr]
+      fa = abs(fi)
+    }
+  }
+  if((eptr < ne && ea < fa) || (fptr >= nf)) {
+    a = ei
+    eptr += 1
+    if(eptr < ne) {
+      ei = e[eptr]
+      ea = abs(ei)
+    }
+  } else {
+    a = fi
+    fptr += 1
+    if(fptr < nf) {
+      fi = -f[fptr]
+      fa = abs(fi)
+    }
+  }
+  var x = a + b
+  var bv = x - a
+  var y = b - bv
+  var q0 = y
+  var q1 = x
+  var _x, _bv, _av, _br, _ar
+  while(eptr < ne && fptr < nf) {
+    if(ea < fa) {
+      a = ei
+      eptr += 1
+      if(eptr < ne) {
+        ei = e[eptr]
+        ea = abs(ei)
+      }
+    } else {
+      a = fi
+      fptr += 1
+      if(fptr < nf) {
+        fi = -f[fptr]
+        fa = abs(fi)
+      }
+    }
+    b = q0
+    x = a + b
+    bv = x - a
+    y = b - bv
+    if(y) {
+      g[count++] = y
+    }
+    _x = q1 + x
+    _bv = _x - q1
+    _av = _x - _bv
+    _br = x - _bv
+    _ar = q1 - _av
+    q0 = _ar + _br
+    q1 = _x
+  }
+  while(eptr < ne) {
+    a = ei
+    b = q0
+    x = a + b
+    bv = x - a
+    y = b - bv
+    if(y) {
+      g[count++] = y
+    }
+    _x = q1 + x
+    _bv = _x - q1
+    _av = _x - _bv
+    _br = x - _bv
+    _ar = q1 - _av
+    q0 = _ar + _br
+    q1 = _x
+    eptr += 1
+    if(eptr < ne) {
+      ei = e[eptr]
+    }
+  }
+  while(fptr < nf) {
+    a = fi
+    b = q0
+    x = a + b
+    bv = x - a
+    y = b - bv
+    if(y) {
+      g[count++] = y
+    } 
+    _x = q1 + x
+    _bv = _x - q1
+    _av = _x - _bv
+    _br = x - _bv
+    _ar = q1 - _av
+    q0 = _ar + _br
+    q1 = _x
+    fptr += 1
+    if(fptr < nf) {
+      fi = -f[fptr]
+    }
+  }
+  if(q0) {
+    g[count++] = q0
+  }
+  if(q1) {
+    g[count++] = q1
+  }
+  if(!count) {
+    g[count++] = 0.0  
+  }
+  g.length = count
+  return g
+}
+},{}],62:[function(require,module,exports){
+"use strict"
+
+module.exports = linearExpansionSum
+
+//Easy case: Add two scalars
+function scalarScalar(a, b) {
+  var x = a + b
+  var bv = x - a
+  var av = x - bv
+  var br = b - bv
+  var ar = a - av
+  var y = ar + br
+  if(y) {
+    return [y, x]
+  }
+  return [x]
+}
+
+function linearExpansionSum(e, f) {
+  var ne = e.length|0
+  var nf = f.length|0
+  if(ne === 1 && nf === 1) {
+    return scalarScalar(e[0], f[0])
+  }
+  var n = ne + nf
+  var g = new Array(n)
+  var count = 0
+  var eptr = 0
+  var fptr = 0
+  var abs = Math.abs
+  var ei = e[eptr]
+  var ea = abs(ei)
+  var fi = f[fptr]
+  var fa = abs(fi)
+  var a, b
+  if(ea < fa) {
+    b = ei
+    eptr += 1
+    if(eptr < ne) {
+      ei = e[eptr]
+      ea = abs(ei)
+    }
+  } else {
+    b = fi
+    fptr += 1
+    if(fptr < nf) {
+      fi = f[fptr]
+      fa = abs(fi)
+    }
+  }
+  if((eptr < ne && ea < fa) || (fptr >= nf)) {
+    a = ei
+    eptr += 1
+    if(eptr < ne) {
+      ei = e[eptr]
+      ea = abs(ei)
+    }
+  } else {
+    a = fi
+    fptr += 1
+    if(fptr < nf) {
+      fi = f[fptr]
+      fa = abs(fi)
+    }
+  }
+  var x = a + b
+  var bv = x - a
+  var y = b - bv
+  var q0 = y
+  var q1 = x
+  var _x, _bv, _av, _br, _ar
+  while(eptr < ne && fptr < nf) {
+    if(ea < fa) {
+      a = ei
+      eptr += 1
+      if(eptr < ne) {
+        ei = e[eptr]
+        ea = abs(ei)
+      }
+    } else {
+      a = fi
+      fptr += 1
+      if(fptr < nf) {
+        fi = f[fptr]
+        fa = abs(fi)
+      }
+    }
+    b = q0
+    x = a + b
+    bv = x - a
+    y = b - bv
+    if(y) {
+      g[count++] = y
+    }
+    _x = q1 + x
+    _bv = _x - q1
+    _av = _x - _bv
+    _br = x - _bv
+    _ar = q1 - _av
+    q0 = _ar + _br
+    q1 = _x
+  }
+  while(eptr < ne) {
+    a = ei
+    b = q0
+    x = a + b
+    bv = x - a
+    y = b - bv
+    if(y) {
+      g[count++] = y
+    }
+    _x = q1 + x
+    _bv = _x - q1
+    _av = _x - _bv
+    _br = x - _bv
+    _ar = q1 - _av
+    q0 = _ar + _br
+    q1 = _x
+    eptr += 1
+    if(eptr < ne) {
+      ei = e[eptr]
+    }
+  }
+  while(fptr < nf) {
+    a = fi
+    b = q0
+    x = a + b
+    bv = x - a
+    y = b - bv
+    if(y) {
+      g[count++] = y
+    } 
+    _x = q1 + x
+    _bv = _x - q1
+    _av = _x - _bv
+    _br = x - _bv
+    _ar = q1 - _av
+    q0 = _ar + _br
+    q1 = _x
+    fptr += 1
+    if(fptr < nf) {
+      fi = f[fptr]
+    }
+  }
+  if(q0) {
+    g[count++] = q0
+  }
+  if(q1) {
+    g[count++] = q1
+  }
+  if(!count) {
+    g[count++] = 0.0  
+  }
+  g.length = count
+  return g
+}
+},{}],63:[function(require,module,exports){
 "use strict";Object.defineProperty(exports,"__esModule",{value:true});exports.DstColorFactor=exports.DstAlphaFactor=exports.DoubleSide=exports.DodecahedronGeometry=exports.DodecahedronBufferGeometry=exports.DiscreteInterpolant=exports.DirectionalLightHelper=exports.DirectionalLight=exports.DepthTexture=exports.DepthStencilFormat=exports.DepthFormat=exports.DefaultLoadingManager=exports.DecrementWrapStencilOp=exports.DecrementStencilOp=exports.DataUtils=exports.DataTextureLoader=exports.DataTexture3D=exports.DataTexture2DArray=exports.DataTexture=exports.DataArrayTexture=exports.Data3DTexture=exports.Cylindrical=exports.CylinderGeometry=exports.CylinderBufferGeometry=exports.CustomToneMapping=exports.CustomBlending=exports.CurvePath=exports.Curve=exports.CullFaceNone=exports.CullFaceFrontBack=exports.CullFaceFront=exports.CullFaceBack=exports.CubicInterpolant=exports.CubicBezierCurve3=exports.CubicBezierCurve=exports.CubeUVReflectionMapping=exports.CubeTextureLoader=exports.CubeTexture=exports.CubeRefractionMapping=exports.CubeReflectionMapping=exports.CubeCamera=exports.ConeGeometry=exports.ConeBufferGeometry=exports.CompressedTextureLoader=exports.CompressedTexture=exports.CompressedArrayTexture=exports.ColorManagement=exports.ColorKeyframeTrack=exports.Color=exports.Clock=exports.ClampToEdgeWrapping=exports.CircleGeometry=exports.CircleBufferGeometry=exports.CineonToneMapping=exports.CatmullRomCurve3=exports.CapsuleGeometry=exports.CapsuleBufferGeometry=exports.CanvasTexture=exports.CameraHelper=exports.Camera=exports.Cache=exports.ByteType=exports.BufferGeometryLoader=exports.BufferGeometry=exports.BufferAttribute=exports.BoxHelper=exports.BoxGeometry=exports.BoxBufferGeometry=exports.Box3Helper=exports.Box3=exports.Box2=exports.BooleanKeyframeTrack=exports.Bone=exports.BasicShadowMap=exports.BasicDepthPacking=exports.BackSide=exports.AxesHelper=exports.AudioLoader=exports.AudioListener=exports.AudioContext=exports.AudioAnalyser=exports.Audio=exports.ArrowHelper=exports.ArrayCamera=exports.ArcCurve=exports.AnimationUtils=exports.AnimationObjectGroup=exports.AnimationMixer=exports.AnimationLoader=exports.AnimationClip=exports.AmbientLightProbe=exports.AmbientLight=exports.AlwaysStencilFunc=exports.AlwaysDepth=exports.AlphaFormat=exports.AdditiveBlending=exports.AdditiveAnimationBlendMode=exports.AddOperation=exports.AddEquation=exports.ACESFilmicToneMapping=void 0;exports.ImageUtils=exports.ImageLoader=exports.ImageBitmapLoader=exports.IcosahedronGeometry=exports.IcosahedronBufferGeometry=exports.HemisphereLightProbe=exports.HemisphereLightHelper=exports.HemisphereLight=exports.HalfFloatType=exports.Group=exports.GridHelper=exports.GreaterStencilFunc=exports.GreaterEqualStencilFunc=exports.GreaterEqualDepth=exports.GreaterDepth=exports.GLSL3=exports.GLSL1=exports.GLBufferAttribute=exports.Frustum=exports.FrontSide=exports.FramebufferTexture=exports.FogExp2=exports.Fog=exports.FloatType=exports.Float64BufferAttribute=exports.Float32BufferAttribute=exports.Float16BufferAttribute=exports.FileLoader=exports.ExtrudeGeometry=exports.ExtrudeBufferGeometry=exports.EventDispatcher=exports.Euler=exports.EquirectangularRefractionMapping=exports.EquirectangularReflectionMapping=exports.EqualStencilFunc=exports.EqualDepth=exports.EllipseCurve=exports.EdgesGeometry=exports.DynamicReadUsage=exports.DynamicDrawUsage=exports.DynamicCopyUsage=void 0;exports.ImmediateRenderObject=ImmediateRenderObject;exports.MathUtils=exports.MaterialLoader=exports.Material=exports.MOUSE=exports.LuminanceFormat=exports.LuminanceAlphaFormat=exports.LoopRepeat=exports.LoopPingPong=exports.LoopOnce=exports.LoadingManager=exports.LoaderUtils=exports.Loader=exports.LinearToneMapping=exports.LinearSRGBColorSpace=exports.LinearMipmapNearestFilter=exports.LinearMipmapLinearFilter=exports.LinearMipMapNearestFilter=exports.LinearMipMapLinearFilter=exports.LinearInterpolant=exports.LinearFilter=exports.LinearEncoding=exports.LineSegments=exports.LineLoop=exports.LineDashedMaterial=exports.LineCurve3=exports.LineCurve=exports.LineBasicMaterial=exports.Line3=exports.Line=exports.LightProbe=exports.Light=exports.LessStencilFunc=exports.LessEqualStencilFunc=exports.LessEqualDepth=exports.LessDepth=exports.Layers=exports.LatheGeometry=exports.LatheBufferGeometry=exports.LOD=exports.KeyframeTrack=exports.KeepStencilOp=exports.InvertStencilOp=exports.InterpolateSmooth=exports.InterpolateLinear=exports.InterpolateDiscrete=exports.Interpolant=exports.InterleavedBufferAttribute=exports.InterleavedBuffer=exports.IntType=exports.Int8BufferAttribute=exports.Int32BufferAttribute=exports.Int16BufferAttribute=exports.InstancedMesh=exports.InstancedInterleavedBuffer=exports.InstancedBufferGeometry=exports.InstancedBufferAttribute=exports.IncrementWrapStencilOp=exports.IncrementStencilOp=void 0;exports.RGB_S3TC_DXT1_Format=exports.RGB_PVRTC_4BPPV1_Format=exports.RGB_PVRTC_2BPPV1_Format=exports.RGB_ETC2_Format=exports.RGB_ETC1_Format=exports.RGBFormat=exports.RGBA_S3TC_DXT5_Format=exports.RGBA_S3TC_DXT3_Format=exports.RGBA_S3TC_DXT1_Format=exports.RGBA_PVRTC_4BPPV1_Format=exports.RGBA_PVRTC_2BPPV1_Format=exports.RGBA_ETC2_EAC_Format=exports.RGBA_BPTC_Format=exports.RGBA_ASTC_8x8_Format=exports.RGBA_ASTC_8x6_Format=exports.RGBA_ASTC_8x5_Format=exports.RGBA_ASTC_6x6_Format=exports.RGBA_ASTC_6x5_Format=exports.RGBA_ASTC_5x5_Format=exports.RGBA_ASTC_5x4_Format=exports.RGBA_ASTC_4x4_Format=exports.RGBA_ASTC_12x12_Format=exports.RGBA_ASTC_12x10_Format=exports.RGBA_ASTC_10x8_Format=exports.RGBA_ASTC_10x6_Format=exports.RGBA_ASTC_10x5_Format=exports.RGBA_ASTC_10x10_Format=exports.RGBAIntegerFormat=exports.RGBAFormat=exports.RGBADepthPacking=exports.REVISION=exports.QuaternionLinearInterpolant=exports.QuaternionKeyframeTrack=exports.Quaternion=exports.QuadraticBezierCurve3=exports.QuadraticBezierCurve=exports.PropertyMixer=exports.PropertyBinding=exports.PositionalAudio=exports.PolyhedronGeometry=exports.PolyhedronBufferGeometry=exports.PolarGridHelper=exports.PointsMaterial=exports.Points=exports.PointLightHelper=exports.PointLight=exports.PlaneHelper=exports.PlaneGeometry=exports.PlaneBufferGeometry=exports.Plane=exports.PerspectiveCamera=exports.Path=exports.PMREMGenerator=exports.PCFSoftShadowMap=exports.PCFShadowMap=exports.OrthographicCamera=exports.OneMinusSrcColorFactor=exports.OneMinusSrcAlphaFactor=exports.OneMinusDstColorFactor=exports.OneMinusDstAlphaFactor=exports.OneFactor=exports.OctahedronGeometry=exports.OctahedronBufferGeometry=exports.ObjectSpaceNormalMap=exports.ObjectLoader=exports.Object3D=exports.NumberKeyframeTrack=exports.NotEqualStencilFunc=exports.NotEqualDepth=exports.NormalBlending=exports.NormalAnimationBlendMode=exports.NoToneMapping=exports.NoColorSpace=exports.NoBlending=exports.NeverStencilFunc=exports.NeverDepth=exports.NearestMipmapNearestFilter=exports.NearestMipmapLinearFilter=exports.NearestMipMapNearestFilter=exports.NearestMipMapLinearFilter=exports.NearestFilter=exports.MultiplyOperation=exports.MultiplyBlending=exports.MixOperation=exports.MirroredRepeatWrapping=exports.MinEquation=exports.MeshToonMaterial=exports.MeshStandardMaterial=exports.MeshPhysicalMaterial=exports.MeshPhongMaterial=exports.MeshNormalMaterial=exports.MeshMatcapMaterial=exports.MeshLambertMaterial=exports.MeshDistanceMaterial=exports.MeshDepthMaterial=exports.MeshBasicMaterial=exports.Mesh=exports.MaxEquation=exports.Matrix4=exports.Matrix3=void 0;exports.WebGLRenderTarget=exports.WebGLMultisampleRenderTarget=exports.WebGLMultipleRenderTargets=exports.WebGLCubeRenderTarget=exports.WebGLArrayRenderTarget=exports.WebGL3DRenderTarget=exports.WebGL1Renderer=exports.VideoTexture=exports.VectorKeyframeTrack=exports.Vector4=exports.Vector3=exports.Vector2=exports.VSMShadowMap=exports.UnsignedShortType=exports.UnsignedShort5551Type=exports.UnsignedShort4444Type=exports.UnsignedIntType=exports.UnsignedInt248Type=exports.UnsignedByteType=exports.UniformsUtils=exports.UniformsLib=exports.UniformsGroup=exports.Uniform=exports.Uint8ClampedBufferAttribute=exports.Uint8BufferAttribute=exports.Uint32BufferAttribute=exports.Uint16BufferAttribute=exports.UVMapping=exports.TwoPassDoubleSide=exports.TubeGeometry=exports.TubeBufferGeometry=exports.TrianglesDrawMode=exports.TriangleStripDrawMode=exports.TriangleFanDrawMode=exports.Triangle=exports.TorusKnotGeometry=exports.TorusKnotBufferGeometry=exports.TorusGeometry=exports.TorusBufferGeometry=exports.TextureLoader=exports.Texture=exports.TetrahedronGeometry=exports.TetrahedronBufferGeometry=exports.TangentSpaceNormalMap=exports.TOUCH=exports.SubtractiveBlending=exports.SubtractEquation=exports.StringKeyframeTrack=exports.StreamReadUsage=exports.StreamDrawUsage=exports.StreamCopyUsage=exports.StereoCamera=exports.StaticReadUsage=exports.StaticDrawUsage=exports.StaticCopyUsage=exports.SrcColorFactor=exports.SrcAlphaSaturateFactor=exports.SrcAlphaFactor=exports.SpriteMaterial=exports.Sprite=exports.SpotLightHelper=exports.SpotLight=exports.SplineCurve=exports.SphericalHarmonics3=exports.Spherical=exports.SphereGeometry=exports.SphereBufferGeometry=exports.Sphere=exports.Source=exports.SkinnedMesh=exports.SkeletonHelper=exports.Skeleton=exports.ShortType=exports.ShapeUtils=exports.ShapePath=exports.ShapeGeometry=exports.ShapeBufferGeometry=exports.Shape=exports.ShadowMaterial=exports.ShaderMaterial=exports.ShaderLib=exports.ShaderChunk=exports.Scene=exports.SRGBColorSpace=exports.RingGeometry=exports.RingBufferGeometry=exports.ReverseSubtractEquation=exports.ReplaceStencilOp=exports.RepeatWrapping=exports.ReinhardToneMapping=exports.RedIntegerFormat=exports.RedFormat=exports.RectAreaLight=exports.Raycaster=exports.Ray=exports.RawShaderMaterial=exports.RGIntegerFormat=exports.RGFormat=void 0;exports.WebGLRenderer=WebGLRenderer;exports.WebGLUtils=WebGLUtils;exports.sRGBEncoding=exports._SRGBAFormat=exports.ZeroStencilOp=exports.ZeroSlopeEnding=exports.ZeroFactor=exports.ZeroCurvatureEnding=exports.WrapAroundEnding=exports.WireframeGeometry=void 0;/**
  * @license
  * Copyright 2010-2022 Three.js Authors
@@ -10741,7 +11500,7 @@ exports.TetrahedronBufferGeometry=TetrahedronBufferGeometry;class TorusBufferGeo
 exports.TorusBufferGeometry=TorusBufferGeometry;class TorusKnotBufferGeometry extends TorusKnotGeometry{constructor(radius,tube,tubularSegments,radialSegments,p,q){console.warn('THREE.TorusKnotBufferGeometry has been renamed to THREE.TorusKnotGeometry.');super(radius,tube,tubularSegments,radialSegments,p,q);}}// r144
 exports.TorusKnotBufferGeometry=TorusKnotBufferGeometry;class TubeBufferGeometry extends TubeGeometry{constructor(path,tubularSegments,radius,radialSegments,closed){console.warn('THREE.TubeBufferGeometry has been renamed to THREE.TubeGeometry.');super(path,tubularSegments,radius,radialSegments,closed);}}exports.TubeBufferGeometry=TubeBufferGeometry;if(typeof __THREE_DEVTOOLS__!=='undefined'){__THREE_DEVTOOLS__.dispatchEvent(new CustomEvent('register',{detail:{revision:REVISION}}));}if(typeof window!=='undefined'){if(window.__THREE__){console.warn('WARNING: Multiple instances of Three.js being imported.');}else{window.__THREE__=REVISION;}}
 
-},{}],57:[function(require,module,exports){
+},{}],64:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -11531,4 +12290,56 @@ class MapControls extends OrbitControls {
 }
 exports.MapControls = MapControls;
 
-},{"three":56}]},{},[4]);
+},{"three":63}],65:[function(require,module,exports){
+"use strict"
+
+module.exports = twoProduct
+
+var SPLITTER = +(Math.pow(2, 27) + 1.0)
+
+function twoProduct(a, b, result) {
+  var x = a * b
+
+  var c = SPLITTER * a
+  var abig = c - a
+  var ahi = c - abig
+  var alo = a - ahi
+
+  var d = SPLITTER * b
+  var bbig = d - b
+  var bhi = d - bbig
+  var blo = b - bhi
+
+  var err1 = x - (ahi * bhi)
+  var err2 = err1 - (alo * bhi)
+  var err3 = err2 - (ahi * blo)
+
+  var y = alo * blo - err3
+
+  if(result) {
+    result[0] = y
+    result[1] = x
+    return result
+  }
+
+  return [ y, x ]
+}
+},{}],66:[function(require,module,exports){
+"use strict"
+
+module.exports = fastTwoSum
+
+function fastTwoSum(a, b, result) {
+	var x = a + b
+	var bv = x - a
+	var av = x - bv
+	var br = b - bv
+	var ar = a - av
+	if(result) {
+		result[0] = ar + br
+		result[1] = x
+		return result
+	}
+	return [ar+br, x]
+}
+},{}]},{},[5]);

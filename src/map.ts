@@ -1,11 +1,11 @@
 import * as THREE from 'three';
 
-import { MapControls } from "three/examples/jsm/controls/OrbitControls";
-
 import { Grid } from "./Grid";
-import { MapCallbackType, myCallbackType } from './interfaces';
+import { MapCallbackType, myCallbackType, Point, TileInfo, MapInfo } from './interfaces';
 import { Object3D } from 'three';
 import { HEX } from './Hex';
+import { getHexCenter } from './helpers';
+
 let { setOptions } = require( "./setoptions.js");
 
 export class HexMap {
@@ -14,7 +14,7 @@ export class HexMap {
     private pointer:THREE.Object3D;
     private Callback:{ [key: string]: myCallbackType } = {};
     private grid:Grid = new Grid();
-    private map:object;
+    private map:MapInfo;
 
     private options = {
         gridVisible: true,
@@ -34,43 +34,32 @@ export class HexMap {
     }
 
     private makeMap():THREE.Group {
-        let gridHex = new THREE.Group();
+        let mapHex = new THREE.Group();
         //@ts-ignore
         this.options.width = this.map.w;
         //@ts-ignore
         this.options.height = this.map.h;
         //@ts-ignore
         for(let x = 0; x < this.map.w; x++) {
+            
             //@ts-ignore
             for(let y = 0; y < this.map.h; y++) {
-                let color = 0x84aa53;
-                //@ts-ignore
-                if(this.map[x][y] == "w") {
-                    color = 0x6d95b2;
-                }
-                //@ts-ignore
-                if(this.map[x][y] == "t") {
-                    color = 0xf2e98c;
-                }
-                let hex = HEX(x, y, this.options.size, false, color);
-                hex.userData = {
-                    x: x,
-                    y: y,
-                    type: "tile",
-                    //@ts-ignore
-                    land: this.map[x][y]
-                }
-                gridHex.add(hex);
+                let tileInfo:TileInfo = this.map[x][y];
+                let hex = HEX(tileInfo, this.options.size, x, y);
+                let position:Point = getHexCenter(x, y, this.options.size);
+                hex.position.setX(position.x);
+                hex.position.setZ(position.y);
+                mapHex.add(hex);
             }
         } 
         // Hexes for map
 
-        this.Callback[MapCallbackType.geometryAdd](gridHex);
-        return gridHex;
+        this.Callback[MapCallbackType.geometryAdd](mapHex);
+        return mapHex;
     }
 
     private makeGrid():Grid {
-        this.grid = new Grid(this.options.width, this.options.height, this.options.size, true, this.options.gridColor);
+        this.grid = new Grid(this.options.width, this.options.height, this.options.size, this.options.gridColor);
         this.grid.visible = this.options.gridVisible;
         this.Callback[MapCallbackType.geometryAdd](this.grid.getGrid());
         return this.grid;
@@ -94,16 +83,20 @@ export class HexMap {
 
         let selector:Object3D = new THREE.Mesh(geometry, material);
         selector.rotateX(-90 * (Math.PI/180));
-        selector.position.setY(0.01);
+        selector.position.setY(this.options.size / 10 + 1.1);
         selector.visible = false;
         this.selector = selector;
         this.Callback[MapCallbackType.geometryAdd](selector);
         return selector;
     }
 
-    public moveSelector(Tile:THREE.Object3D):void {
+    public moveSelector(userData:Point):void {
+        let position:Point = getHexCenter(userData.x, userData.y, this.options.size);
+        console.log(userData, this.map[userData.x][userData.y]);
         this.selector.visible = true;
-        this.selector.position.set(Tile.position.x, this.selector.position.y, Tile.position.z);
+        this.selector.position.setX(position.x);
+        this.selector.position.setZ(position.y);
+        
     }
 
     private makePointer():Object3D {
@@ -115,21 +108,23 @@ export class HexMap {
 
         let pointer:Object3D = new THREE.Mesh(geometry, material);
         pointer.rotateX(-90 * (Math.PI/180));
-        pointer.position.setY(0.05);
+        pointer.position.setY(this.options.size / 10 + 1.1);
         pointer.visible = false;
         this.pointer = pointer;
         this.Callback[MapCallbackType.geometryAdd](pointer);
         return pointer;
     }
 
-    public movePointer(Tile:THREE.Object3D):void {
+    public movePointer(userData:Point):void {
+        let position:Point = getHexCenter(userData.x, userData.y, this.options.size);
         this.pointer.visible = true;
-        this.pointer.position.set(Tile.position.x, this.pointer.position.y, Tile.position.z);
+        this.pointer.position.setX(position.x);
+        this.pointer.position.setZ(position.y);
     }
     //----------------------------------------------------------------------------------------------------
     // INTI MAP
     //----------------------------------------------------------------------------------------------------
-    public init(mapData:object) {
+    public init(mapData:MapInfo) {
         this.map = mapData;
         //Gen map
         this.makeMap();
