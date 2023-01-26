@@ -1,5 +1,5 @@
 import { ConeGeometry, MeshLambertMaterial, Mesh, Group, Box3} from "three";
-import { getRandomInt, HEXPolygon } from "../helpers";
+import { getRandomInt, HEXPolygon } from "../helpers/helpers";
 //------------------------------------------------------------------------------
 //Checker point inside polygon or not
 //------------------------------------------------------------------------------

@@ -4,9 +4,11 @@ A civ like 3D hexagonal terrain map based on three.js. See the [demo](https://gu
 
 ![Screenshot](public/main.png)
 
+Project was started inspired by [threejs-hex-map](https://github.com/Bunkerbewohner/threejs-hex-map).
+
 ## Overview
 
-* project just started for learning threejs, result on screen.
+* project just started for learning threejs, result is on screen.
 
 ### Installation
 
@@ -19,3 +21,9 @@ npm install
 
 npm run start
 ```
+
+### Links
+
+Path finder by [weixiaofan](https://github.com/weixiaofan/hexpath)[^1]
+
+[^1]: I reedit source code to be compatible with the typescript and orginize the class for simple use in the future. Modification to take care about unit restrictions and land type. 

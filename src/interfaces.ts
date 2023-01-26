@@ -27,7 +27,7 @@ export let LandColor: { [key in Land]: ColorRepresentation} =  {
 
 export interface Point {x:number, y:number}
 
-export interface TileInfo {type: Land, wood:boolean, river:boolean}
+export interface TileInfo {type: Land, wood:boolean, river:boolean, unit:string}
 
 export interface myCallbackType { (myArgument: object): void }
 //Store data for maps

@@ -599,7 +599,8 @@
     "15": {
       "type": "shore",
       "wood": false,
-      "river": false
+      "river": false,
+      "unit": "viking_boat"
     },
     "16": {
       "type": "land",

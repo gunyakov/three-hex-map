@@ -1,7 +1,6 @@
 import * as THREE from 'three'
-import { Vector3 } from 'three';
 import { MapControls } from 'three/examples/jsm/controls/OrbitControls.js'
-import { MapCallbackType, myCallbackType } from './interfaces';
+import { MapCallbackType, myCallbackType, Point } from './interfaces';
 
 export class Scene {
   private canvas:Element;
@@ -14,6 +13,9 @@ export class Scene {
   private _axesVisible:boolean = false;
   private axes:THREE.AxesHelper;
   private Callback:{ [key: string]: myCallbackType } = {};
+  private mousemove:boolean = false;
+  private lastCellMove:Point = {x:0, y:0};
+  private lastCellClick:Point = {x:0, y:0};
 
   constructor(el:Element) {
     this.Callback[MapCallbackType.mousemove] = function() {};
@@ -31,6 +33,8 @@ export class Scene {
 
     // start RAF
     this.events();
+
+    this.draw(0);
   }
 
   /**
@@ -134,6 +138,12 @@ export class Scene {
     stone[1].rotation.set(0, 0, Math.PI / 2);
     stone[1].scale.set(1, 1, 1);
     stone[1].position.set(300, 0.7, 300);
+
+    // var geometry = new THREE.SphereGeometry( 3000, 3000, 32 );
+    // var material = new THREE.MeshBasicMaterial( {color: 0xffff00} );
+    // var sphere = new THREE.Mesh( geometry, material );
+    // sphere.material.side = THREE.BackSide;
+    // this.scene.add( sphere );
   }
   /**
    * Threejs controls to have controls on our scene
@@ -146,20 +156,19 @@ export class Scene {
 
     //controls.addEventListener( 'change', render ); // call this only in static scenes (i.e., if there is no animation loop)
 
-    this.controls.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
+    //this.controls.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
     this.controls.dampingFactor = 0.05;
 
     this.controls.screenSpacePanning = false;
 
     this.controls.minDistance = 100;
     this.controls.maxDistance = 800;
-    this.controls.minAzimuthAngle = 90 * (Math.PI / 180);
-    this.controls.maxAzimuthAngle = 90 * (Math.PI / 180);
-    this.controls.minPolarAngle = 0
-    this.controls.maxPolarAngle = 15 * (Math.PI / 180);
+    this.controls.minAzimuthAngle = 80 * (Math.PI / 180);
+    this.controls.maxAzimuthAngle = 100 * (Math.PI / 180);
+    this.controls.minPolarAngle = 10 * (Math.PI / 180)
+    this.controls.maxPolarAngle = 90 * (Math.PI / 180);
 
     //this.controls.enableRotate = false;
-    this.draw(0);
   }
 
   /**
@@ -167,8 +176,9 @@ export class Scene {
    */
   events() {
     window.addEventListener( 'resize', this.handleResize, { passive: true });
-    window.addEventListener( "click", (event) => this.onPointerMove(event, this.camera, this.scene));
-    window.addEventListener( 'pointermove', (event) => this.onPointerMove(event, this.camera, this.scene));
+    window.addEventListener( "mouseup", this.onPointerMove.bind(this));
+    window.addEventListener( 'pointermove', this.onPointerMove.bind(this));
+    window.addEventListener( 'mousedown', this.cacheMouseDown.bind(this));
   }
 
   /**
@@ -201,7 +211,7 @@ export class Scene {
     this.renderer.setSize(this.width, this.height);
   }
 
-  private onPointerMove = function( event:MouseEvent, camera:THREE.PerspectiveCamera, scene:THREE.Scene):void {
+  private onPointerMove = function( event:MouseEvent):void {
     // calculate pointer position in normalized device coordinates
     // (-1 to +1) for both components
     const raycaster = new THREE.Raycaster();
@@ -210,19 +220,40 @@ export class Scene {
     pointerVector.x = ( event.clientX / window.innerWidth ) * 2 - 1;
     pointerVector.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
     // update the picking ray with the camera and pointer position
-    raycaster.setFromCamera( pointerVector, camera );
+    raycaster.setFromCamera( pointerVector, this.camera );
     // calculate objects intersecting the picking ray
-    const intersects = raycaster.intersectObjects( scene.children );
+    const intersects = raycaster.intersectObjects( this.scene.children );
     for ( let i = 0; i < intersects.length; i ++ ) {
       let tile = intersects[ i ].object;
       if(tile.userData?.type == "tile") {
-        this.Callback[MapCallbackType.mousemove](tile);
-          if(event.type == "click") {
-            this.Callback[MapCallbackType.cellClick](tile);
+        //Get coords of current tile
+        let cellCoords:Point = {x: tile.userData.x, y: tile.userData.y};
+        if(event.type == "pointermove") {
+          this.mousemove = true;
+          //If last tile is not same as current tile
+          if(this.lastCellMove.x != cellCoords.x || this.lastCellMove.y != cellCoords.y) {
+            console.log(event.type);
+            this.lastCellMove = cellCoords;
+            this.Callback[MapCallbackType.mousemove](tile);
           }
+        }
+        if(event.type == "mouseup") {
+          if(this.lastCellClick.x != cellCoords.x || this.lastCellClick.y != cellCoords.y) {
+            this.lastCellClick = cellCoords;
+            console.log(event.type);
+            if(!this.mousemove) {
+              this.Callback[MapCallbackType.cellClick](tile);
+            }
+          }
+        }
       }
     }
   };
+
+  private cacheMouseDown(event:MouseEvent) {
+    console.log(event.type);
+    this.mousemove = false;
+  }
 
   add = (element:any) => {
     this.scene.add(element);
