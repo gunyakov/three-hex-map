@@ -1,36 +1,46 @@
-import { ColorRepresentation } from "three";
-
-export enum MapCallbackType {
-    cellClick = "cellClick",
-    unitMove = "unitMove",
-    geometryAdd = "geometryAdd",
-    mousemove = "mousemove"
-}
-
-export enum Land {
-    sea = "sea",
-    shore = "shore",
-    land = "land",
-    sand = "sand",
-    tundra = "tundra",
-    snow = "snow"
-}
-
-export let LandColor: { [key in Land]: ColorRepresentation} =  {
-    [Land.land]: 0x84aa53,
-    [Land.shore]: 0x4f6c80,
-    [Land.sea]: 0x2a368c,
-    [Land.sand]: 0xaea765,
-    [Land.tundra]: 0xffffff,
-    [Land.snow]: 0xffffff
-}
-
+import { Land, UnitActions } from "./enums";
+//----------------------------------------------------------------------------------
+//Cell coords or pixel coords
+//----------------------------------------------------------------------------------
 export interface Point {x:number, y:number}
-
-export interface TileInfo {type: Land, wood:boolean, river:boolean, unit:string}
-
+//----------------------------------------------------------------------------------
+//Calback common interface
+//----------------------------------------------------------------------------------
 export interface myCallbackType { (myArgument: object): void }
-//Store data for maps
+//----------------------------------------------------------------------------------
+//Tile info interface
+//----------------------------------------------------------------------------------
+export interface TileInfo {type: Land, wood:boolean, river:boolean, unit:string}
+//----------------------------------------------------------------------------------
+//Map info interface
+//----------------------------------------------------------------------------------
 interface MapInfoY { [y:number]:TileInfo}
-
-export interface MapInfo { [x:number]:MapInfoY }
+export interface MapInfoData { [x:number]:MapInfoY }
+export interface MapInfo { data: MapInfoData, w: number, h: number}
+//----------------------------------------------------------------------------------
+//Units Info interface
+//----------------------------------------------------------------------------------
+export interface UnitInfo {
+    id: string,
+    file: string,
+    format: string,
+    scale: number,
+    positionY: number,
+    land: boolean,
+    shore: boolean,
+    sea: boolean,
+    sand: boolean,
+    tundra: boolean,
+    snow: boolean,
+    movement: number,
+    health: number,
+    attack: number,
+    defence: number,
+    viewRange: number,
+    distanceAttack: number,
+    actions: UnitActions[]
+}
+//----------------------------------------------------------------------------------
+//List to store units 
+//----------------------------------------------------------------------------------
+export interface UnitList { [id:string]:UnitInfo }

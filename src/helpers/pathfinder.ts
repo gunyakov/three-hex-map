@@ -1,18 +1,19 @@
 // A* Pathfinding with Manhattan Heuristics for Hexagons.
 // reference: https://github.com/nreijmersdal/hexpath
-import { Land, MapInfo, Point } from "../interfaces";
+import { MapInfo, MapInfoData, Point } from "../interfaces";
+import { Land } from "../enums";
 
 export class PathFinder {
     private mapSizeX:number;
     private mapSizeY:number;
-    private mapArray:MapInfo;
+    private mapArray:MapInfoData;
     private firstrowlong:boolean = false;
     private restricted: { [key in Land]:boolean};
 
-    constructor(sizeX:number, sizeY:number, map:MapInfo, restricted:{ [key in Land]:boolean}) {
-        this.mapSizeX = sizeX;
-        this.mapSizeY = sizeY;
-        this.mapArray = map;
+    constructor(map:MapInfo, restricted:{ [key in Land]:boolean}) {
+        this.mapSizeX = map.w;
+        this.mapSizeY = map.h;
+        this.mapArray = map.data;
         this.restricted = restricted;
     }
 

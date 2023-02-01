@@ -6,7 +6,7 @@
   "scripts": {
     "prepare": "cp ./node_modules/three/build/three.min.js ./public/js/three.min.js",
     "compile": "npx tsc",
-    "bundle": "npx browserify build/index.js -p esmify > public/js/three-hex-map.js",
+    "bundle": "npx browserify build/index.js -p esmify > public/js/bundle.js",
     "minify": "npx uglifyjs public/js/bundle.js -o public/js/bundle.min.js",
     "build": "npx webpack",
     "release": "npm run compile && npm run bundle && npm run minify",
@@ -30,7 +30,7 @@
   "homepage": "https://github.com/gunyakov/three-hex-map#readme",
   "devDependencies": {
     "@types/requirejs": "^2.1.34",
-    "@types/three": "^0.148.0",
+    "@types/three": "^0.148.1",
     "browserify": "^17.0.0",
     "esmify": "^2.1.1",
     "nodemon": "^2.0.20",

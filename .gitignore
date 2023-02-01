@@ -42,7 +42,8 @@ node_modules/
 jspm_packages/
 build/
 public/examples
-
+public/lightmap
+public/js/bundle.js
 # TypeScript v1 declaration files
 typings/
 

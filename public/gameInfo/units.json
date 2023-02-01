@@ -1,0 +1,14 @@
+[
+    {
+        "x": 3,
+        "y": 15,
+        "type": "viking_boat",
+        "id": "unit_1"
+    },
+    {
+        "x": 3,
+        "y": 13,
+        "type": "viking_boat",
+        "id": "unit_2"
+    }
+]

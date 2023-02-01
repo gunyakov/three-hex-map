@@ -1,0 +1,6810 @@
+{
+  "data": {  
+    "0": {
+      "0": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "1": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "2": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "3": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "4": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "5": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "6": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "7": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "8": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "9": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "10": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "11": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "12": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "13": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "14": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "15": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "16": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "17": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "18": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "19": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "20": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "21": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "22": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "23": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "24": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "25": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "26": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "27": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "28": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "29": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "30": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "31": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "32": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "33": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      }
+    },
+    "1": {
+      "0": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "1": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "2": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "3": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "4": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "5": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "6": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "7": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "8": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "9": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "10": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "11": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "12": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "13": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "14": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "15": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "16": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "17": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "18": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "19": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "20": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "21": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "22": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "23": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "24": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "25": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "26": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "27": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "28": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "29": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "30": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "31": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "32": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "33": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "34": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      }
+    },
+    "2": {
+      "0": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "1": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "2": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "3": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "4": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "5": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "6": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "7": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "8": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "9": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "10": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "11": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "12": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "13": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "14": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "15": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "16": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "17": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "18": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "19": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "20": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "21": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "22": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "23": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "24": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "25": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "26": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "27": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "28": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "29": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "30": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "31": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "32": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "33": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      }
+    },
+    "3": {
+      "0": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "1": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "2": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "3": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "4": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "5": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "6": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "7": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "8": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "9": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "10": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "11": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "12": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "13": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "14": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "15": {
+        "type": "shore",
+        "wood": false,
+        "river": false,
+        "unit": "viking_boat"
+      },
+      "16": {
+        "type": "land",
+        "wood": true,
+        "river": false
+      },
+      "17": {
+        "type": "land",
+        "wood": true,
+        "river": false
+      },
+      "18": {
+        "type": "land",
+        "wood": true,
+        "river": false
+      },
+      "19": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "20": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "21": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "22": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "23": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "24": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "25": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "26": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "27": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "28": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "29": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "30": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "31": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "32": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "33": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "34": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      }
+    },
+    "4": {
+      "0": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "1": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "2": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "3": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "4": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "5": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "6": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "7": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "8": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "9": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "10": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "11": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "12": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "13": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "14": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "15": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "16": {
+        "type": "sand",
+        "wood": false,
+        "river": false
+      },
+      "17": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "18": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "19": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "20": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "21": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "22": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "23": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "24": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "25": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "26": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "27": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "28": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "29": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "30": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "31": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "32": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "33": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      }
+    },
+    "5": {
+      "0": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "1": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "2": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "3": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "4": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "5": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "6": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "7": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "8": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "9": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "10": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "11": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "12": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "13": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "14": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "15": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "16": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "17": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "18": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "19": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "20": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "21": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "22": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "23": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "24": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "25": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "26": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "27": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "28": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "29": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "30": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "31": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "32": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "33": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "34": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      }
+    },
+    "6": {
+      "0": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "1": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "2": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "3": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "4": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "5": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "6": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "7": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "8": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "9": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "10": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "11": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "12": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "13": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "14": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "15": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "16": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "17": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "18": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "19": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "20": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "21": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "22": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "23": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "24": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "25": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "26": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "27": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "28": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "29": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "30": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "31": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "32": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "33": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      }
+    },
+    "7": {
+      "0": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "1": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "2": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "3": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "4": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "5": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "6": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "7": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "8": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "9": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "10": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "11": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "12": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "13": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "14": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "15": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "16": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "17": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "18": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "19": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "20": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "21": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "22": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "23": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "24": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "25": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "26": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "27": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "28": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "29": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "30": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "31": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "32": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "33": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "34": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      }
+    },
+    "8": {
+      "0": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "1": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "2": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "3": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "4": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "5": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "6": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "7": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "8": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "9": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "10": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "11": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "12": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "13": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "14": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "15": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "16": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "17": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "18": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "19": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "20": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "21": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "22": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "23": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "24": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "25": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "26": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "27": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "28": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "29": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "30": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "31": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "32": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "33": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      }
+    },
+    "9": {
+      "0": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "1": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "2": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "3": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "4": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "5": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "6": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "7": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "8": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "9": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "10": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "11": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "12": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "13": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "14": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "15": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "16": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "17": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "18": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "19": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "20": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "21": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "22": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "23": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "24": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "25": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "26": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "27": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "28": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "29": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "30": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "31": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "32": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "33": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "34": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      }
+    },
+    "10": {
+      "0": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "1": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "2": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "3": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "4": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "5": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "6": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "7": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "8": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "9": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "10": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "11": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "12": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "13": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "14": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "15": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "16": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "17": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "18": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "19": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "20": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "21": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "22": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "23": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "24": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "25": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "26": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "27": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "28": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "29": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "30": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "31": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "32": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "33": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      }
+    },
+    "11": {
+      "0": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "1": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "2": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "3": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "4": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "5": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "6": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "7": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "8": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "9": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "10": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "11": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "12": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "13": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "14": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "15": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "16": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "17": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "18": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "19": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "20": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "21": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "22": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "23": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "24": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "25": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "26": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "27": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "28": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "29": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "30": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "31": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "32": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "33": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "34": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      }
+    },
+    "12": {
+      "0": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "1": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "2": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "3": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "4": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "5": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "6": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "7": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "8": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "9": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "10": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "11": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "12": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "13": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "14": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "15": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "16": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "17": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "18": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "19": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "20": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "21": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "22": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "23": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "24": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "25": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "26": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "27": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "28": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "29": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "30": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "31": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "32": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "33": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      }
+    },
+    "13": {
+      "0": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "1": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "2": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "3": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "4": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "5": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "6": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "7": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "8": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "9": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "10": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "11": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "12": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "13": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "14": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "15": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "16": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "17": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "18": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "19": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "20": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "21": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "22": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "23": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "24": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "25": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "26": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "27": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "28": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "29": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "30": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "31": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "32": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "33": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "34": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      }
+    },
+    "14": {
+      "0": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "1": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "2": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "3": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "4": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "5": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "6": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "7": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "8": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "9": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "10": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "11": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "12": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "13": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "14": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "15": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "16": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "17": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "18": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "19": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "20": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "21": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "22": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "23": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "24": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "25": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "26": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "27": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "28": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "29": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "30": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "31": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "32": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "33": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      }
+    },
+    "15": {
+      "0": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "1": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "2": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "3": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "4": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "5": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "6": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "7": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "8": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "9": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "10": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "11": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "12": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "13": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "14": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "15": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "16": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "17": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "18": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "19": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "20": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "21": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "22": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "23": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "24": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "25": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "26": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "27": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "28": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "29": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "30": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "31": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "32": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "33": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "34": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      }
+    },
+    "16": {
+      "0": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "1": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "2": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "3": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "4": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "5": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "6": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "7": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "8": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "9": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "10": {
+        "type": "sand",
+        "wood": false,
+        "river": false
+      },
+      "11": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "12": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "13": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "14": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "15": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "16": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "17": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "18": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "19": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "20": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "21": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "22": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "23": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "24": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "25": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "26": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "27": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "28": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "29": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "30": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "31": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "32": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "33": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      }
+    },
+    "17": {
+      "0": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "1": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "2": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "3": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "4": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "5": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "6": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "7": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "8": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "9": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "10": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "11": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "12": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "13": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "14": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "15": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "16": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "17": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "18": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "19": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "20": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "21": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "22": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "23": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "24": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "25": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "26": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "27": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "28": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "29": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "30": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "31": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "32": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "33": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "34": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      }
+    },
+    "18": {
+      "0": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "1": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "2": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "3": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "4": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "5": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "6": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "7": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "8": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "9": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "10": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "11": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "12": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "13": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "14": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "15": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "16": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "17": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "18": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "19": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "20": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "21": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "22": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "23": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "24": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "25": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "26": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "27": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "28": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "29": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "30": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "31": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "32": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "33": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      }
+    },
+    "19": {
+      "0": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "1": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "2": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "3": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "4": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "5": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "6": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "7": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "8": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "9": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "10": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "11": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "12": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "13": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "14": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "15": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "16": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "17": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "18": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "19": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "20": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "21": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "22": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "23": {
+        "type": "sand",
+        "wood": false,
+        "river": false
+      },
+      "24": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "25": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "26": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "27": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "28": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "29": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "30": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "31": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "32": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "33": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "34": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      }
+    },
+    "20": {
+      "0": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "1": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "2": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "3": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "4": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "5": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "6": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "7": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "8": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "9": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "10": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "11": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "12": {
+        "type": "sand",
+        "wood": false,
+        "river": false
+      },
+      "13": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "14": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "15": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "16": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "17": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "18": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "19": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "20": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "21": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "22": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "23": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "24": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "25": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "26": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "27": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "28": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "29": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "30": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "31": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "32": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "33": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      }
+    },
+    "21": {
+      "0": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "1": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "2": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "3": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "4": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "5": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "6": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "7": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "8": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "9": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "10": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "11": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "12": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "13": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "14": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "15": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "16": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "17": {
+        "type": "sand",
+        "wood": false,
+        "river": false
+      },
+      "18": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "19": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "20": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "21": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "22": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "23": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "24": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "25": {
+        "type": "sand",
+        "wood": false,
+        "river": false
+      },
+      "26": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "27": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "28": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "29": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "30": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "31": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "32": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "33": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "34": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      }
+    },
+    "22": {
+      "0": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "1": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "2": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "3": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "4": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "5": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "6": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "7": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "8": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "9": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "10": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "11": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "12": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "13": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "14": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "15": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "16": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "17": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "18": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "19": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "20": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "21": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "22": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "23": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "24": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "25": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "26": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "27": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "28": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "29": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "30": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "31": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "32": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "33": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      }
+    },
+    "23": {
+      "0": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "1": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "2": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "3": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "4": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "5": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "6": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "7": {
+        "type": "sand",
+        "wood": false,
+        "river": false
+      },
+      "8": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "9": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "10": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "11": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "12": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "13": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "14": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "15": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "16": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "17": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "18": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "19": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "20": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "21": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "22": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "23": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "24": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "25": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "26": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "27": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "28": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "29": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "30": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "31": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "32": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "33": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "34": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      }
+    },
+    "24": {
+      "0": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "1": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "2": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "3": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "4": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "5": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "6": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "7": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "8": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "9": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "10": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "11": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "12": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "13": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "14": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "15": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "16": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "17": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "18": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "19": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "20": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "21": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "22": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "23": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "24": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "25": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "26": {
+        "type": "sand",
+        "wood": false,
+        "river": false
+      },
+      "27": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "28": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "29": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "30": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "31": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "32": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "33": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      }
+    },
+    "25": {
+      "0": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "1": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "2": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "3": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "4": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "5": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "6": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "7": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "8": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "9": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "10": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "11": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "12": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "13": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "14": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "15": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "16": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "17": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "18": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "19": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "20": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "21": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "22": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "23": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "24": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "25": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "26": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "27": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "28": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "29": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "30": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "31": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "32": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "33": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "34": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      }
+    },
+    "26": {
+      "0": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "1": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "2": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "3": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "4": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "5": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "6": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "7": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "8": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "9": {
+        "type": "sand",
+        "wood": false,
+        "river": false
+      },
+      "10": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "11": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "12": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "13": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "14": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "15": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "16": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "17": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "18": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "19": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "20": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "21": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "22": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "23": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "24": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "25": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "26": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "27": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "28": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "29": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "30": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "31": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "32": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "33": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      }
+    },
+    "27": {
+      "0": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "1": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "2": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "3": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "4": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "5": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "6": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "7": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "8": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "9": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "10": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "11": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "12": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "13": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "14": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "15": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "16": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "17": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "18": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "19": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "20": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "21": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "22": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "23": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "24": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "25": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "26": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "27": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "28": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "29": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "30": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "31": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "32": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "33": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "34": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      }
+    },
+    "28": {
+      "0": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "1": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "2": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "3": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "4": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "5": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "6": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "7": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "8": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "9": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "10": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "11": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "12": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "13": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "14": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "15": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "16": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "17": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "18": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "19": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "20": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "21": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "22": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "23": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "24": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "25": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "26": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "27": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "28": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "29": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "30": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "31": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "32": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "33": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      }
+    },
+    "29": {
+      "0": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "1": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "2": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "3": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "4": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "5": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "6": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "7": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "8": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "9": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "10": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "11": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "12": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "13": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "14": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "15": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "16": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "17": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "18": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "19": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "20": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "21": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "22": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "23": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "24": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "25": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "26": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "27": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "28": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "29": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "30": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "31": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "32": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "33": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "34": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      }
+    },
+    "30": {
+      "0": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "1": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "2": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "3": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "4": {
+        "type": "sand",
+        "wood": false,
+        "river": false
+      },
+      "5": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "6": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "7": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "8": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "9": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "10": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "11": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "12": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "13": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "14": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "15": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "16": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "17": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "18": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "19": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "20": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "21": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "22": {
+        "type": "sand",
+        "wood": false,
+        "river": false
+      },
+      "23": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "24": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "25": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "26": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "27": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "28": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "29": {
+        "type": "sand",
+        "wood": false,
+        "river": false
+      },
+      "30": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "31": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "32": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "33": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      }
+    },
+    "31": {
+      "0": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "1": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "2": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "3": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "4": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "5": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "6": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "7": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "8": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "9": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "10": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "11": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "12": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "13": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "14": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "15": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "16": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "17": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "18": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "19": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "20": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "21": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "22": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "23": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "24": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "25": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "26": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "27": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "28": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "29": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "30": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "31": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "32": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "33": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "34": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      }
+    },
+    "32": {
+      "0": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "1": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "2": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "3": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "4": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "5": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "6": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "7": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "8": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "9": {
+        "type": "sand",
+        "wood": false,
+        "river": false
+      },
+      "10": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "11": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "12": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "13": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "14": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "15": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "16": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "17": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "18": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "19": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "20": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "21": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "22": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "23": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "24": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "25": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "26": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "27": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "28": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "29": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "30": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "31": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "32": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "33": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      }
+    },
+    "33": {
+      "0": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "1": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "2": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "3": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "4": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "5": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "6": {
+        "type": "land",
+        "wood": true,
+        "river": false
+      },
+      "7": {
+        "type": "land",
+        "wood": true,
+        "river": false
+      },
+      "8": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "9": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "10": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "11": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "12": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "13": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "14": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "15": {
+        "type": "sand",
+        "wood": false,
+        "river": false
+      },
+      "16": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "17": {
+        "type": "sand",
+        "wood": false,
+        "river": false
+      },
+      "18": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "19": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "20": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "21": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "22": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "23": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "24": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "25": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "26": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "27": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "28": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "29": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "30": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "31": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "32": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "33": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "34": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      }
+    },
+    "34": {
+      "0": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "1": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "2": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "3": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "4": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "5": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "6": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "7": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "8": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "9": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "10": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "11": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "12": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "13": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "14": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "15": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "16": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "17": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "18": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "19": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "20": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "21": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "22": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "23": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "24": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "25": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "26": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "27": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "28": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "29": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "30": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "31": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "32": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "33": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      }
+    },
+    "35": {
+      "0": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "1": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "2": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "3": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "4": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "5": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "6": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "7": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "8": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "9": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "10": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "11": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "12": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "13": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "14": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "15": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "16": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "17": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "18": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "19": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "20": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "21": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "22": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "23": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "24": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "25": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "26": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "27": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "28": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "29": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "30": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "31": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "32": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "33": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "34": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      }
+    },
+    "36": {
+      "0": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "1": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "2": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "3": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "4": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "5": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "6": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "7": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "8": {
+        "type": "land",
+        "wood": false,
+        "river": false
+      },
+      "9": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "10": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "11": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "12": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "13": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "14": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "15": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "16": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "17": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "18": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "19": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "20": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "21": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "22": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "23": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "24": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "25": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "26": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "27": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "28": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "29": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "30": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "31": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "32": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "33": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      }
+    },
+    "37": {
+      "0": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "1": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "2": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "3": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "4": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "5": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "6": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "7": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "8": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "9": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "10": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "11": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "12": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "13": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "14": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "15": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "16": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "17": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "18": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "19": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "20": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "21": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "22": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "23": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "24": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "25": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "26": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "27": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "28": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "29": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "30": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "31": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "32": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "33": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "34": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      }
+    },
+    "38": {
+      "0": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "1": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "2": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "3": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "4": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "5": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "6": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "7": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "8": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "9": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "10": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "11": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "12": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "13": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "14": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "15": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "16": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "17": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "18": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "19": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "20": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "21": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "22": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "23": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "24": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "25": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "26": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "27": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "28": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "29": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "30": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "31": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "32": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      },
+      "33": {
+        "type": "shore",
+        "wood": false,
+        "river": false
+      }
+    }
+  },
+  "w": 39,
+  "h": 34
+}

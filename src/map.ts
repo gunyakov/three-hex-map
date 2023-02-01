@@ -1,14 +1,14 @@
 import * as THREE from 'three';
 
 import { Grid } from "./objects/Grid";
-import { MapCallbackType, myCallbackType, Point, TileInfo, MapInfo, Land } from './interfaces';
+import { myCallbackType, Point, TileInfo, MapInfo } from './interfaces';
+import { MapCallbackType, Land } from './enums';
 import { HEX } from './objects/Hex';
 import { getHexCenter } from './helpers/helpers';
-import { PathFinder } from "./helpers/pathfinder";
-import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader'
+
 import { Scene } from "./Scene";
 
-let { setOptions } = require( "./setoptions.js");
+import { setOptions } from "./helpers/setoptions";
 
 export class HexMap {
 
@@ -17,9 +17,10 @@ export class HexMap {
     private Callback:{ [key: string]: myCallbackType } = {};
     private grid:Grid = new Grid();
     private map:MapInfo;
-    private routeGroupe:THREE.Group;
     private _scene:THREE.Scene;
     private _lastCoordsClicked:Point = {x: 0, y:0};
+    private _lastCellMove:Point = {x:0, y:0};
+    private _pathLine:THREE.Line;
 
     private options = {
         gridVisible: true,
@@ -54,7 +55,11 @@ export class HexMap {
         //---------------------------------------------------------------------------------------------
         //REGISTER CALLBACK FOR MOVEMENT OF POINTER
         //---------------------------------------------------------------------------------------------
-        GameScene.on(MapCallbackType.mousemove, this.movePointer.bind(this)); 
+        GameScene.on(MapCallbackType.mousemove, this.mousemove.bind(this)); 
+        //---------------------------------------------------------------------------------------------
+        //REGISTER CALLBACK FOR ANIMATE
+        //---------------------------------------------------------------------------------------------
+        GameScene.on(MapCallbackType.animate, this.animate.bind(this)); 
     }
 
     private cellClick(Tile:THREE.Object3D):void {
@@ -68,11 +73,11 @@ export class HexMap {
 
         this.moveSelector(Tile);
 
-        if(this._lastCoordsClicked.x > 0 || this._lastCoordsClicked.y > 0) {
-            this.findPath(this._lastCoordsClicked.x, this._lastCoordsClicked.y, cellCoords.x, cellCoords.y);
+        if(this._lastCoordsClicked.x > 0 || this._lastCoordsClicked.y > 0) {         
+                    
         }
 
-        if(this.map[cellCoords.x][cellCoords.y]['unit']) {
+        if(this.map['data'][cellCoords.x][cellCoords.y]['unit'] !== "none") {
             this._lastCoordsClicked = cellCoords;
             console.log("Cell with unit");
         }
@@ -92,15 +97,12 @@ export class HexMap {
         for(let x = 0; x < this.map.w; x++) {
             //@ts-ignore
             for(let y = 0; y < this.map.h; y++) {
-                let tileInfo:TileInfo = this.map[x][y];
+                let tileInfo:TileInfo = this.map['data'][x][y];
                 let hex = HEX(tileInfo, this.options.size, x, y);
                 let position:Point = getHexCenter(x, y, this.options.size);
                 hex.position.setX(position.x);
                 hex.position.setZ(position.y);
                 mapHex.add(hex);
-                if(tileInfo?.unit) {
-                    this.setUnit(tileInfo.unit, x, y);
-                }
             }
         } 
         // Hexes for map
@@ -145,7 +147,6 @@ export class HexMap {
     }
 
     private makePointer():void {
-
         const geometry = new THREE.RingGeometry(0.97 * this.options.size, this.options.size, 6, 2);
         const material = new THREE.MeshBasicMaterial({
             color: this.options.pointerColor
@@ -158,16 +159,25 @@ export class HexMap {
         this._scene.add(this.pointer);
     }
 
-    public movePointer(Tile:THREE.Object3D):void {
+    private mousemove(Tile:THREE.Object3D):void {
+        //Get cell coords from scene
         let cellCoords:Point = {x: Tile.userData.x, y: Tile.userData.y};
-        let position:Point = getHexCenter(cellCoords.x, cellCoords.y, this.options.size);
-        this.pointer.visible = true;
-        this.pointer.position.setX(position.x);
-        this.pointer.position.setZ(position.y);
-
-        if(this._lastCoordsClicked.x > 0 || this._lastCoordsClicked.y > 0) {
-            this.findPath(this._lastCoordsClicked.x, this._lastCoordsClicked.y, cellCoords.x, cellCoords.y);
+        //If mouse move fired not in the same cell 
+        //Prevent code execution if mouse move in same cell
+        if(this._lastCellMove.x != cellCoords.x || this._lastCellMove.y != cellCoords.y) {
+            //Get center in pixels from cell coords
+            let position:Point = getHexCenter(cellCoords.x, cellCoords.y, this.options.size);
+            //Show pointer
+            this.pointer.visible = true;
+            //Set position of pointer
+            this.pointer.position.setX(position.x);
+            this.pointer.position.setZ(position.y);
+            //Save last cell coords
+            this._lastCellMove = cellCoords;
+            //Fire callback to notice game engine of pointer move
+            this.Callback[MapCallbackType.cellMove](cellCoords);
         }
+        
     }
 
     private makeFog():THREE.Object3D {
@@ -195,99 +205,50 @@ export class HexMap {
         return floor;
     }
 
-    public setUnit(key:string, x:number, y:number):void {
-        let position:Point = getHexCenter(x, y, this.options.size);
-        const fbxLoader = new FBXLoader()
-        fbxLoader.load(
-          `models/${key}.fbx`,
-          (object) => {
-              object.scale.set(.15, .15, .15)
-              object.position.setX(position.x);
-              object.position.setZ(position.y);
-              object.position.setY(4);
-              this._scene.add(object);
-          },
-          (xhr) => {
-              console.log((xhr.loaded / xhr.total) * 100 + '% loaded')
-          },
-          (error) => {
-              console.log(error)
-          }
-        )
-        // const fbxLoader2 = new FBXLoader()
-        // fbxLoader2.load(
-        //     `models/archer.fbx`,
-        //     (object) => {
-        //         //object.scale.set(.15, .15, .15)
-        //         object.position.setX(position.x);
-        //         object.position.setZ(position.y);
-        //         object.position.setY(20);
-        //         this.Callback[MapCallbackType.geometryAdd](object);
-        //     },
-        //     (xhr) => {
-        //         console.log((xhr.loaded / xhr.total) * 100 + '% loaded')
-        //     },
-        //     (error) => {
-        //         console.log(error)
-        //     }
-        //   )
+    public add(object:THREE.Object3D) {
+        this._scene.add(object);
     }
 
-    public findPath(start_x:number, start_y:number, stop_x:number, stop_y:number):void {
+    public drawRoutePath(path:Point[]):void {
 
-        this.cleanRoutePath();
+        const material = new THREE.LineBasicMaterial( { color: 0xff0000, linewidth: 5 } );
 
-        //this.routeGroupe = new THREE.Group();
+        const points:THREE.Vector3[] = [];
 
-        let restrictions:{ [key in Land]:boolean} = {
-            sea: true,
-            shore: true,
-            land: false,
-            sand: true,
-            tundra: false,
-            snow: false
-        }
+        for(let i = 0; i < path.length; i++) {
 
-        let pathFinder = new PathFinder(this.options.width, this.options.height, this.map, restrictions);
+            let position:Point = getHexCenter(path[i]['x'], path[i]['y'], this.options.size);
 
-        let path:Point[] = pathFinder.find(start_x, start_y, stop_x, stop_y);
-
-        if(path.length > 0) {
-
-            const material = new THREE.LineBasicMaterial( { color: 0xff0000, linewidth: 5 } );
-
-            const points = [];
+            let point3 = new THREE.Vector3( position.x, 10, position.y );
             
-            for(let i = 0; i < path.length; i++) {
+            points.push( point3 );
 
-                let position:Point = getHexCenter(path[i]['x'], path[i]['y'], this.options.size);
-
-                points.push( new THREE.Vector3( position.x, 20, position.y ) );
-
-            }
-
-            const geometry = new THREE.BufferGeometry().setFromPoints( points );
-
-            const line = new THREE.Line( geometry, material );
-
-            line.name = "LinePath";
-
-            this._scene.add(line);
         }
+
+        const geometry = new THREE.BufferGeometry().setFromPoints( points );
+
+        this._pathLine = new THREE.Line( geometry, material );
+
+        this._scene.add(this._pathLine);
     }
 
-    private cleanRoutePath():void {
+    public cleanRoutePath():void {
         //Delete prev route line from map
-        let obj = this._scene.getObjectByName("LinePath");
-
-        if(obj) {
-            this._scene.remove(obj);
+        if(typeof this._pathLine !== "undefined") {
+            this._scene.remove(this._pathLine);
+            this._pathLine = undefined;
         }
+    }
+    //----------------------------------------------------------------------------------------------------
+    //ANIMATE
+    //----------------------------------------------------------------------------------------------------
+    private animate(temp:object) {
+        
     }
     //----------------------------------------------------------------------------------------------------
     // INTI MAP
     //----------------------------------------------------------------------------------------------------
-    public init(mapData:MapInfo) {
+    public async init(mapData:MapInfo):Promise<void> {
         this.map = mapData;
         //Gen map
         this.makeMap();

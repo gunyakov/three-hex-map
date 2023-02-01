@@ -9,7 +9,7 @@
       "rootDir": "src",
       "lib": [
           "dom",
-          "es2015"
+          "es2017"
       ],
       "types": [
           "requirejs",
@@ -17,11 +17,8 @@
       ],
       "preserveConstEnums": true
   },
-  "exclude": [
-      "node_modules",
-      "src/map.ts"
-  ],
   "files": [
     "src/index.ts"
-  ]
+  ],
+
 }

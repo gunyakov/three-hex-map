@@ -20,7 +20,11 @@ cd three-hex-map
 npm install
 
 npm run start
+
+npm run server
 ```
+
+Open [http://127.0.0.1:3000](http://127.0.0.1:3000) in your browser.
 
 ### Links
 

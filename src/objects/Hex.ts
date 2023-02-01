@@ -1,6 +1,7 @@
-import { Mesh, MeshPhongMaterial, RingGeometry, Shape, ExtrudeGeometry, MeshBasicMaterial, Group, ColorRepresentation} from "three";
+import { Mesh, MeshPhongMaterial, MeshLambertMaterial, RingGeometry, Shape, ExtrudeGeometry, MeshBasicMaterial, Group, ColorRepresentation, TextureLoader, RepeatWrapping} from "three";
 import { HEXPolygon } from "../helpers/helpers";
-import { LandColor, TileInfo } from "../interfaces";
+import { TileInfo } from "../interfaces";
+import { LandColor } from "../enums";
 import { WOOD } from "./tree";
 import { makeTextSprite } from "./citysprite";
 
@@ -11,7 +12,8 @@ export function HEX(TileInfo:TileInfo, size:number = 6, x:number = 0, y:number =
     let color = LandColor[TileInfo.type];
     let arrPoints = HEXPolygon({x: 0, y: 0}, size);
 
-    const materialTop = new MeshPhongMaterial( { color: color} );
+    const texture = new TextureLoader().load( 'textures/clouds.png' );
+    const materialTop = new MeshLambertMaterial( { color: color, bumpMap: texture});
     const materialSides = new MeshPhongMaterial( { color: 0xb47a7e});
 
     let materials = [

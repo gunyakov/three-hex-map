@@ -1,6 +1,10 @@
 import * as THREE from 'three'
+import { Object3D } from 'three';
 import { MapControls } from 'three/examples/jsm/controls/OrbitControls.js'
-import { MapCallbackType, myCallbackType, Point } from './interfaces';
+import { myCallbackType, Point } from './interfaces';
+import { MapCallbackType } from './enums';
+
+//import { MeshBasicNodeMaterial, vec4, color, positionLocal, mix } from 'three/examples/jsm/nodes/Nodes.js';
 
 export class Scene {
   private canvas:Element;
@@ -20,6 +24,8 @@ export class Scene {
   constructor(el:Element) {
     this.Callback[MapCallbackType.mousemove] = function() {};
     this.Callback[MapCallbackType.cellClick] = function() {};
+    this.Callback[MapCallbackType.animate] = function() {};
+    
     this.canvas = el;
 
     this.setScene();
@@ -122,10 +128,10 @@ export class Scene {
     this.scene.add(this.camera)
   }
 
-  setStone():void {
+  async setStone():Promise<void> {
     var geo_stone = new THREE.DodecahedronGeometry(10, 0);
     var mat_stone = new THREE.MeshLambertMaterial({ color: 0x9eaeac });
-    var stone = [];
+    var stone:Object3D[] = [];
     for (var i = 0; i < 2; i++) {
       stone[i] = new THREE.Mesh(geo_stone, mat_stone);
       this.scene.add(stone[i]);
@@ -139,11 +145,32 @@ export class Scene {
     stone[1].scale.set(1, 1, 1);
     stone[1].position.set(300, 0.7, 300);
 
-    // var geometry = new THREE.SphereGeometry( 3000, 3000, 32 );
-    // var material = new THREE.MeshBasicMaterial( {color: 0xffff00} );
-    // var sphere = new THREE.Mesh( geometry, material );
-    // sphere.material.side = THREE.BackSide;
-    // this.scene.add( sphere );
+    // // LIGHTS
+
+    // const light = new THREE.DirectionalLight( 0xaabbff, 0.3 );
+    // light.position.x = 300;
+    // light.position.y = 250;
+    // light.position.z = - 500;
+    // this.scene.add( light );
+
+    // // SKYDOME
+
+    // const topColor = new THREE.Color().copy( light.color ).convertSRGBToLinear();
+    // const bottomColor = new THREE.Color( 0xffffff ).convertSRGBToLinear();
+    // const offset = 400;
+    // const exponent = 0.6;
+    // //@ts-ignore
+    // const h = positionLocal.add( offset ).normalize().y;
+
+    // const skyMat = new MeshBasicNodeMaterial();
+    // skyMat.colorNode = vec4( mix( color( bottomColor ), color( topColor ), h.max( 0.0 ).pow( exponent ) ), 1.0 );
+    // skyMat.side = THREE.BackSide;
+
+    // const sky = new THREE.Mesh( new THREE.SphereGeometry( 4000, 32, 15 ), skyMat );
+    // this.scene.add( sky );
+    // const loader = new THREE.ObjectLoader();
+		// const object = await loader.loadAsync( 'lightmap/lightmap.json' );
+    // this.scene.add( object );
   }
   /**
    * Threejs controls to have controls on our scene
@@ -189,6 +216,7 @@ export class Scene {
    */
   draw = (now:number) => {
     // now: time in ms
+    this.Callback[MapCallbackType.animate]({t: now});
     // if (this.controls) this.controls.update() // for damping
     this.renderer.render(this.scene, this.camera);
 
@@ -232,7 +260,6 @@ export class Scene {
           this.mousemove = true;
           //If last tile is not same as current tile
           if(this.lastCellMove.x != cellCoords.x || this.lastCellMove.y != cellCoords.y) {
-            console.log(event.type);
             this.lastCellMove = cellCoords;
             this.Callback[MapCallbackType.mousemove](tile);
           }
@@ -240,7 +267,6 @@ export class Scene {
         if(event.type == "mouseup") {
           if(this.lastCellClick.x != cellCoords.x || this.lastCellClick.y != cellCoords.y) {
             this.lastCellClick = cellCoords;
-            console.log(event.type);
             if(!this.mousemove) {
               this.Callback[MapCallbackType.cellClick](tile);
             }

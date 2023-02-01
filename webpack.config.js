@@ -3,11 +3,11 @@ module.exports = {
     entry: "./build/index.js",
     output: {
         path: __dirname + "/public/js",
-        filename: "three-hex-map.js",
-        library: "three-hex-map",
+        filename: "bundle.js",
+        library: "bundle",
         libraryTarget: "commonjs"
     },
     externals: {
-        "three": "three"
+        "three": "three",
     }
 }

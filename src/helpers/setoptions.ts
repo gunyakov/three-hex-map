@@ -1,4 +1,4 @@
-export function setOptions(obj, options) {
+export function setOptions(obj:any, options:any) {
     //@ts-ignore
 	if (!Object.hasOwn(obj, 'options')) {
 		obj.options = obj.options ? Object.create(obj.options) : {};

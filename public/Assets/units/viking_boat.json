@@ -1,0 +1,20 @@
+{
+    "file": "viking_boat",
+    "format": "fbx",
+    "scale": 0.15,
+    "positionY": 4,
+    "land": false,
+    "shore": true,
+    "sea": false,
+    "sand": false,
+    "tundra": false,
+    "snow": false,
+    "movement": 5,
+    "health": 100,
+    "attack": 50,
+    "defence": 30,
+    "viewRange": 3,
+    "distanceAttack": 2,
+    "actions": ["walk", "defence", "distanceAttack", "death", "idle"],
+    "animateSpeed": 0.5
+}
