@@ -4,7 +4,7 @@ A civ like 3D hexagonal terrain map based on three.js. See the [demo](https://gu
 
 ![Screenshot](public/main.png)
 
-Project was started inspired by [threejs-hex-map](https://github.com/Bunkerbewohner/threejs-hex-map).
+Project was inspired by [threejs-hex-map](https://github.com/Bunkerbewohner/threejs-hex-map).
 
 ## Overview
 
