@@ -4,11 +4,10 @@
 
 <head>
     <title>Three HEX Map</title>
-    <script type="text/javascript" src="js/dat.gui.min.js"></script>
-    <script type="text/javascript" src="js/bundle.min.js"></script>
+    <link rel="stylesheet" href="js/vendor/dat.gui.css">
     <style>
+        /* set margin to 0 and overflow to hidden, to go fullscreen */
         body {
-            /* set margin to 0 and overflow to hidden, to go fullscreen */
             margin: 0;
             overflow: hidden;
             width: 100%;
@@ -24,6 +23,104 @@
 <body>
 
 <canvas class="scene__canvas" game-scene></canvas>
+
+<!--
+    This page loads three.js, the hex-map engine and its own init code as three
+    separate, independent files - nothing here is bundled together:
+
+      1) three.js (public/js/vendor/three.module.js) - the peer dependency the
+         engine expects the page itself to supply (see package.json's
+         peerDependencies and tsup.config.ts's external:["three"]).
+      2) the engine (public/js/hex-map.global.js) - HexMap + GameEngine + Unit +
+         PathFinder etc., built from src/ via `npm run build:demo`
+         (tsup -> rollup, see rollup.config.global.mjs). A plain UMD/global
+         build, so it just needs `window.THREE` to exist before it runs.
+      3) this page's own init code below - fetches the demo's map/unit JSON and
+         calls GameEngine, with an editable options object so map settings can
+         be tweaked without touching any of the above.
+
+    Loading order is guaranteed by the HTML spec: `type="module"` scripts and
+    `defer` classic scripts both execute after parsing, in document order - so
+    despite the middle one being a classic (non-module) script, it still runs
+    after the module above it and before the module below it.
+-->
+<script type="module">
+    import * as THREE from "./js/vendor/three.module.js";
+    window.THREE = THREE;
+</script>
+
+<script src="js/hex-map.global.js" defer></script>
+
+<script type="module">
+    import { GUI } from "./js/vendor/dat.gui.module.js";
+    const { GameEngine } = window.HexMap;
+
+    // ---------------------------------------------------------------------
+    // Map options - edit these and reload the page to see the result. Every
+    // field is optional; the values below are spelled out (even where they
+    // match the library default) so they're easy to find and tweak.
+    // See HexMapOptions in src/HexMap.ts for the full/authoritative list.
+    // ---------------------------------------------------------------------
+    const mapOptions = {
+        element: "[game-scene]",
+        size: 40,                    // hex circumradius, world units
+        texturesBaseUrl: "textures/",
+
+        gridVisible: true,
+        gridColor: 0x42322b,
+        gridWidth: 0.04,
+        gridOpacity: 0.35,
+
+        selectorColor: 0xffff00,
+        pointerColor: 0xeeeeee,
+        treesPerTile: 20,
+
+        // Solid animated water (waves + sparkle + beach slope) vs. a flat,
+        // static, atlas-textured tile. Set to false to go back to a plain
+        // water texture with no animation.
+        waterAnimation: true,
+        waterColorShallow: 0x2f9c8f,
+        waterColorDeep: 0x0f4c75,
+
+        // Wave fine-tuning, only used when waterAnimation is true.
+        waterWaveAmplitude: 1.6,
+        waterWaveFrequency: 1.0,
+        waterWaveSpeed: 1.0,
+        waterSparkleIntensity: 1.0,
+        waterFresnelIntensity: 1.0,
+
+        // waterDepth defaults to size * 0.25 if left unset.
+        waterDepth: 10,
+        beachWidth: 0.35            // 0..1, fraction of a coastal tile's radius
+    };
+
+    async function init() {
+        const game = new GameEngine(mapOptions);
+
+        const [mapData, unitsData] = await Promise.all([
+            fetch("gameInfo/map.json").then(r => r.json()),
+            fetch("gameInfo/units.json").then(r => r.json())
+        ]);
+
+        await game.init(mapData, unitsData);
+
+        game.on("unitClick", cellCoords => {
+            // Here goes UI to activate unit actions - game.currentUnit.actions
+            // lists what this unit can currently do.
+            console.log("unitClick", cellCoords, game.currentUnit?.actions);
+        });
+
+        game.on("click", cellCoords => console.log("click", cellCoords));
+        game.on("hover", payload => console.log("hover", payload));
+        game.on("start_move", payload => console.log("start_move", payload));
+        game.on("end_move", payload => console.log("end_move", payload));
+
+        const gui = new GUI();
+        gui.add(game.map, "gridVisible");
+    }
+
+    init();
+</script>
 
 </body>
 </html>

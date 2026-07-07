@@ -1,26 +1,40 @@
 {
   "name": "three-hex-map",
-  "version": "0.0.1",
-  "description": "A civ like 3D hexagonal terrain map based on three.js.",
-  "main": "index.js",
+  "version": "0.2.0",
+  "description": "A civ like 3D hexagonal terrain map based on three.js, rendered via instancing/shaders.",
+  "type": "module",
+  "main": "dist/hex-map.js",
+  "module": "dist/hex-map.mjs",
+  "types": "dist/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/hex-map.mjs",
+      "require": "./dist/hex-map.js"
+    }
+  },
+  "unpkg": "dist/hex-map.global.js",
+  "files": [
+    "dist"
+  ],
   "scripts": {
-    "prepare": "cp ./node_modules/three/build/three.min.js ./public/js/three.min.js",
-    "compile": "npx tsc",
-    "bundle": "npx browserify build/index.js -p esmify > public/js/bundle.js",
-    "minify": "npx uglifyjs public/js/bundle.js -o public/js/bundle.min.js",
-    "build": "npx webpack",
-    "release": "npm run compile && npm run bundle && npm run minify",
+    "build:lib": "tsup && tsc -p tsconfig.build.json && rollup -c rollup.config.global.mjs",
+    "build:demo": "npm run build:lib && node scripts/copy-demo-assets.cjs",
+    "build": "npm run build:demo",
     "server": "npx http-server public -c-1 -p 3000",
-    "start": "npm run compile && npm run bundle"
+    "start": "npm run build && npm run server",
+    "typecheck": "tsc --noEmit"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/gunyakov/three-hex-map.git"
   },
   "keywords": [
-    "civilizatio",
+    "civilization",
     "hex map",
-    "game map"
+    "game map",
+    "threejs",
+    "webgl"
   ],
   "author": "Oleg Gunyakov",
   "license": "ISC",
@@ -28,22 +42,20 @@
     "url": "https://github.com/gunyakov/three-hex-map/issues"
   },
   "homepage": "https://github.com/gunyakov/three-hex-map#readme",
+  "peerDependencies": {
+    "three": ">=0.160.0"
+  },
   "devDependencies": {
-    "@types/requirejs": "^2.1.34",
-    "@types/three": "^0.148.1",
-    "browserify": "^17.0.0",
-    "esmify": "^2.1.1",
-    "nodemon": "^2.0.20",
-    "typescript": "^4.9.4",
-    "uglify-js": "^3.17.4",
-    "webpack": "^5.75.0",
-    "webpack-cli": "^5.0.1"
+    "@rollup/plugin-commonjs": "^29.0.3",
+    "@rollup/plugin-node-resolve": "^16.0.3",
+    "@types/three": "^0.185.0",
+    "dat.gui": "^0.7.9",
+    "rollup": "^4.62.2",
+    "three": "^0.185.1",
+    "tsup": "^8.5.1",
+    "typescript": "^6.0.3"
   },
   "dependencies": {
-    "@types/dat.gui": "^0.7.7",
-    "axios": "^1.2.3",
-    "dat.gui": "^0.7.9",
-    "robust-point-in-polygon": "^1.0.3",
-    "three": "^0.148.0"
+    "robust-point-in-polygon": "^1.0.3"
   }
 }

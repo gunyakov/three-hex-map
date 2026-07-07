@@ -1,31 +1,31 @@
+//----------------------------------------------------------------------------------
+//Library entry point. `three` is a peerDependency (see package.json/tsup.config.ts) -
+//consumers must have their own copy of three.js installed/loaded.
+//----------------------------------------------------------------------------------
+export { HexMap } from "./HexMap";
+export type { HexMapOptions } from "./HexMap";
 
-import * as dat from 'dat.gui';
-import { UnitActions } from './enums';
-import { Point } from "./interfaces";
+export { GameEngine } from "./gameengine";
+export type { GameEngineOptions } from "./gameengine";
 
-import { GameEngine } from "./gameengine";
+export { Unit } from "./objects/Unit";
+export { PathFinder } from "./helpers/pathfinder";
+export { EventEmitter } from "./EventEmitter";
+export type { Listener } from "./EventEmitter";
 
-// once everything is loaded, we run our Three.js stuff.
-async function init() {
-    //MAKE NEW GAME
-    let game = new GameEngine({element: "[game-scene]"});
-    //INIT GAME
-    await game.init();
+export { Land, UnitActions, LandColor, LandPriority } from "./enums";
+export type { HexMapEventName } from "./enums";
 
-    game.on('unitClick', function(cellCoords:Point) {
-        //Here must be your code to generate UI to activate unit actions
-        //actions return Array with actions enabled for this unit
-        console.log(game.currentUnit.actions);
-    });
-    //Here you need activate proper unit action
-    //game.currentUnit.activate(UnitActions.walk);
+export type {
+    Point,
+    TileInfo,
+    RiverSegment,
+    MapInfo,
+    MapInfoData,
+    UnitInfo,
+    UnitList
+} from "./interfaces";
 
-    game.on("cellClick", function(cellCoords:Point) {
-        
-    });
-    //Additional controls for testing purposes
-    const gui = new dat.GUI();
-    gui.add( game.map, "gridVisible");
-}
-
-window.onload = init;
+export { getHexCenter, HEXPolygon } from "./helpers/helpers";
+export { getNeighborCoords, getNeighbors, NEIGHBOR_DIRECTIONS } from "./helpers/neighbors";
+export type { NeighborDirection, Neighbor } from "./helpers/neighbors";
