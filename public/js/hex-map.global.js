@@ -1953,6 +1953,4941 @@
 
 	}
 
+	/**
+	 * Returns a new indexed geometry based on `TrianglesDrawMode` draw mode.
+	 * This mode corresponds to the `gl.TRIANGLES` primitive in WebGL.
+	 *
+	 * @param {BufferGeometry} geometry - The geometry to convert.
+	 * @param {number} drawMode - The current draw mode.
+	 * @return {BufferGeometry} The new geometry using `TrianglesDrawMode`.
+	 */
+	function toTrianglesDrawMode( geometry, drawMode ) {
+
+		if ( drawMode === three.TrianglesDrawMode ) {
+
+			console.warn( 'THREE.BufferGeometryUtils.toTrianglesDrawMode(): Geometry already defined as triangles.' );
+			return geometry;
+
+		}
+
+		if ( drawMode === three.TriangleFanDrawMode || drawMode === three.TriangleStripDrawMode ) {
+
+			let index = geometry.getIndex();
+
+			// generate index if not present
+
+			if ( index === null ) {
+
+				const indices = [];
+
+				const position = geometry.getAttribute( 'position' );
+
+				if ( position !== undefined ) {
+
+					for ( let i = 0; i < position.count; i ++ ) {
+
+						indices.push( i );
+
+					}
+
+					geometry.setIndex( indices );
+					index = geometry.getIndex();
+
+				} else {
+
+					console.error( 'THREE.BufferGeometryUtils.toTrianglesDrawMode(): Undefined position attribute. Processing not possible.' );
+					return geometry;
+
+				}
+
+			}
+
+			//
+
+			const numberOfTriangles = index.count - 2;
+			const newIndices = [];
+
+			if ( drawMode === three.TriangleFanDrawMode ) {
+
+				// gl.TRIANGLE_FAN
+
+				for ( let i = 1; i <= numberOfTriangles; i ++ ) {
+
+					newIndices.push( index.getX( 0 ) );
+					newIndices.push( index.getX( i ) );
+					newIndices.push( index.getX( i + 1 ) );
+
+				}
+
+			} else {
+
+				// gl.TRIANGLE_STRIP
+
+				for ( let i = 0; i < numberOfTriangles; i ++ ) {
+
+					if ( i % 2 === 0 ) {
+
+						newIndices.push( index.getX( i ) );
+						newIndices.push( index.getX( i + 1 ) );
+						newIndices.push( index.getX( i + 2 ) );
+
+					} else {
+
+						newIndices.push( index.getX( i + 2 ) );
+						newIndices.push( index.getX( i + 1 ) );
+						newIndices.push( index.getX( i ) );
+
+					}
+
+				}
+
+			}
+
+			if ( ( newIndices.length / 3 ) !== numberOfTriangles ) {
+
+				console.error( 'THREE.BufferGeometryUtils.toTrianglesDrawMode(): Unable to generate correct amount of triangles.' );
+
+			}
+
+			// build final geometry
+
+			const newGeometry = geometry.clone();
+			newGeometry.setIndex( newIndices );
+			newGeometry.clearGroups();
+
+			return newGeometry;
+
+		} else {
+
+			console.error( 'THREE.BufferGeometryUtils.toTrianglesDrawMode(): Unknown draw mode:', drawMode );
+			return geometry;
+
+		}
+
+	}
+
+	/**
+	 * Clones the given 3D object and its descendants, ensuring that any `SkinnedMesh` instances are
+	 * correctly associated with their bones. Bones are also cloned, and must be descendants of the
+	 * object passed to this method. Other data, like geometries and materials, are reused by reference.
+	 *
+	 * @param {Object3D} source - The 3D object to clone.
+	 * @return {Object3D} The cloned 3D object.
+	 */
+	function clone( source ) {
+
+		const sourceLookup = new Map();
+		const cloneLookup = new Map();
+
+		const clone = source.clone();
+
+		parallelTraverse( source, clone, function ( sourceNode, clonedNode ) {
+
+			sourceLookup.set( clonedNode, sourceNode );
+			cloneLookup.set( sourceNode, clonedNode );
+
+		} );
+
+		clone.traverse( function ( node ) {
+
+			if ( ! node.isSkinnedMesh ) return;
+
+			const clonedMesh = node;
+			const sourceMesh = sourceLookup.get( node );
+			const sourceBones = sourceMesh.skeleton.bones;
+
+			clonedMesh.skeleton = sourceMesh.skeleton.clone();
+			clonedMesh.bindMatrix.copy( sourceMesh.bindMatrix );
+
+			clonedMesh.skeleton.bones = sourceBones.map( function ( bone ) {
+
+				return cloneLookup.get( bone );
+
+			} );
+
+			clonedMesh.bind( clonedMesh.skeleton, clonedMesh.bindMatrix );
+
+		} );
+
+		return clone;
+
+	}
+
+	function parallelTraverse( a, b, callback ) {
+
+		callback( a, b );
+
+		for ( let i = 0; i < a.children.length; i ++ ) {
+
+			parallelTraverse( a.children[ i ], b.children[ i ], callback );
+
+		}
+
+	}
+
+	/**
+	 * A loader for the glTF 2.0 format.
+	 *
+	 * [glTF](https://www.khronos.org/gltf/) (GL Transmission Format) is an [open format specification]{@link https://github.com/KhronosGroup/glTF/tree/main/specification/2.0)
+	 * for efficient delivery and loading of 3D content. Assets may be provided either in JSON (.gltf) or binary (.glb)
+	 * format. External files store textures (.jpg, .png) and additional binary data (.bin). A glTF asset may deliver
+	 * one or more scenes, including meshes, materials, textures, skins, skeletons, morph targets, animations, lights,
+	 * and/or cameras.
+	 *
+	 * `GLTFLoader` uses {@link ImageBitmapLoader} whenever possible. Be advised that image bitmaps are not
+	 * automatically GC-collected when they are no longer referenced, and they require special handling during
+	 * the disposal process.
+	 *
+	 * `GLTFLoader` supports the following glTF 2.0 extensions:
+	 * - KHR_draco_mesh_compression
+	 * - KHR_lights_punctual
+	 * - KHR_materials_anisotropy
+	 * - KHR_materials_clearcoat
+	 * - KHR_materials_dispersion
+	 * - KHR_materials_emissive_strength
+	 * - KHR_materials_ior
+	 * - KHR_materials_specular
+	 * - KHR_materials_transmission
+	 * - KHR_materials_iridescence
+	 * - KHR_materials_unlit
+	 * - KHR_materials_volume
+	 * - KHR_mesh_quantization
+	 * - KHR_meshopt_compression
+	 * - KHR_texture_basisu
+	 * - KHR_texture_transform
+	 * - EXT_materials_bump
+	 * - EXT_meshopt_compression
+	 * - EXT_mesh_gpu_instancing
+	 * - EXT_texture_avif
+	 * - EXT_texture_webp
+	 *
+	 * The following glTF 2.0 extension is supported by an external user plugin:
+	 * - [KHR_materials_variants](https://github.com/takahirox/three-gltf-extensions)
+	 * - [MSFT_texture_dds](https://github.com/takahirox/three-gltf-extensions)
+	 * - [KHR_animation_pointer](https://github.com/needle-tools/three-animation-pointer)
+	 * - [NEEDLE_progressive](https://github.com/needle-tools/gltf-progressive)
+	 *
+	 * ```js
+	 * const loader = new GLTFLoader();
+	 *
+	 * // Optional: Provide a DRACOLoader instance to decode compressed mesh data
+	 * const dracoLoader = new DRACOLoader();
+	 * dracoLoader.setDecoderPath( '/examples/jsm/libs/draco/' );
+	 * loader.setDRACOLoader( dracoLoader );
+	 *
+	 * const gltf = await loader.loadAsync( 'models/gltf/duck/duck.gltf' );
+	 * scene.add( gltf.scene );
+	 * ```
+	 *
+	 * @augments Loader
+	 * @three_import import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+	 */
+	class GLTFLoader extends three.Loader {
+
+		/**
+		 * Constructs a new glTF loader.
+		 *
+		 * @param {LoadingManager} [manager] - The loading manager.
+		 */
+		constructor( manager ) {
+
+			super( manager );
+
+			this.dracoLoader = null;
+			this.ktx2Loader = null;
+			this.meshoptDecoder = null;
+
+			this.pluginCallbacks = [];
+
+			this.register( function ( parser ) {
+
+				return new GLTFMaterialsClearcoatExtension( parser );
+
+			} );
+
+			this.register( function ( parser ) {
+
+				return new GLTFMaterialsDispersionExtension( parser );
+
+			} );
+
+			this.register( function ( parser ) {
+
+				return new GLTFTextureBasisUExtension( parser );
+
+			} );
+
+			this.register( function ( parser ) {
+
+				return new GLTFTextureWebPExtension( parser );
+
+			} );
+
+			this.register( function ( parser ) {
+
+				return new GLTFTextureAVIFExtension( parser );
+
+			} );
+
+			this.register( function ( parser ) {
+
+				return new GLTFMaterialsSheenExtension( parser );
+
+			} );
+
+			this.register( function ( parser ) {
+
+				return new GLTFMaterialsTransmissionExtension( parser );
+
+			} );
+
+			this.register( function ( parser ) {
+
+				return new GLTFMaterialsVolumeExtension( parser );
+
+			} );
+
+			this.register( function ( parser ) {
+
+				return new GLTFMaterialsIorExtension( parser );
+
+			} );
+
+			this.register( function ( parser ) {
+
+				return new GLTFMaterialsEmissiveStrengthExtension( parser );
+
+			} );
+
+			this.register( function ( parser ) {
+
+				return new GLTFMaterialsSpecularExtension( parser );
+
+			} );
+
+			this.register( function ( parser ) {
+
+				return new GLTFMaterialsIridescenceExtension( parser );
+
+			} );
+
+			this.register( function ( parser ) {
+
+				return new GLTFMaterialsAnisotropyExtension( parser );
+
+			} );
+
+			this.register( function ( parser ) {
+
+				return new GLTFMaterialsBumpExtension( parser );
+
+			} );
+
+			this.register( function ( parser ) {
+
+				return new GLTFLightsExtension( parser );
+
+			} );
+
+			this.register( function ( parser ) {
+
+				return new GLTFMeshoptCompression( parser, EXTENSIONS.EXT_MESHOPT_COMPRESSION );
+
+			} );
+
+			this.register( function ( parser ) {
+
+				return new GLTFMeshoptCompression( parser, EXTENSIONS.KHR_MESHOPT_COMPRESSION );
+
+			} );
+
+			this.register( function ( parser ) {
+
+				return new GLTFMeshGpuInstancing( parser );
+
+			} );
+
+		}
+
+		/**
+		 * Starts loading from the given URL and passes the loaded glTF asset
+		 * to the `onLoad()` callback.
+		 *
+		 * @param {string} url - The path/URL of the file to be loaded. This can also be a data URI.
+		 * @param {function(GLTFLoader~LoadObject)} onLoad - Executed when the loading process has been finished.
+		 * @param {onProgressCallback} onProgress - Executed while the loading is in progress.
+		 * @param {onErrorCallback} onError - Executed when errors occur.
+		 */
+		load( url, onLoad, onProgress, onError ) {
+
+			const scope = this;
+
+			let resourcePath;
+
+			if ( this.resourcePath !== '' ) {
+
+				resourcePath = this.resourcePath;
+
+			} else if ( this.path !== '' ) {
+
+				// If a base path is set, resources will be relative paths from that plus the relative path of the gltf file
+				// Example  path = 'https://my-cnd-server.com/', url = 'assets/models/model.gltf'
+				// resourcePath = 'https://my-cnd-server.com/assets/models/'
+				// referenced resource 'model.bin' will be loaded from 'https://my-cnd-server.com/assets/models/model.bin'
+				// referenced resource '../textures/texture.png' will be loaded from 'https://my-cnd-server.com/assets/textures/texture.png'
+				const relativeUrl = three.LoaderUtils.extractUrlBase( url );
+				resourcePath = three.LoaderUtils.resolveURL( relativeUrl, this.path );
+
+			} else {
+
+				resourcePath = three.LoaderUtils.extractUrlBase( url );
+
+			}
+
+			// Tells the LoadingManager to track an extra item, which resolves after
+			// the model is fully loaded. This means the count of items loaded will
+			// be incorrect, but ensures manager.onLoad() does not fire early.
+			this.manager.itemStart( url );
+
+			const _onError = function ( e ) {
+
+				if ( onError ) {
+
+					onError( e );
+
+				} else {
+
+					console.error( e );
+
+				}
+
+				scope.manager.itemError( url );
+				scope.manager.itemEnd( url );
+
+			};
+
+			const loader = new three.FileLoader( this.manager );
+
+			loader.setPath( this.path );
+			loader.setResponseType( 'arraybuffer' );
+			loader.setRequestHeader( this.requestHeader );
+			loader.setWithCredentials( this.withCredentials );
+
+			loader.load( url, function ( data ) {
+
+				try {
+
+					scope.parse( data, resourcePath, function ( gltf ) {
+
+						onLoad( gltf );
+
+						scope.manager.itemEnd( url );
+
+					}, _onError );
+
+				} catch ( e ) {
+
+					_onError( e );
+
+				}
+
+			}, onProgress, _onError );
+
+		}
+
+		/**
+		 * Sets the given Draco loader to this loader. Required for decoding assets
+		 * compressed with the `KHR_draco_mesh_compression` extension.
+		 *
+		 * @param {DRACOLoader} dracoLoader - The Draco loader to set.
+		 * @return {GLTFLoader} A reference to this loader.
+		 */
+		setDRACOLoader( dracoLoader ) {
+
+			this.dracoLoader = dracoLoader;
+			return this;
+
+		}
+
+		/**
+		 * Sets the given KTX2 loader to this loader. Required for loading KTX2
+		 * compressed textures.
+		 *
+		 * @param {KTX2Loader} ktx2Loader - The KTX2 loader to set.
+		 * @return {GLTFLoader} A reference to this loader.
+		 */
+		setKTX2Loader( ktx2Loader ) {
+
+			this.ktx2Loader = ktx2Loader;
+			return this;
+
+		}
+
+		/**
+		 * Sets the given meshopt decoder. Required for decoding assets
+		 * compressed with the `EXT_meshopt_compression` extension.
+		 *
+		 * @param {Object} meshoptDecoder - The meshopt decoder to set.
+		 * @return {GLTFLoader} A reference to this loader.
+		 */
+		setMeshoptDecoder( meshoptDecoder ) {
+
+			this.meshoptDecoder = meshoptDecoder;
+			return this;
+
+		}
+
+		/**
+		 * Registers a plugin callback. This API is internally used to implement the various
+		 * glTF extensions but can also used by third-party code to add additional logic
+		 * to the loader.
+		 *
+		 * @param {function(parser:GLTFParser)} callback - The callback function to register.
+		 * @return {GLTFLoader} A reference to this loader.
+		 */
+		register( callback ) {
+
+			if ( this.pluginCallbacks.indexOf( callback ) === -1 ) {
+
+				this.pluginCallbacks.push( callback );
+
+			}
+
+			return this;
+
+		}
+
+		/**
+		 * Unregisters a plugin callback.
+		 *
+		 * @param {Function} callback - The callback function to unregister.
+		 * @return {GLTFLoader} A reference to this loader.
+		 */
+		unregister( callback ) {
+
+			if ( this.pluginCallbacks.indexOf( callback ) !== -1 ) {
+
+				this.pluginCallbacks.splice( this.pluginCallbacks.indexOf( callback ), 1 );
+
+			}
+
+			return this;
+
+		}
+
+		/**
+		 * Parses the given glTF data and returns the resulting group.
+		 *
+		 * @param {string|ArrayBuffer} data - The raw glTF data.
+		 * @param {string} path - The URL base path.
+		 * @param {function(GLTFLoader~LoadObject)} onLoad - Executed when the loading process has been finished.
+		 * @param {onErrorCallback} onError - Executed when errors occur.
+		 */
+		parse( data, path, onLoad, onError ) {
+
+			let json;
+			const extensions = {};
+			const plugins = {};
+			const textDecoder = new TextDecoder();
+
+			if ( typeof data === 'string' ) {
+
+				json = JSON.parse( data );
+
+			} else if ( data instanceof ArrayBuffer ) {
+
+				const magic = textDecoder.decode( new Uint8Array( data, 0, 4 ) );
+
+				if ( magic === BINARY_EXTENSION_HEADER_MAGIC ) {
+
+					try {
+
+						extensions[ EXTENSIONS.KHR_BINARY_GLTF ] = new GLTFBinaryExtension( data );
+
+					} catch ( error ) {
+
+						if ( onError ) onError( error );
+						return;
+
+					}
+
+					json = JSON.parse( extensions[ EXTENSIONS.KHR_BINARY_GLTF ].content );
+
+				} else {
+
+					json = JSON.parse( textDecoder.decode( data ) );
+
+				}
+
+			} else {
+
+				json = data;
+
+			}
+
+			if ( json.asset === undefined || json.asset.version[ 0 ] < 2 ) {
+
+				if ( onError ) onError( new Error( 'THREE.GLTFLoader: Unsupported asset. glTF versions >=2.0 are supported.' ) );
+				return;
+
+			}
+
+			const parser = new GLTFParser( json, {
+
+				path: path || this.resourcePath || '',
+				crossOrigin: this.crossOrigin,
+				requestHeader: this.requestHeader,
+				manager: this.manager,
+				ktx2Loader: this.ktx2Loader,
+				meshoptDecoder: this.meshoptDecoder
+
+			} );
+
+			parser.fileLoader.setRequestHeader( this.requestHeader );
+
+			for ( let i = 0; i < this.pluginCallbacks.length; i ++ ) {
+
+				const plugin = this.pluginCallbacks[ i ]( parser );
+
+				if ( ! plugin.name ) console.error( 'THREE.GLTFLoader: Invalid plugin found: missing name' );
+
+				plugins[ plugin.name ] = plugin;
+
+				// Workaround to avoid determining as unknown extension
+				// in addUnknownExtensionsToUserData().
+				// Remove this workaround if we move all the existing
+				// extension handlers to plugin system
+				extensions[ plugin.name ] = true;
+
+			}
+
+			if ( json.extensionsUsed ) {
+
+				for ( let i = 0; i < json.extensionsUsed.length; ++ i ) {
+
+					const extensionName = json.extensionsUsed[ i ];
+					const extensionsRequired = json.extensionsRequired || [];
+
+					switch ( extensionName ) {
+
+						case EXTENSIONS.KHR_MATERIALS_UNLIT:
+							extensions[ extensionName ] = new GLTFMaterialsUnlitExtension();
+							break;
+
+						case EXTENSIONS.KHR_DRACO_MESH_COMPRESSION:
+							extensions[ extensionName ] = new GLTFDracoMeshCompressionExtension( json, this.dracoLoader );
+							break;
+
+						case EXTENSIONS.KHR_TEXTURE_TRANSFORM:
+							extensions[ extensionName ] = new GLTFTextureTransformExtension();
+							break;
+
+						case EXTENSIONS.KHR_MESH_QUANTIZATION:
+							extensions[ extensionName ] = new GLTFMeshQuantizationExtension();
+							break;
+
+						default:
+
+							if ( extensionsRequired.indexOf( extensionName ) >= 0 && plugins[ extensionName ] === undefined ) {
+
+								console.warn( 'THREE.GLTFLoader: Unknown extension "' + extensionName + '".' );
+
+							}
+
+					}
+
+				}
+
+			}
+
+			parser.setExtensions( extensions );
+			parser.setPlugins( plugins );
+			parser.parse( onLoad, onError );
+
+		}
+
+		/**
+		 * Async version of {@link GLTFLoader#parse}.
+		 *
+		 * @async
+		 * @param {string|ArrayBuffer} data - The raw glTF data.
+		 * @param {string} path - The URL base path.
+		 * @return {Promise<GLTFLoader~LoadObject>} A Promise that resolves with the loaded glTF when the parsing has been finished.
+		 */
+		parseAsync( data, path ) {
+
+			const scope = this;
+
+			return new Promise( function ( resolve, reject ) {
+
+				scope.parse( data, path, resolve, reject );
+
+			} );
+
+		}
+
+	}
+
+	/* GLTFREGISTRY */
+
+	function GLTFRegistry() {
+
+		let objects = {};
+
+		return	{
+
+			get: function ( key ) {
+
+				return objects[ key ];
+
+			},
+
+			add: function ( key, object ) {
+
+				objects[ key ] = object;
+
+			},
+
+			remove: function ( key ) {
+
+				delete objects[ key ];
+
+			},
+
+			removeAll: function () {
+
+				objects = {};
+
+			}
+
+		};
+
+	}
+
+	/*********************************/
+	/********** EXTENSIONS ***********/
+	/*********************************/
+
+	function getMaterialExtension( parser, materialIndex, extensionName ) {
+
+		const materialDef = parser.json.materials[ materialIndex ];
+
+		if ( materialDef.extensions && materialDef.extensions[ extensionName ] ) {
+
+			return materialDef.extensions[ extensionName ];
+
+		}
+
+		return null;
+
+	}
+
+	const EXTENSIONS = {
+		KHR_BINARY_GLTF: 'KHR_binary_glTF',
+		KHR_DRACO_MESH_COMPRESSION: 'KHR_draco_mesh_compression',
+		KHR_LIGHTS_PUNCTUAL: 'KHR_lights_punctual',
+		KHR_MATERIALS_CLEARCOAT: 'KHR_materials_clearcoat',
+		KHR_MATERIALS_DISPERSION: 'KHR_materials_dispersion',
+		KHR_MATERIALS_IOR: 'KHR_materials_ior',
+		KHR_MATERIALS_SHEEN: 'KHR_materials_sheen',
+		KHR_MATERIALS_SPECULAR: 'KHR_materials_specular',
+		KHR_MATERIALS_TRANSMISSION: 'KHR_materials_transmission',
+		KHR_MATERIALS_IRIDESCENCE: 'KHR_materials_iridescence',
+		KHR_MATERIALS_ANISOTROPY: 'KHR_materials_anisotropy',
+		KHR_MATERIALS_UNLIT: 'KHR_materials_unlit',
+		KHR_MATERIALS_VOLUME: 'KHR_materials_volume',
+		KHR_TEXTURE_BASISU: 'KHR_texture_basisu',
+		KHR_TEXTURE_TRANSFORM: 'KHR_texture_transform',
+		KHR_MESH_QUANTIZATION: 'KHR_mesh_quantization',
+		KHR_MATERIALS_EMISSIVE_STRENGTH: 'KHR_materials_emissive_strength',
+		EXT_MATERIALS_BUMP: 'EXT_materials_bump',
+		EXT_TEXTURE_WEBP: 'EXT_texture_webp',
+		EXT_TEXTURE_AVIF: 'EXT_texture_avif',
+		EXT_MESHOPT_COMPRESSION: 'EXT_meshopt_compression',
+		KHR_MESHOPT_COMPRESSION: 'KHR_meshopt_compression',
+		EXT_MESH_GPU_INSTANCING: 'EXT_mesh_gpu_instancing'
+	};
+
+	/**
+	 * Punctual Lights Extension
+	 *
+	 * Specification: https://github.com/KhronosGroup/glTF/tree/master/extensions/2.0/Khronos/KHR_lights_punctual
+	 *
+	 * @private
+	 */
+	class GLTFLightsExtension {
+
+		constructor( parser ) {
+
+			this.parser = parser;
+			this.name = EXTENSIONS.KHR_LIGHTS_PUNCTUAL;
+
+			// Object3D instance caches
+			this.cache = { refs: {}, uses: {} };
+
+		}
+
+		_markDefs() {
+
+			const parser = this.parser;
+			const nodeDefs = this.parser.json.nodes || [];
+
+			for ( let nodeIndex = 0, nodeLength = nodeDefs.length; nodeIndex < nodeLength; nodeIndex ++ ) {
+
+				const nodeDef = nodeDefs[ nodeIndex ];
+
+				if ( nodeDef.extensions
+						&& nodeDef.extensions[ this.name ]
+						&& nodeDef.extensions[ this.name ].light !== undefined ) {
+
+					parser._addNodeRef( this.cache, nodeDef.extensions[ this.name ].light );
+
+				}
+
+			}
+
+		}
+
+		_loadLight( lightIndex ) {
+
+			const parser = this.parser;
+			const cacheKey = 'light:' + lightIndex;
+			let dependency = parser.cache.get( cacheKey );
+
+			if ( dependency ) return dependency;
+
+			const json = parser.json;
+			const extensions = ( json.extensions && json.extensions[ this.name ] ) || {};
+			const lightDefs = extensions.lights || [];
+			const lightDef = lightDefs[ lightIndex ];
+			let lightNode;
+
+			const color = new three.Color( 0xffffff );
+
+			if ( lightDef.color !== undefined ) color.setRGB( lightDef.color[ 0 ], lightDef.color[ 1 ], lightDef.color[ 2 ], three.LinearSRGBColorSpace );
+
+			const range = lightDef.range !== undefined ? lightDef.range : 0;
+
+			switch ( lightDef.type ) {
+
+				case 'directional':
+					lightNode = new three.DirectionalLight( color );
+					lightNode.target.position.set( 0, 0, -1 );
+					lightNode.add( lightNode.target );
+					break;
+
+				case 'point':
+					lightNode = new three.PointLight( color );
+					lightNode.distance = range;
+					break;
+
+				case 'spot':
+					lightNode = new three.SpotLight( color );
+					lightNode.distance = range;
+					// Handle spotlight properties.
+					lightDef.spot = lightDef.spot || {};
+					lightDef.spot.innerConeAngle = lightDef.spot.innerConeAngle !== undefined ? lightDef.spot.innerConeAngle : 0;
+					lightDef.spot.outerConeAngle = lightDef.spot.outerConeAngle !== undefined ? lightDef.spot.outerConeAngle : Math.PI / 4.0;
+					lightNode.angle = lightDef.spot.outerConeAngle;
+					lightNode.penumbra = 1.0 - lightDef.spot.innerConeAngle / lightDef.spot.outerConeAngle;
+					lightNode.target.position.set( 0, 0, -1 );
+					lightNode.add( lightNode.target );
+					break;
+
+				default:
+					throw new Error( 'THREE.GLTFLoader: Unexpected light type: ' + lightDef.type );
+
+			}
+
+			// Some lights (e.g. spot) default to a position other than the origin. Reset the position
+			// here, because node-level parsing will only override position if explicitly specified.
+			lightNode.position.set( 0, 0, 0 );
+
+			assignExtrasToUserData( lightNode, lightDef );
+
+			if ( lightDef.intensity !== undefined ) lightNode.intensity = lightDef.intensity;
+
+			lightNode.name = parser.createUniqueName( lightDef.name || ( 'light_' + lightIndex ) );
+
+			dependency = Promise.resolve( lightNode );
+
+			parser.cache.add( cacheKey, dependency );
+
+			return dependency;
+
+		}
+
+		getDependency( type, index ) {
+
+			if ( type !== 'light' ) return;
+
+			return this._loadLight( index );
+
+		}
+
+		createNodeAttachment( nodeIndex ) {
+
+			const self = this;
+			const parser = this.parser;
+			const json = parser.json;
+			const nodeDef = json.nodes[ nodeIndex ];
+			const lightDef = ( nodeDef.extensions && nodeDef.extensions[ this.name ] ) || {};
+			const lightIndex = lightDef.light;
+
+			if ( lightIndex === undefined ) return null;
+
+			return this._loadLight( lightIndex ).then( function ( light ) {
+
+				return parser._getNodeRef( self.cache, lightIndex, light );
+
+			} );
+
+		}
+
+	}
+
+	/**
+	 * Unlit Materials Extension
+	 *
+	 * Specification: https://github.com/KhronosGroup/glTF/tree/master/extensions/2.0/Khronos/KHR_materials_unlit
+	 *
+	 * @private
+	 */
+	class GLTFMaterialsUnlitExtension {
+
+		constructor() {
+
+			this.name = EXTENSIONS.KHR_MATERIALS_UNLIT;
+
+		}
+
+		getMaterialType() {
+
+			return three.MeshBasicMaterial;
+
+		}
+
+		extendParams( materialParams, materialDef, parser ) {
+
+			const pending = [];
+
+			materialParams.color = new three.Color( 1.0, 1.0, 1.0 );
+			materialParams.opacity = 1.0;
+
+			const metallicRoughness = materialDef.pbrMetallicRoughness;
+
+			if ( metallicRoughness ) {
+
+				if ( Array.isArray( metallicRoughness.baseColorFactor ) ) {
+
+					const array = metallicRoughness.baseColorFactor;
+
+					materialParams.color.setRGB( array[ 0 ], array[ 1 ], array[ 2 ], three.LinearSRGBColorSpace );
+					materialParams.opacity = array[ 3 ];
+
+				}
+
+				if ( metallicRoughness.baseColorTexture !== undefined ) {
+
+					pending.push( parser.assignTexture( materialParams, 'map', metallicRoughness.baseColorTexture, three.SRGBColorSpace ) );
+
+				}
+
+			}
+
+			return Promise.all( pending );
+
+		}
+
+	}
+
+	/**
+	 * Materials Emissive Strength Extension
+	 *
+	 * Specification: https://github.com/KhronosGroup/glTF/blob/5768b3ce0ef32bc39cdf1bef10b948586635ead3/extensions/2.0/Khronos/KHR_materials_emissive_strength/README.md
+	 *
+	 * @private
+	 */
+	class GLTFMaterialsEmissiveStrengthExtension {
+
+		constructor( parser ) {
+
+			this.parser = parser;
+			this.name = EXTENSIONS.KHR_MATERIALS_EMISSIVE_STRENGTH;
+
+		}
+
+		extendMaterialParams( materialIndex, materialParams ) {
+
+			const extension = getMaterialExtension( this.parser, materialIndex, this.name );
+
+			if ( extension === null ) return Promise.resolve();
+
+			if ( extension.emissiveStrength !== undefined ) {
+
+				materialParams.emissiveIntensity = extension.emissiveStrength;
+
+			}
+
+			return Promise.resolve();
+
+		}
+
+	}
+
+	/**
+	 * Clearcoat Materials Extension
+	 *
+	 * Specification: https://github.com/KhronosGroup/glTF/tree/master/extensions/2.0/Khronos/KHR_materials_clearcoat
+	 *
+	 * @private
+	 */
+	class GLTFMaterialsClearcoatExtension {
+
+		constructor( parser ) {
+
+			this.parser = parser;
+			this.name = EXTENSIONS.KHR_MATERIALS_CLEARCOAT;
+
+		}
+
+		getMaterialType( materialIndex ) {
+
+			const extension = getMaterialExtension( this.parser, materialIndex, this.name );
+
+			return extension !== null ? three.MeshPhysicalMaterial : null;
+
+		}
+
+		extendMaterialParams( materialIndex, materialParams ) {
+
+			const extension = getMaterialExtension( this.parser, materialIndex, this.name );
+
+			if ( extension === null ) return Promise.resolve();
+
+			const pending = [];
+
+			if ( extension.clearcoatFactor !== undefined ) {
+
+				materialParams.clearcoat = extension.clearcoatFactor;
+
+			}
+
+			if ( extension.clearcoatTexture !== undefined ) {
+
+				pending.push( this.parser.assignTexture( materialParams, 'clearcoatMap', extension.clearcoatTexture ) );
+
+			}
+
+			if ( extension.clearcoatRoughnessFactor !== undefined ) {
+
+				materialParams.clearcoatRoughness = extension.clearcoatRoughnessFactor;
+
+			}
+
+			if ( extension.clearcoatRoughnessTexture !== undefined ) {
+
+				pending.push( this.parser.assignTexture( materialParams, 'clearcoatRoughnessMap', extension.clearcoatRoughnessTexture ) );
+
+			}
+
+			if ( extension.clearcoatNormalTexture !== undefined ) {
+
+				pending.push( this.parser.assignTexture( materialParams, 'clearcoatNormalMap', extension.clearcoatNormalTexture ) );
+
+				if ( extension.clearcoatNormalTexture.scale !== undefined ) {
+
+					const scale = extension.clearcoatNormalTexture.scale;
+
+					materialParams.clearcoatNormalScale = new three.Vector2( scale, scale );
+
+				}
+
+			}
+
+			return Promise.all( pending );
+
+		}
+
+	}
+
+	/**
+	 * Materials dispersion Extension
+	 *
+	 * Specification: https://github.com/KhronosGroup/glTF/tree/main/extensions/2.0/Khronos/KHR_materials_dispersion
+	 *
+	 * @private
+	 */
+	class GLTFMaterialsDispersionExtension {
+
+		constructor( parser ) {
+
+			this.parser = parser;
+			this.name = EXTENSIONS.KHR_MATERIALS_DISPERSION;
+
+		}
+
+		getMaterialType( materialIndex ) {
+
+			const extension = getMaterialExtension( this.parser, materialIndex, this.name );
+
+			return extension !== null ? three.MeshPhysicalMaterial : null;
+
+		}
+
+		extendMaterialParams( materialIndex, materialParams ) {
+
+			const extension = getMaterialExtension( this.parser, materialIndex, this.name );
+
+			if ( extension === null ) return Promise.resolve();
+
+			materialParams.dispersion = extension.dispersion !== undefined ? extension.dispersion : 0;
+
+			return Promise.resolve();
+
+		}
+
+	}
+
+	/**
+	 * Iridescence Materials Extension
+	 *
+	 * Specification: https://github.com/KhronosGroup/glTF/tree/master/extensions/2.0/Khronos/KHR_materials_iridescence
+	 *
+	 * @private
+	 */
+	class GLTFMaterialsIridescenceExtension {
+
+		constructor( parser ) {
+
+			this.parser = parser;
+			this.name = EXTENSIONS.KHR_MATERIALS_IRIDESCENCE;
+
+		}
+
+		getMaterialType( materialIndex ) {
+
+			const extension = getMaterialExtension( this.parser, materialIndex, this.name );
+
+			return extension !== null ? three.MeshPhysicalMaterial : null;
+
+		}
+
+		extendMaterialParams( materialIndex, materialParams ) {
+
+			const extension = getMaterialExtension( this.parser, materialIndex, this.name );
+
+			if ( extension === null ) return Promise.resolve();
+
+			const pending = [];
+
+			if ( extension.iridescenceFactor !== undefined ) {
+
+				materialParams.iridescence = extension.iridescenceFactor;
+
+			}
+
+			if ( extension.iridescenceTexture !== undefined ) {
+
+				pending.push( this.parser.assignTexture( materialParams, 'iridescenceMap', extension.iridescenceTexture ) );
+
+			}
+
+			if ( extension.iridescenceIor !== undefined ) {
+
+				materialParams.iridescenceIOR = extension.iridescenceIor;
+
+			}
+
+			if ( materialParams.iridescenceThicknessRange === undefined ) {
+
+				materialParams.iridescenceThicknessRange = [ 100, 400 ];
+
+			}
+
+			if ( extension.iridescenceThicknessMinimum !== undefined ) {
+
+				materialParams.iridescenceThicknessRange[ 0 ] = extension.iridescenceThicknessMinimum;
+
+			}
+
+			if ( extension.iridescenceThicknessMaximum !== undefined ) {
+
+				materialParams.iridescenceThicknessRange[ 1 ] = extension.iridescenceThicknessMaximum;
+
+			}
+
+			if ( extension.iridescenceThicknessTexture !== undefined ) {
+
+				pending.push( this.parser.assignTexture( materialParams, 'iridescenceThicknessMap', extension.iridescenceThicknessTexture ) );
+
+			}
+
+			return Promise.all( pending );
+
+		}
+
+	}
+
+	/**
+	 * Sheen Materials Extension
+	 *
+	 * Specification: https://github.com/KhronosGroup/glTF/tree/main/extensions/2.0/Khronos/KHR_materials_sheen
+	 *
+	 * @private
+	 */
+	class GLTFMaterialsSheenExtension {
+
+		constructor( parser ) {
+
+			this.parser = parser;
+			this.name = EXTENSIONS.KHR_MATERIALS_SHEEN;
+
+		}
+
+		getMaterialType( materialIndex ) {
+
+			const extension = getMaterialExtension( this.parser, materialIndex, this.name );
+
+			return extension !== null ? three.MeshPhysicalMaterial : null;
+
+		}
+
+		extendMaterialParams( materialIndex, materialParams ) {
+
+			const extension = getMaterialExtension( this.parser, materialIndex, this.name );
+
+			if ( extension === null ) return Promise.resolve();
+
+			const pending = [];
+
+			materialParams.sheenColor = new three.Color( 0, 0, 0 );
+			materialParams.sheenRoughness = 0;
+			materialParams.sheen = 1;
+
+			if ( extension.sheenColorFactor !== undefined ) {
+
+				const colorFactor = extension.sheenColorFactor;
+				materialParams.sheenColor.setRGB( colorFactor[ 0 ], colorFactor[ 1 ], colorFactor[ 2 ], three.LinearSRGBColorSpace );
+
+			}
+
+			if ( extension.sheenRoughnessFactor !== undefined ) {
+
+				materialParams.sheenRoughness = extension.sheenRoughnessFactor;
+
+			}
+
+			if ( extension.sheenColorTexture !== undefined ) {
+
+				pending.push( this.parser.assignTexture( materialParams, 'sheenColorMap', extension.sheenColorTexture, three.SRGBColorSpace ) );
+
+			}
+
+			if ( extension.sheenRoughnessTexture !== undefined ) {
+
+				pending.push( this.parser.assignTexture( materialParams, 'sheenRoughnessMap', extension.sheenRoughnessTexture ) );
+
+			}
+
+			return Promise.all( pending );
+
+		}
+
+	}
+
+	/**
+	 * Transmission Materials Extension
+	 *
+	 * Specification: https://github.com/KhronosGroup/glTF/tree/master/extensions/2.0/Khronos/KHR_materials_transmission
+	 * Draft: https://github.com/KhronosGroup/glTF/pull/1698
+	 *
+	 * @private
+	 */
+	class GLTFMaterialsTransmissionExtension {
+
+		constructor( parser ) {
+
+			this.parser = parser;
+			this.name = EXTENSIONS.KHR_MATERIALS_TRANSMISSION;
+
+		}
+
+		getMaterialType( materialIndex ) {
+
+			const extension = getMaterialExtension( this.parser, materialIndex, this.name );
+
+			return extension !== null ? three.MeshPhysicalMaterial : null;
+
+		}
+
+		extendMaterialParams( materialIndex, materialParams ) {
+
+			const extension = getMaterialExtension( this.parser, materialIndex, this.name );
+
+			if ( extension === null ) return Promise.resolve();
+
+			const pending = [];
+
+			if ( extension.transmissionFactor !== undefined ) {
+
+				materialParams.transmission = extension.transmissionFactor;
+
+			}
+
+			if ( extension.transmissionTexture !== undefined ) {
+
+				pending.push( this.parser.assignTexture( materialParams, 'transmissionMap', extension.transmissionTexture ) );
+
+			}
+
+			return Promise.all( pending );
+
+		}
+
+	}
+
+	/**
+	 * Materials Volume Extension
+	 *
+	 * Specification: https://github.com/KhronosGroup/glTF/tree/master/extensions/2.0/Khronos/KHR_materials_volume
+	 *
+	 * @private
+	 */
+	class GLTFMaterialsVolumeExtension {
+
+		constructor( parser ) {
+
+			this.parser = parser;
+			this.name = EXTENSIONS.KHR_MATERIALS_VOLUME;
+
+		}
+
+		getMaterialType( materialIndex ) {
+
+			const extension = getMaterialExtension( this.parser, materialIndex, this.name );
+
+			return extension !== null ? three.MeshPhysicalMaterial : null;
+
+		}
+
+		extendMaterialParams( materialIndex, materialParams ) {
+
+			const extension = getMaterialExtension( this.parser, materialIndex, this.name );
+
+			if ( extension === null ) return Promise.resolve();
+
+			const pending = [];
+
+			materialParams.thickness = extension.thicknessFactor !== undefined ? extension.thicknessFactor : 0;
+
+			if ( extension.thicknessTexture !== undefined ) {
+
+				pending.push( this.parser.assignTexture( materialParams, 'thicknessMap', extension.thicknessTexture ) );
+
+			}
+
+			materialParams.attenuationDistance = extension.attenuationDistance || Infinity;
+
+			const colorArray = extension.attenuationColor || [ 1, 1, 1 ];
+			materialParams.attenuationColor = new three.Color().setRGB( colorArray[ 0 ], colorArray[ 1 ], colorArray[ 2 ], three.LinearSRGBColorSpace );
+
+			return Promise.all( pending );
+
+		}
+
+	}
+
+	/**
+	 * Materials ior Extension
+	 *
+	 * Specification: https://github.com/KhronosGroup/glTF/tree/master/extensions/2.0/Khronos/KHR_materials_ior
+	 *
+	 * @private
+	 */
+	class GLTFMaterialsIorExtension {
+
+		constructor( parser ) {
+
+			this.parser = parser;
+			this.name = EXTENSIONS.KHR_MATERIALS_IOR;
+
+		}
+
+		getMaterialType( materialIndex ) {
+
+			const extension = getMaterialExtension( this.parser, materialIndex, this.name );
+
+			return extension !== null ? three.MeshPhysicalMaterial : null;
+
+		}
+
+		extendMaterialParams( materialIndex, materialParams ) {
+
+			const extension = getMaterialExtension( this.parser, materialIndex, this.name );
+
+			if ( extension === null ) return Promise.resolve();
+
+			materialParams.ior = extension.ior !== undefined ? extension.ior : 1.5;
+
+			if ( materialParams.ior === 0 ) materialParams.ior = 1000; // see #26167
+
+			return Promise.resolve();
+
+		}
+
+	}
+
+	/**
+	 * Materials specular Extension
+	 *
+	 * Specification: https://github.com/KhronosGroup/glTF/tree/master/extensions/2.0/Khronos/KHR_materials_specular
+	 *
+	 * @private
+	 */
+	class GLTFMaterialsSpecularExtension {
+
+		constructor( parser ) {
+
+			this.parser = parser;
+			this.name = EXTENSIONS.KHR_MATERIALS_SPECULAR;
+
+		}
+
+		getMaterialType( materialIndex ) {
+
+			const extension = getMaterialExtension( this.parser, materialIndex, this.name );
+
+			return extension !== null ? three.MeshPhysicalMaterial : null;
+
+		}
+
+		extendMaterialParams( materialIndex, materialParams ) {
+
+			const extension = getMaterialExtension( this.parser, materialIndex, this.name );
+
+			if ( extension === null ) return Promise.resolve();
+
+			const pending = [];
+
+			materialParams.specularIntensity = extension.specularFactor !== undefined ? extension.specularFactor : 1.0;
+
+			if ( extension.specularTexture !== undefined ) {
+
+				pending.push( this.parser.assignTexture( materialParams, 'specularIntensityMap', extension.specularTexture ) );
+
+			}
+
+			const colorArray = extension.specularColorFactor || [ 1, 1, 1 ];
+			materialParams.specularColor = new three.Color().setRGB( colorArray[ 0 ], colorArray[ 1 ], colorArray[ 2 ], three.LinearSRGBColorSpace );
+
+			if ( extension.specularColorTexture !== undefined ) {
+
+				pending.push( this.parser.assignTexture( materialParams, 'specularColorMap', extension.specularColorTexture, three.SRGBColorSpace ) );
+
+			}
+
+			return Promise.all( pending );
+
+		}
+
+	}
+
+
+	/**
+	 * Materials bump Extension
+	 *
+	 * Specification: https://github.com/KhronosGroup/glTF/tree/master/extensions/2.0/Khronos/EXT_materials_bump
+	 *
+	 * @private
+	 */
+	class GLTFMaterialsBumpExtension {
+
+		constructor( parser ) {
+
+			this.parser = parser;
+			this.name = EXTENSIONS.EXT_MATERIALS_BUMP;
+
+		}
+
+		getMaterialType( materialIndex ) {
+
+			const extension = getMaterialExtension( this.parser, materialIndex, this.name );
+
+			return extension !== null ? three.MeshPhysicalMaterial : null;
+
+		}
+
+		extendMaterialParams( materialIndex, materialParams ) {
+
+			const extension = getMaterialExtension( this.parser, materialIndex, this.name );
+
+			if ( extension === null ) return Promise.resolve();
+
+			const pending = [];
+
+			materialParams.bumpScale = extension.bumpFactor !== undefined ? extension.bumpFactor : 1.0;
+
+			if ( extension.bumpTexture !== undefined ) {
+
+				pending.push( this.parser.assignTexture( materialParams, 'bumpMap', extension.bumpTexture ) );
+
+			}
+
+			return Promise.all( pending );
+
+		}
+
+	}
+
+	/**
+	 * Materials anisotropy Extension
+	 *
+	 * Specification: https://github.com/KhronosGroup/glTF/tree/master/extensions/2.0/Khronos/KHR_materials_anisotropy
+	 *
+	 * @private
+	 */
+	class GLTFMaterialsAnisotropyExtension {
+
+		constructor( parser ) {
+
+			this.parser = parser;
+			this.name = EXTENSIONS.KHR_MATERIALS_ANISOTROPY;
+
+		}
+
+		getMaterialType( materialIndex ) {
+
+			const extension = getMaterialExtension( this.parser, materialIndex, this.name );
+
+			return extension !== null ? three.MeshPhysicalMaterial : null;
+
+		}
+
+		extendMaterialParams( materialIndex, materialParams ) {
+
+			const extension = getMaterialExtension( this.parser, materialIndex, this.name );
+
+			if ( extension === null ) return Promise.resolve();
+
+			const pending = [];
+
+			if ( extension.anisotropyStrength !== undefined ) {
+
+				materialParams.anisotropy = extension.anisotropyStrength;
+
+			}
+
+			if ( extension.anisotropyRotation !== undefined ) {
+
+				materialParams.anisotropyRotation = extension.anisotropyRotation;
+
+			}
+
+			if ( extension.anisotropyTexture !== undefined ) {
+
+				pending.push( this.parser.assignTexture( materialParams, 'anisotropyMap', extension.anisotropyTexture ) );
+
+			}
+
+			return Promise.all( pending );
+
+		}
+
+	}
+
+	/**
+	 * BasisU Texture Extension
+	 *
+	 * Specification: https://github.com/KhronosGroup/glTF/tree/master/extensions/2.0/Khronos/KHR_texture_basisu
+	 *
+	 * @private
+	 */
+	class GLTFTextureBasisUExtension {
+
+		constructor( parser ) {
+
+			this.parser = parser;
+			this.name = EXTENSIONS.KHR_TEXTURE_BASISU;
+
+		}
+
+		loadTexture( textureIndex ) {
+
+			const parser = this.parser;
+			const json = parser.json;
+
+			const textureDef = json.textures[ textureIndex ];
+
+			if ( ! textureDef.extensions || ! textureDef.extensions[ this.name ] ) {
+
+				return null;
+
+			}
+
+			const extension = textureDef.extensions[ this.name ];
+			const loader = parser.options.ktx2Loader;
+
+			if ( ! loader ) {
+
+				if ( json.extensionsRequired && json.extensionsRequired.indexOf( this.name ) >= 0 ) {
+
+					throw new Error( 'THREE.GLTFLoader: setKTX2Loader must be called before loading KTX2 textures' );
+
+				} else {
+
+					// Assumes that the extension is optional and that a fallback texture is present
+					return null;
+
+				}
+
+			}
+
+			return parser.loadTextureImage( textureIndex, extension.source, loader );
+
+		}
+
+	}
+
+	/**
+	 * WebP Texture Extension
+	 *
+	 * Specification: https://github.com/KhronosGroup/glTF/tree/master/extensions/2.0/Vendor/EXT_texture_webp
+	 *
+	 * @private
+	 */
+	class GLTFTextureWebPExtension {
+
+		constructor( parser ) {
+
+			this.parser = parser;
+			this.name = EXTENSIONS.EXT_TEXTURE_WEBP;
+
+		}
+
+		loadTexture( textureIndex ) {
+
+			const name = this.name;
+			const parser = this.parser;
+			const json = parser.json;
+
+			const textureDef = json.textures[ textureIndex ];
+
+			if ( ! textureDef.extensions || ! textureDef.extensions[ name ] ) {
+
+				return null;
+
+			}
+
+			const extension = textureDef.extensions[ name ];
+			const source = json.images[ extension.source ];
+
+			let loader = parser.textureLoader;
+			if ( source.uri ) {
+
+				const handler = parser.options.manager.getHandler( source.uri );
+				if ( handler !== null ) loader = handler;
+
+			}
+
+			return parser.loadTextureImage( textureIndex, extension.source, loader );
+
+		}
+
+	}
+
+	/**
+	 * AVIF Texture Extension
+	 *
+	 * Specification: https://github.com/KhronosGroup/glTF/tree/master/extensions/2.0/Vendor/EXT_texture_avif
+	 *
+	 * @private
+	 */
+	class GLTFTextureAVIFExtension {
+
+		constructor( parser ) {
+
+			this.parser = parser;
+			this.name = EXTENSIONS.EXT_TEXTURE_AVIF;
+
+		}
+
+		loadTexture( textureIndex ) {
+
+			const name = this.name;
+			const parser = this.parser;
+			const json = parser.json;
+
+			const textureDef = json.textures[ textureIndex ];
+
+			if ( ! textureDef.extensions || ! textureDef.extensions[ name ] ) {
+
+				return null;
+
+			}
+
+			const extension = textureDef.extensions[ name ];
+			const source = json.images[ extension.source ];
+
+			let loader = parser.textureLoader;
+			if ( source.uri ) {
+
+				const handler = parser.options.manager.getHandler( source.uri );
+				if ( handler !== null ) loader = handler;
+
+			}
+
+			return parser.loadTextureImage( textureIndex, extension.source, loader );
+
+		}
+
+	}
+
+	/**
+	 * meshopt BufferView Compression Extension
+	 *
+	 * Specification: https://github.com/KhronosGroup/glTF/tree/master/extensions/2.0/Vendor/EXT_meshopt_compression
+	 *
+	 * @private
+	 */
+	class GLTFMeshoptCompression {
+
+		constructor( parser, name ) {
+
+			this.name = name;
+			this.parser = parser;
+
+		}
+
+		loadBufferView( index ) {
+
+			const json = this.parser.json;
+			const bufferView = json.bufferViews[ index ];
+
+			if ( bufferView.extensions && bufferView.extensions[ this.name ] ) {
+
+				const extensionDef = bufferView.extensions[ this.name ];
+
+				const buffer = this.parser.getDependency( 'buffer', extensionDef.buffer );
+				const decoder = this.parser.options.meshoptDecoder;
+
+				if ( ! decoder || ! decoder.supported ) {
+
+					if ( json.extensionsRequired && json.extensionsRequired.indexOf( this.name ) >= 0 ) {
+
+						throw new Error( 'THREE.GLTFLoader: setMeshoptDecoder must be called before loading compressed files' );
+
+					} else {
+
+						// Assumes that the extension is optional and that fallback buffer data is present
+						return null;
+
+					}
+
+				}
+
+				return buffer.then( function ( res ) {
+
+					const byteOffset = extensionDef.byteOffset || 0;
+					const byteLength = extensionDef.byteLength || 0;
+
+					const count = extensionDef.count;
+					const stride = extensionDef.byteStride;
+
+					const source = new Uint8Array( res, byteOffset, byteLength );
+
+					if ( decoder.decodeGltfBufferAsync ) {
+
+						return decoder.decodeGltfBufferAsync( count, stride, source, extensionDef.mode, extensionDef.filter ).then( function ( res ) {
+
+							return res.buffer;
+
+						} );
+
+					} else {
+
+						// Support for MeshoptDecoder 0.18 or earlier, without decodeGltfBufferAsync
+						return decoder.ready.then( function () {
+
+							const result = new ArrayBuffer( count * stride );
+							decoder.decodeGltfBuffer( new Uint8Array( result ), count, stride, source, extensionDef.mode, extensionDef.filter );
+							return result;
+
+						} );
+
+					}
+
+				} );
+
+			} else {
+
+				return null;
+
+			}
+
+		}
+
+	}
+
+	/**
+	 * GPU Instancing Extension
+	 *
+	 * Specification: https://github.com/KhronosGroup/glTF/tree/master/extensions/2.0/Vendor/EXT_mesh_gpu_instancing
+	 *
+	 * @private
+	 */
+	class GLTFMeshGpuInstancing {
+
+		constructor( parser ) {
+
+			this.name = EXTENSIONS.EXT_MESH_GPU_INSTANCING;
+			this.parser = parser;
+
+		}
+
+		createNodeMesh( nodeIndex ) {
+
+			const json = this.parser.json;
+			const nodeDef = json.nodes[ nodeIndex ];
+
+			if ( ! nodeDef.extensions || ! nodeDef.extensions[ this.name ] ||
+				nodeDef.mesh === undefined ) {
+
+				return null;
+
+			}
+
+			const meshDef = json.meshes[ nodeDef.mesh ];
+
+			// No Points or Lines + Instancing support yet
+
+			for ( const primitive of meshDef.primitives ) {
+
+				if ( primitive.mode !== WEBGL_CONSTANTS.TRIANGLES &&
+					 primitive.mode !== WEBGL_CONSTANTS.TRIANGLE_STRIP &&
+					 primitive.mode !== WEBGL_CONSTANTS.TRIANGLE_FAN &&
+					 primitive.mode !== undefined ) {
+
+					return null;
+
+				}
+
+			}
+
+			const extensionDef = nodeDef.extensions[ this.name ];
+			const attributesDef = extensionDef.attributes;
+
+			// @TODO: Can we support InstancedMesh + SkinnedMesh?
+
+			const pending = [];
+			const attributes = {};
+
+			for ( const key in attributesDef ) {
+
+				pending.push( this.parser.getDependency( 'accessor', attributesDef[ key ] ).then( accessor => {
+
+					attributes[ key ] = accessor;
+					return attributes[ key ];
+
+				} ) );
+
+			}
+
+			if ( pending.length < 1 ) {
+
+				return null;
+
+			}
+
+			pending.push( this.parser.createNodeMesh( nodeIndex ) );
+
+			return Promise.all( pending ).then( results => {
+
+				const nodeObject = results.pop();
+				const meshes = nodeObject.isGroup ? nodeObject.children : [ nodeObject ];
+				const count = results[ 0 ].count; // All attribute counts should be same
+				const instancedMeshes = [];
+
+				for ( const mesh of meshes ) {
+
+					// Temporal variables
+					const m = new three.Matrix4();
+					const p = new three.Vector3();
+					const q = new three.Quaternion();
+					const s = new three.Vector3( 1, 1, 1 );
+
+					const instancedMesh = new three.InstancedMesh( mesh.geometry, mesh.material, count );
+
+					for ( let i = 0; i < count; i ++ ) {
+
+						if ( attributes.TRANSLATION ) {
+
+							p.fromBufferAttribute( attributes.TRANSLATION, i );
+
+						}
+
+						if ( attributes.ROTATION ) {
+
+							q.fromBufferAttribute( attributes.ROTATION, i );
+
+						}
+
+						if ( attributes.SCALE ) {
+
+							s.fromBufferAttribute( attributes.SCALE, i );
+
+						}
+
+						instancedMesh.setMatrixAt( i, m.compose( p, q, s ) );
+
+					}
+
+					// Add instance attributes to the geometry, excluding TRS.
+					for ( const attributeName in attributes ) {
+
+						if ( attributeName === '_COLOR_0' ) {
+
+							const attr = attributes[ attributeName ];
+							instancedMesh.instanceColor = new three.InstancedBufferAttribute( attr.array, attr.itemSize, attr.normalized );
+
+						} else if ( attributeName !== 'TRANSLATION' &&
+							 attributeName !== 'ROTATION' &&
+							 attributeName !== 'SCALE' ) {
+
+							mesh.geometry.setAttribute( attributeName, attributes[ attributeName ] );
+
+						}
+
+					}
+
+					// Just in case
+					three.Object3D.prototype.copy.call( instancedMesh, mesh );
+
+					this.parser.assignFinalMaterial( instancedMesh );
+
+					instancedMeshes.push( instancedMesh );
+
+				}
+
+				if ( nodeObject.isGroup ) {
+
+					nodeObject.clear();
+
+					nodeObject.add( ... instancedMeshes );
+
+					return nodeObject;
+
+				}
+
+				return instancedMeshes[ 0 ];
+
+			} );
+
+		}
+
+	}
+
+	/* BINARY EXTENSION */
+	const BINARY_EXTENSION_HEADER_MAGIC = 'glTF';
+	const BINARY_EXTENSION_HEADER_LENGTH = 12;
+	const BINARY_EXTENSION_CHUNK_TYPES = { JSON: 0x4E4F534A, BIN: 0x004E4942 };
+
+	class GLTFBinaryExtension {
+
+		constructor( data ) {
+
+			this.name = EXTENSIONS.KHR_BINARY_GLTF;
+			this.content = null;
+			this.body = null;
+
+			const headerView = new DataView( data, 0, BINARY_EXTENSION_HEADER_LENGTH );
+			const textDecoder = new TextDecoder();
+
+			this.header = {
+				magic: textDecoder.decode( new Uint8Array( data.slice( 0, 4 ) ) ),
+				version: headerView.getUint32( 4, true ),
+				length: headerView.getUint32( 8, true )
+			};
+
+			if ( this.header.magic !== BINARY_EXTENSION_HEADER_MAGIC ) {
+
+				throw new Error( 'THREE.GLTFLoader: Unsupported glTF-Binary header.' );
+
+			} else if ( this.header.version < 2.0 ) {
+
+				throw new Error( 'THREE.GLTFLoader: Legacy binary file detected.' );
+
+			}
+
+			const chunkContentsLength = this.header.length - BINARY_EXTENSION_HEADER_LENGTH;
+			const chunkView = new DataView( data, BINARY_EXTENSION_HEADER_LENGTH );
+			let chunkIndex = 0;
+
+			while ( chunkIndex < chunkContentsLength ) {
+
+				const chunkLength = chunkView.getUint32( chunkIndex, true );
+				chunkIndex += 4;
+
+				const chunkType = chunkView.getUint32( chunkIndex, true );
+				chunkIndex += 4;
+
+				if ( chunkType === BINARY_EXTENSION_CHUNK_TYPES.JSON ) {
+
+					const contentArray = new Uint8Array( data, BINARY_EXTENSION_HEADER_LENGTH + chunkIndex, chunkLength );
+					this.content = textDecoder.decode( contentArray );
+
+				} else if ( chunkType === BINARY_EXTENSION_CHUNK_TYPES.BIN ) {
+
+					const byteOffset = BINARY_EXTENSION_HEADER_LENGTH + chunkIndex;
+					this.body = data.slice( byteOffset, byteOffset + chunkLength );
+
+				}
+
+				// Clients must ignore chunks with unknown types.
+
+				chunkIndex += chunkLength;
+
+			}
+
+			if ( this.content === null ) {
+
+				throw new Error( 'THREE.GLTFLoader: JSON content not found.' );
+
+			}
+
+		}
+
+	}
+
+	/**
+	 * DRACO Mesh Compression Extension
+	 *
+	 * Specification: https://github.com/KhronosGroup/glTF/tree/master/extensions/2.0/Khronos/KHR_draco_mesh_compression
+	 *
+	 * @private
+	 */
+	class GLTFDracoMeshCompressionExtension {
+
+		constructor( json, dracoLoader ) {
+
+			if ( ! dracoLoader ) {
+
+				throw new Error( 'THREE.GLTFLoader: No DRACOLoader instance provided.' );
+
+			}
+
+			this.name = EXTENSIONS.KHR_DRACO_MESH_COMPRESSION;
+			this.json = json;
+			this.dracoLoader = dracoLoader;
+			this.dracoLoader.preload();
+
+		}
+
+		decodePrimitive( primitive, parser ) {
+
+			const json = this.json;
+			const dracoLoader = this.dracoLoader;
+			const bufferViewIndex = primitive.extensions[ this.name ].bufferView;
+			const gltfAttributeMap = primitive.extensions[ this.name ].attributes;
+			const threeAttributeMap = {};
+			const attributeNormalizedMap = {};
+			const attributeTypeMap = {};
+
+			for ( const attributeName in gltfAttributeMap ) {
+
+				const threeAttributeName = ATTRIBUTES[ attributeName ] || attributeName.toLowerCase();
+
+				threeAttributeMap[ threeAttributeName ] = gltfAttributeMap[ attributeName ];
+
+			}
+
+			for ( const attributeName in primitive.attributes ) {
+
+				const threeAttributeName = ATTRIBUTES[ attributeName ] || attributeName.toLowerCase();
+
+				if ( gltfAttributeMap[ attributeName ] !== undefined ) {
+
+					const accessorDef = json.accessors[ primitive.attributes[ attributeName ] ];
+					const componentType = WEBGL_COMPONENT_TYPES[ accessorDef.componentType ];
+
+					attributeTypeMap[ threeAttributeName ] = componentType.name;
+					attributeNormalizedMap[ threeAttributeName ] = accessorDef.normalized === true;
+
+				}
+
+			}
+
+			return parser.getDependency( 'bufferView', bufferViewIndex ).then( function ( bufferView ) {
+
+				return new Promise( function ( resolve, reject ) {
+
+					dracoLoader.decodeDracoFile( bufferView, function ( geometry ) {
+
+						for ( const attributeName in geometry.attributes ) {
+
+							const attribute = geometry.attributes[ attributeName ];
+							const normalized = attributeNormalizedMap[ attributeName ];
+
+							if ( normalized !== undefined ) attribute.normalized = normalized;
+
+						}
+
+						resolve( geometry );
+
+					}, threeAttributeMap, attributeTypeMap, three.LinearSRGBColorSpace, reject );
+
+				} );
+
+			} );
+
+		}
+
+	}
+
+	/**
+	 * Texture Transform Extension
+	 *
+	 * Specification: https://github.com/KhronosGroup/glTF/tree/master/extensions/2.0/Khronos/KHR_texture_transform
+	 *
+	 * @private
+	 */
+	class GLTFTextureTransformExtension {
+
+		constructor() {
+
+			this.name = EXTENSIONS.KHR_TEXTURE_TRANSFORM;
+
+		}
+
+		extendTexture( texture, transform ) {
+
+			if ( ( transform.texCoord === undefined || transform.texCoord === texture.channel )
+				&& transform.offset === undefined
+				&& transform.rotation === undefined
+				&& transform.scale === undefined ) {
+
+				// See https://github.com/mrdoob/three.js/issues/21819.
+				return texture;
+
+			}
+
+			texture = texture.clone();
+
+			if ( transform.texCoord !== undefined ) {
+
+				texture.channel = transform.texCoord;
+
+			}
+
+			if ( transform.offset !== undefined ) {
+
+				texture.offset.fromArray( transform.offset );
+
+			}
+
+			if ( transform.rotation !== undefined ) {
+
+				texture.rotation = transform.rotation;
+
+			}
+
+			if ( transform.scale !== undefined ) {
+
+				texture.repeat.fromArray( transform.scale );
+
+			}
+
+			texture.needsUpdate = true;
+
+			return texture;
+
+		}
+
+	}
+
+	/**
+	 * Mesh Quantization Extension
+	 *
+	 * Specification: https://github.com/KhronosGroup/glTF/tree/master/extensions/2.0/Khronos/KHR_mesh_quantization
+	 *
+	 * @private
+	 */
+	class GLTFMeshQuantizationExtension {
+
+		constructor() {
+
+			this.name = EXTENSIONS.KHR_MESH_QUANTIZATION;
+
+		}
+
+	}
+
+	/*********************************/
+	/********** INTERPOLATION ********/
+	/*********************************/
+
+	// Spline Interpolation
+	// Specification: https://github.com/KhronosGroup/glTF/blob/master/specification/2.0/README.md#appendix-c-spline-interpolation
+	class GLTFCubicSplineInterpolant extends three.Interpolant {
+
+		constructor( parameterPositions, sampleValues, sampleSize, resultBuffer ) {
+
+			super( parameterPositions, sampleValues, sampleSize, resultBuffer );
+
+		}
+
+		copySampleValue_( index ) {
+
+			// Copies a sample value to the result buffer. See description of glTF
+			// CUBICSPLINE values layout in interpolate_() function below.
+
+			const result = this.resultBuffer,
+				values = this.sampleValues,
+				valueSize = this.valueSize,
+				offset = index * valueSize * 3 + valueSize;
+
+			for ( let i = 0; i !== valueSize; i ++ ) {
+
+				result[ i ] = values[ offset + i ];
+
+			}
+
+			return result;
+
+		}
+
+		interpolate_( i1, t0, t, t1 ) {
+
+			const result = this.resultBuffer;
+			const values = this.sampleValues;
+			const stride = this.valueSize;
+
+			const stride2 = stride * 2;
+			const stride3 = stride * 3;
+
+			const td = t1 - t0;
+
+			const p = ( t - t0 ) / td;
+			const pp = p * p;
+			const ppp = pp * p;
+
+			const offset1 = i1 * stride3;
+			const offset0 = offset1 - stride3;
+
+			const s2 = -2 * ppp + 3 * pp;
+			const s3 = ppp - pp;
+			const s0 = 1 - s2;
+			const s1 = s3 - pp + p;
+
+			// Layout of keyframe output values for CUBICSPLINE animations:
+			//   [ inTangent_1, splineVertex_1, outTangent_1, inTangent_2, splineVertex_2, ... ]
+			for ( let i = 0; i !== stride; i ++ ) {
+
+				const p0 = values[ offset0 + i + stride ]; // splineVertex_k
+				const m0 = values[ offset0 + i + stride2 ] * td; // outTangent_k * (t_k+1 - t_k)
+				const p1 = values[ offset1 + i + stride ]; // splineVertex_k+1
+				const m1 = values[ offset1 + i ] * td; // inTangent_k+1 * (t_k+1 - t_k)
+
+				result[ i ] = s0 * p0 + s1 * m0 + s2 * p1 + s3 * m1;
+
+			}
+
+			return result;
+
+		}
+
+	}
+
+	const _quaternion = new three.Quaternion();
+
+	class GLTFCubicSplineQuaternionInterpolant extends GLTFCubicSplineInterpolant {
+
+		interpolate_( i1, t0, t, t1 ) {
+
+			const result = super.interpolate_( i1, t0, t, t1 );
+
+			_quaternion.fromArray( result ).normalize().toArray( result );
+
+			return result;
+
+		}
+
+	}
+
+
+	/*********************************/
+	/********** INTERNALS ************/
+	/*********************************/
+
+	/* CONSTANTS */
+
+	const WEBGL_CONSTANTS = {
+		POINTS: 0,
+		LINES: 1,
+		LINE_LOOP: 2,
+		LINE_STRIP: 3,
+		TRIANGLES: 4,
+		TRIANGLE_STRIP: 5,
+		TRIANGLE_FAN: 6};
+
+	const WEBGL_COMPONENT_TYPES = {
+		5120: Int8Array,
+		5121: Uint8Array,
+		5122: Int16Array,
+		5123: Uint16Array,
+		5125: Uint32Array,
+		5126: Float32Array
+	};
+
+	const WEBGL_FILTERS = {
+		9728: three.NearestFilter,
+		9729: three.LinearFilter,
+		9984: three.NearestMipmapNearestFilter,
+		9985: three.LinearMipmapNearestFilter,
+		9986: three.NearestMipmapLinearFilter,
+		9987: three.LinearMipmapLinearFilter
+	};
+
+	const WEBGL_WRAPPINGS = {
+		33071: three.ClampToEdgeWrapping,
+		33648: three.MirroredRepeatWrapping,
+		10497: three.RepeatWrapping
+	};
+
+	const WEBGL_TYPE_SIZES = {
+		'SCALAR': 1,
+		'VEC2': 2,
+		'VEC3': 3,
+		'VEC4': 4,
+		'MAT2': 4,
+		'MAT3': 9,
+		'MAT4': 16
+	};
+
+	const ATTRIBUTES = {
+		POSITION: 'position',
+		NORMAL: 'normal',
+		TANGENT: 'tangent',
+		TEXCOORD_0: 'uv',
+		TEXCOORD_1: 'uv1',
+		TEXCOORD_2: 'uv2',
+		TEXCOORD_3: 'uv3',
+		COLOR_0: 'color',
+		WEIGHTS_0: 'skinWeight',
+		JOINTS_0: 'skinIndex',
+	};
+
+	const PATH_PROPERTIES = {
+		scale: 'scale',
+		translation: 'position',
+		rotation: 'quaternion',
+		weights: 'morphTargetInfluences'
+	};
+
+	const INTERPOLATION = {
+		CUBICSPLINE: undefined, // We use a custom interpolant (GLTFCubicSplineInterpolation) for CUBICSPLINE tracks. Each
+			                        // keyframe track will be initialized with a default interpolation type, then modified.
+		LINEAR: three.InterpolateLinear,
+		STEP: three.InterpolateDiscrete
+	};
+
+	const ALPHA_MODES = {
+		OPAQUE: 'OPAQUE',
+		MASK: 'MASK',
+		BLEND: 'BLEND'
+	};
+
+	/**
+	 * Specification: https://github.com/KhronosGroup/glTF/blob/master/specification/2.0/README.md#default-material
+	 *
+	 * @private
+	 * @param {Object<string, Material>} cache
+	 * @return {Material}
+	 */
+	function createDefaultMaterial( cache ) {
+
+		if ( cache[ 'DefaultMaterial' ] === undefined ) {
+
+			cache[ 'DefaultMaterial' ] = new three.MeshStandardMaterial( {
+				color: 0xFFFFFF,
+				emissive: 0x000000,
+				metalness: 1,
+				roughness: 1,
+				transparent: false,
+				depthTest: true,
+				side: three.FrontSide
+			} );
+
+		}
+
+		return cache[ 'DefaultMaterial' ];
+
+	}
+
+	function addUnknownExtensionsToUserData( knownExtensions, object, objectDef ) {
+
+		// Add unknown glTF extensions to an object's userData.
+
+		for ( const name in objectDef.extensions ) {
+
+			if ( knownExtensions[ name ] === undefined ) {
+
+				object.userData.gltfExtensions = object.userData.gltfExtensions || {};
+				object.userData.gltfExtensions[ name ] = objectDef.extensions[ name ];
+
+			}
+
+		}
+
+	}
+
+	/**
+	 *
+	 * @private
+	 * @param {Object3D|Material|BufferGeometry|Object|AnimationClip} object
+	 * @param {GLTF.definition} gltfDef
+	 */
+	function assignExtrasToUserData( object, gltfDef ) {
+
+		if ( gltfDef.extras !== undefined ) {
+
+			if ( typeof gltfDef.extras === 'object' ) {
+
+				Object.assign( object.userData, gltfDef.extras );
+
+			} else {
+
+				console.warn( 'THREE.GLTFLoader: Ignoring primitive type .extras, ' + gltfDef.extras );
+
+			}
+
+		}
+
+	}
+
+	/**
+	 * Specification: https://github.com/KhronosGroup/glTF/blob/master/specification/2.0/README.md#morph-targets
+	 *
+	 * @private
+	 * @param {BufferGeometry} geometry
+	 * @param {Array<GLTF.Target>} targets
+	 * @param {GLTFParser} parser
+	 * @return {Promise<BufferGeometry>}
+	 */
+	function addMorphTargets( geometry, targets, parser ) {
+
+		let hasMorphPosition = false;
+		let hasMorphNormal = false;
+		let hasMorphColor = false;
+
+		for ( let i = 0, il = targets.length; i < il; i ++ ) {
+
+			const target = targets[ i ];
+
+			if ( target.POSITION !== undefined ) hasMorphPosition = true;
+			if ( target.NORMAL !== undefined ) hasMorphNormal = true;
+			if ( target.COLOR_0 !== undefined ) hasMorphColor = true;
+
+			if ( hasMorphPosition && hasMorphNormal && hasMorphColor ) break;
+
+		}
+
+		if ( ! hasMorphPosition && ! hasMorphNormal && ! hasMorphColor ) return Promise.resolve( geometry );
+
+		const pendingPositionAccessors = [];
+		const pendingNormalAccessors = [];
+		const pendingColorAccessors = [];
+
+		for ( let i = 0, il = targets.length; i < il; i ++ ) {
+
+			const target = targets[ i ];
+
+			if ( hasMorphPosition ) {
+
+				const pendingAccessor = target.POSITION !== undefined
+					? parser.getDependency( 'accessor', target.POSITION )
+					: geometry.attributes.position;
+
+				pendingPositionAccessors.push( pendingAccessor );
+
+			}
+
+			if ( hasMorphNormal ) {
+
+				const pendingAccessor = target.NORMAL !== undefined
+					? parser.getDependency( 'accessor', target.NORMAL )
+					: geometry.attributes.normal;
+
+				pendingNormalAccessors.push( pendingAccessor );
+
+			}
+
+			if ( hasMorphColor ) {
+
+				const pendingAccessor = target.COLOR_0 !== undefined
+					? parser.getDependency( 'accessor', target.COLOR_0 )
+					: geometry.attributes.color;
+
+				pendingColorAccessors.push( pendingAccessor );
+
+			}
+
+		}
+
+		return Promise.all( [
+			Promise.all( pendingPositionAccessors ),
+			Promise.all( pendingNormalAccessors ),
+			Promise.all( pendingColorAccessors )
+		] ).then( function ( accessors ) {
+
+			const morphPositions = accessors[ 0 ];
+			const morphNormals = accessors[ 1 ];
+			const morphColors = accessors[ 2 ];
+
+			if ( hasMorphPosition ) geometry.morphAttributes.position = morphPositions;
+			if ( hasMorphNormal ) geometry.morphAttributes.normal = morphNormals;
+			if ( hasMorphColor ) geometry.morphAttributes.color = morphColors;
+			geometry.morphTargetsRelative = true;
+
+			return geometry;
+
+		} );
+
+	}
+
+	/**
+	 *
+	 * @private
+	 * @param {Mesh} mesh
+	 * @param {GLTF.Mesh} meshDef
+	 */
+	function updateMorphTargets( mesh, meshDef ) {
+
+		mesh.updateMorphTargets();
+
+		if ( meshDef.weights !== undefined ) {
+
+			for ( let i = 0, il = meshDef.weights.length; i < il; i ++ ) {
+
+				mesh.morphTargetInfluences[ i ] = meshDef.weights[ i ];
+
+			}
+
+		}
+
+		// .extras has user-defined data, so check that .extras.targetNames is an array.
+		if ( meshDef.extras && Array.isArray( meshDef.extras.targetNames ) ) {
+
+			const targetNames = meshDef.extras.targetNames;
+
+			if ( mesh.morphTargetInfluences.length === targetNames.length ) {
+
+				mesh.morphTargetDictionary = {};
+
+				for ( let i = 0, il = targetNames.length; i < il; i ++ ) {
+
+					mesh.morphTargetDictionary[ targetNames[ i ] ] = i;
+
+				}
+
+			} else {
+
+				console.warn( 'THREE.GLTFLoader: Invalid extras.targetNames length. Ignoring names.' );
+
+			}
+
+		}
+
+	}
+
+	function createPrimitiveKey( primitiveDef ) {
+
+		let geometryKey;
+
+		const dracoExtension = primitiveDef.extensions && primitiveDef.extensions[ EXTENSIONS.KHR_DRACO_MESH_COMPRESSION ];
+
+		if ( dracoExtension ) {
+
+			geometryKey = 'draco:' + dracoExtension.bufferView
+					+ ':' + dracoExtension.indices
+					+ ':' + createAttributesKey( dracoExtension.attributes );
+
+		} else {
+
+			geometryKey = primitiveDef.indices + ':' + createAttributesKey( primitiveDef.attributes ) + ':' + primitiveDef.mode;
+
+		}
+
+		if ( primitiveDef.targets !== undefined ) {
+
+			for ( let i = 0, il = primitiveDef.targets.length; i < il; i ++ ) {
+
+				geometryKey += ':' + createAttributesKey( primitiveDef.targets[ i ] );
+
+			}
+
+		}
+
+		return geometryKey;
+
+	}
+
+	function createAttributesKey( attributes ) {
+
+		let attributesKey = '';
+
+		const keys = Object.keys( attributes ).sort();
+
+		for ( let i = 0, il = keys.length; i < il; i ++ ) {
+
+			attributesKey += keys[ i ] + ':' + attributes[ keys[ i ] ] + ';';
+
+		}
+
+		return attributesKey;
+
+	}
+
+	function getNormalizedComponentScale( constructor ) {
+
+		// Reference:
+		// https://github.com/KhronosGroup/glTF/tree/master/extensions/2.0/Khronos/KHR_mesh_quantization#encoding-quantized-data
+
+		switch ( constructor ) {
+
+			case Int8Array:
+				return 1 / 127;
+
+			case Uint8Array:
+				return 1 / 255;
+
+			case Int16Array:
+				return 1 / 32767;
+
+			case Uint16Array:
+				return 1 / 65535;
+
+			default:
+				throw new Error( 'THREE.GLTFLoader: Unsupported normalized accessor component type.' );
+
+		}
+
+	}
+
+	function getImageURIMimeType( uri ) {
+
+		if ( uri.search( /\.jpe?g($|\?)/i ) > 0 || uri.search( /^data\:image\/jpeg/ ) === 0 ) return 'image/jpeg';
+		if ( uri.search( /\.webp($|\?)/i ) > 0 || uri.search( /^data\:image\/webp/ ) === 0 ) return 'image/webp';
+		if ( uri.search( /\.ktx2($|\?)/i ) > 0 || uri.search( /^data\:image\/ktx2/ ) === 0 ) return 'image/ktx2';
+
+		return 'image/png';
+
+	}
+
+	const _identityMatrix = new three.Matrix4();
+
+	/* GLTF PARSER */
+
+	class GLTFParser {
+
+		constructor( json = {}, options = {} ) {
+
+			this.json = json;
+			this.extensions = {};
+			this.plugins = {};
+			this.options = options;
+
+			// loader object cache
+			this.cache = new GLTFRegistry();
+
+			// associations between Three.js objects and glTF elements
+			this.associations = new Map();
+
+			// BufferGeometry caching
+			this.primitiveCache = {};
+
+			// Node cache
+			this.nodeCache = {};
+
+			// Object3D instance caches
+			this.meshCache = { refs: {}, uses: {} };
+			this.cameraCache = { refs: {}, uses: {} };
+			this.lightCache = { refs: {}, uses: {} };
+
+			this.sourceCache = {};
+			this.textureCache = {};
+
+			// Track node names, to ensure no duplicates
+			this.nodeNamesUsed = {};
+
+			// Use an ImageBitmapLoader if imageBitmaps are supported. Moves much of the
+			// expensive work of uploading a texture to the GPU off the main thread.
+
+			let isSafari = false;
+			let safariVersion = -1;
+			let isFirefox = false;
+			let firefoxVersion = -1;
+
+			if ( typeof navigator !== 'undefined' && typeof navigator.userAgent !== 'undefined' ) {
+
+				const userAgent = navigator.userAgent;
+
+				isSafari = /^((?!chrome|android).)*safari/i.test( userAgent ) === true;
+				const safariMatch = userAgent.match( /Version\/(\d+)/ );
+				safariVersion = isSafari && safariMatch ? parseInt( safariMatch[ 1 ], 10 ) : -1;
+
+				isFirefox = userAgent.indexOf( 'Firefox' ) > -1;
+				firefoxVersion = isFirefox ? userAgent.match( /Firefox\/([0-9]+)\./ )[ 1 ] : -1;
+
+			}
+
+			if ( typeof createImageBitmap === 'undefined' || ( isSafari && safariVersion < 17 ) || ( isFirefox && firefoxVersion < 98 ) ) {
+
+				this.textureLoader = new three.TextureLoader( this.options.manager );
+
+			} else {
+
+				this.textureLoader = new three.ImageBitmapLoader( this.options.manager );
+
+			}
+
+			this.textureLoader.setCrossOrigin( this.options.crossOrigin );
+			this.textureLoader.setRequestHeader( this.options.requestHeader );
+
+			this.fileLoader = new three.FileLoader( this.options.manager );
+			this.fileLoader.setResponseType( 'arraybuffer' );
+
+			if ( this.options.crossOrigin === 'use-credentials' ) {
+
+				this.fileLoader.setWithCredentials( true );
+
+			}
+
+		}
+
+		setExtensions( extensions ) {
+
+			this.extensions = extensions;
+
+		}
+
+		setPlugins( plugins ) {
+
+			this.plugins = plugins;
+
+		}
+
+		parse( onLoad, onError ) {
+
+			const parser = this;
+			const json = this.json;
+			const extensions = this.extensions;
+
+			// Clear the loader cache
+			this.cache.removeAll();
+			this.nodeCache = {};
+
+			// Mark the special nodes/meshes in json for efficient parse
+			this._invokeAll( function ( ext ) {
+
+				return ext._markDefs && ext._markDefs();
+
+			} );
+
+			Promise.all( this._invokeAll( function ( ext ) {
+
+				return ext.beforeRoot && ext.beforeRoot();
+
+			} ) ).then( function () {
+
+				return Promise.all( [
+
+					parser.getDependencies( 'scene' ),
+					parser.getDependencies( 'animation' ),
+					parser.getDependencies( 'camera' ),
+
+				] );
+
+			} ).then( function ( dependencies ) {
+
+				const result = {
+					scene: dependencies[ 0 ][ json.scene || 0 ],
+					scenes: dependencies[ 0 ],
+					animations: dependencies[ 1 ],
+					cameras: dependencies[ 2 ],
+					asset: json.asset,
+					parser: parser,
+					userData: {}
+				};
+
+				addUnknownExtensionsToUserData( extensions, result, json );
+
+				assignExtrasToUserData( result, json );
+
+				return Promise.all( parser._invokeAll( function ( ext ) {
+
+					return ext.afterRoot && ext.afterRoot( result );
+
+				} ) ).then( function () {
+
+					for ( const scene of result.scenes ) {
+
+						scene.updateMatrixWorld();
+
+					}
+
+					onLoad( result );
+
+				} );
+
+			} ).catch( onError );
+
+		}
+
+		/**
+		 * Marks the special nodes/meshes in json for efficient parse.
+		 *
+		 * @private
+		 */
+		_markDefs() {
+
+			const nodeDefs = this.json.nodes || [];
+			const skinDefs = this.json.skins || [];
+			const meshDefs = this.json.meshes || [];
+
+			// Nothing in the node definition indicates whether it is a Bone or an
+			// Object3D. Use the skins' joint references to mark bones.
+			for ( let skinIndex = 0, skinLength = skinDefs.length; skinIndex < skinLength; skinIndex ++ ) {
+
+				const joints = skinDefs[ skinIndex ].joints;
+
+				for ( let i = 0, il = joints.length; i < il; i ++ ) {
+
+					nodeDefs[ joints[ i ] ].isBone = true;
+
+				}
+
+			}
+
+			// Iterate over all nodes, marking references to shared resources,
+			// as well as skeleton joints.
+			for ( let nodeIndex = 0, nodeLength = nodeDefs.length; nodeIndex < nodeLength; nodeIndex ++ ) {
+
+				const nodeDef = nodeDefs[ nodeIndex ];
+
+				if ( nodeDef.mesh !== undefined ) {
+
+					this._addNodeRef( this.meshCache, nodeDef.mesh );
+
+					// Nothing in the mesh definition indicates whether it is
+					// a SkinnedMesh or Mesh. Use the node's mesh reference
+					// to mark SkinnedMesh if node has skin.
+					if ( nodeDef.skin !== undefined ) {
+
+						meshDefs[ nodeDef.mesh ].isSkinnedMesh = true;
+
+					}
+
+				}
+
+				if ( nodeDef.camera !== undefined ) {
+
+					this._addNodeRef( this.cameraCache, nodeDef.camera );
+
+				}
+
+			}
+
+		}
+
+		/**
+		 * Counts references to shared node / Object3D resources. These resources
+		 * can be reused, or "instantiated", at multiple nodes in the scene
+		 * hierarchy. Mesh, Camera, and Light instances are instantiated and must
+		 * be marked. Non-scenegraph resources (like Materials, Geometries, and
+		 * Textures) can be reused directly and are not marked here.
+		 *
+		 * Example: CesiumMilkTruck sample model reuses "Wheel" meshes.
+		 *
+		 * @private
+		 * @param {Object} cache
+		 * @param {Object3D} index
+		 */
+		_addNodeRef( cache, index ) {
+
+			if ( index === undefined ) return;
+
+			if ( cache.refs[ index ] === undefined ) {
+
+				cache.refs[ index ] = cache.uses[ index ] = 0;
+
+			}
+
+			cache.refs[ index ] ++;
+
+		}
+
+		/**
+		 * Returns a reference to a shared resource, cloning it if necessary.
+		 *
+		 * @private
+		 * @param {Object} cache
+		 * @param {number} index
+		 * @param {Object} object
+		 * @return {Object}
+		 */
+		_getNodeRef( cache, index, object ) {
+
+			if ( cache.refs[ index ] <= 1 ) return object;
+
+			const ref = object.clone();
+
+			// Propagates mappings to the cloned object, prevents mappings on the
+			// original object from being lost.
+			const updateMappings = ( original, clone ) => {
+
+				const mappings = this.associations.get( original );
+				if ( mappings != null ) {
+
+					this.associations.set( clone, mappings );
+
+				}
+
+				for ( const [ i, child ] of original.children.entries() ) {
+
+					updateMappings( child, clone.children[ i ] );
+
+				}
+
+			};
+
+			updateMappings( object, ref );
+
+			ref.name += '_instance_' + ( cache.uses[ index ] ++ );
+
+			return ref;
+
+		}
+
+		_invokeOne( func ) {
+
+			const extensions = Object.values( this.plugins );
+			extensions.push( this );
+
+			for ( let i = 0; i < extensions.length; i ++ ) {
+
+				const result = func( extensions[ i ] );
+
+				if ( result ) return result;
+
+			}
+
+			return null;
+
+		}
+
+		_invokeAll( func ) {
+
+			const extensions = Object.values( this.plugins );
+			extensions.unshift( this );
+
+			const pending = [];
+
+			for ( let i = 0; i < extensions.length; i ++ ) {
+
+				const result = func( extensions[ i ] );
+
+				if ( result ) pending.push( result );
+
+			}
+
+			return pending;
+
+		}
+
+		/**
+		 * Requests the specified dependency asynchronously, with caching.
+		 *
+		 * @private
+		 * @param {string} type
+		 * @param {number} index
+		 * @return {Promise<Object3D|Material|Texture|AnimationClip|ArrayBuffer|Object>}
+		 */
+		getDependency( type, index ) {
+
+			const cacheKey = type + ':' + index;
+			let dependency = this.cache.get( cacheKey );
+
+			if ( ! dependency ) {
+
+				switch ( type ) {
+
+					case 'scene':
+						dependency = this.loadScene( index );
+						break;
+
+					case 'node':
+						dependency = this._invokeOne( function ( ext ) {
+
+							return ext.loadNode && ext.loadNode( index );
+
+						} );
+						break;
+
+					case 'mesh':
+						dependency = this._invokeOne( function ( ext ) {
+
+							return ext.loadMesh && ext.loadMesh( index );
+
+						} );
+						break;
+
+					case 'accessor':
+						dependency = this.loadAccessor( index );
+						break;
+
+					case 'bufferView':
+						dependency = this._invokeOne( function ( ext ) {
+
+							return ext.loadBufferView && ext.loadBufferView( index );
+
+						} );
+						break;
+
+					case 'buffer':
+						dependency = this.loadBuffer( index );
+						break;
+
+					case 'material':
+						dependency = this._invokeOne( function ( ext ) {
+
+							return ext.loadMaterial && ext.loadMaterial( index );
+
+						} );
+						break;
+
+					case 'texture':
+						dependency = this._invokeOne( function ( ext ) {
+
+							return ext.loadTexture && ext.loadTexture( index );
+
+						} );
+						break;
+
+					case 'skin':
+						dependency = this.loadSkin( index );
+						break;
+
+					case 'animation':
+						dependency = this._invokeOne( function ( ext ) {
+
+							return ext.loadAnimation && ext.loadAnimation( index );
+
+						} );
+						break;
+
+					case 'camera':
+						dependency = this.loadCamera( index );
+						break;
+
+					default:
+						dependency = this._invokeOne( function ( ext ) {
+
+							return ext != this && ext.getDependency && ext.getDependency( type, index );
+
+						} );
+
+						if ( ! dependency ) {
+
+							throw new Error( 'Unknown type: ' + type );
+
+						}
+
+						break;
+
+				}
+
+				this.cache.add( cacheKey, dependency );
+
+			}
+
+			return dependency;
+
+		}
+
+		/**
+		 * Requests all dependencies of the specified type asynchronously, with caching.
+		 *
+		 * @private
+		 * @param {string} type
+		 * @return {Promise<Array<Object>>}
+		 */
+		getDependencies( type ) {
+
+			let dependencies = this.cache.get( type );
+
+			if ( ! dependencies ) {
+
+				const parser = this;
+				const defs = this.json[ type + ( type === 'mesh' ? 'es' : 's' ) ] || [];
+
+				dependencies = Promise.all( defs.map( function ( def, index ) {
+
+					return parser.getDependency( type, index );
+
+				} ) );
+
+				this.cache.add( type, dependencies );
+
+			}
+
+			return dependencies;
+
+		}
+
+		/**
+		 * Specification: https://github.com/KhronosGroup/glTF/blob/master/specification/2.0/README.md#buffers-and-buffer-views
+		 *
+		 * @private
+		 * @param {number} bufferIndex
+		 * @return {Promise<ArrayBuffer>}
+		 */
+		loadBuffer( bufferIndex ) {
+
+			const bufferDef = this.json.buffers[ bufferIndex ];
+			const loader = this.fileLoader;
+
+			if ( bufferDef.type && bufferDef.type !== 'arraybuffer' ) {
+
+				throw new Error( 'THREE.GLTFLoader: ' + bufferDef.type + ' buffer type is not supported.' );
+
+			}
+
+			// If present, GLB container is required to be the first buffer.
+			if ( bufferDef.uri === undefined && bufferIndex === 0 ) {
+
+				return Promise.resolve( this.extensions[ EXTENSIONS.KHR_BINARY_GLTF ].body );
+
+			}
+
+			const options = this.options;
+
+			return new Promise( function ( resolve, reject ) {
+
+				loader.load( three.LoaderUtils.resolveURL( bufferDef.uri, options.path ), resolve, undefined, function () {
+
+					reject( new Error( 'THREE.GLTFLoader: Failed to load buffer "' + bufferDef.uri + '".' ) );
+
+				} );
+
+			} );
+
+		}
+
+		/**
+		 * Specification: https://github.com/KhronosGroup/glTF/blob/master/specification/2.0/README.md#buffers-and-buffer-views
+		 *
+		 * @private
+		 * @param {number} bufferViewIndex
+		 * @return {Promise<ArrayBuffer>}
+		 */
+		loadBufferView( bufferViewIndex ) {
+
+			const bufferViewDef = this.json.bufferViews[ bufferViewIndex ];
+
+			return this.getDependency( 'buffer', bufferViewDef.buffer ).then( function ( buffer ) {
+
+				const byteLength = bufferViewDef.byteLength || 0;
+				const byteOffset = bufferViewDef.byteOffset || 0;
+				return buffer.slice( byteOffset, byteOffset + byteLength );
+
+			} );
+
+		}
+
+		/**
+		 * Specification: https://github.com/KhronosGroup/glTF/blob/master/specification/2.0/README.md#accessors
+		 *
+		 * @private
+		 * @param {number} accessorIndex
+		 * @return {Promise<BufferAttribute|InterleavedBufferAttribute>}
+		 */
+		loadAccessor( accessorIndex ) {
+
+			const parser = this;
+			const json = this.json;
+
+			const accessorDef = this.json.accessors[ accessorIndex ];
+
+			if ( accessorDef.bufferView === undefined && accessorDef.sparse === undefined ) {
+
+				const itemSize = WEBGL_TYPE_SIZES[ accessorDef.type ];
+				const TypedArray = WEBGL_COMPONENT_TYPES[ accessorDef.componentType ];
+				const normalized = accessorDef.normalized === true;
+
+				const array = new TypedArray( accessorDef.count * itemSize );
+				return Promise.resolve( new three.BufferAttribute( array, itemSize, normalized ) );
+
+			}
+
+			const pendingBufferViews = [];
+
+			if ( accessorDef.bufferView !== undefined ) {
+
+				pendingBufferViews.push( this.getDependency( 'bufferView', accessorDef.bufferView ) );
+
+			} else {
+
+				pendingBufferViews.push( null );
+
+			}
+
+			if ( accessorDef.sparse !== undefined ) {
+
+				pendingBufferViews.push( this.getDependency( 'bufferView', accessorDef.sparse.indices.bufferView ) );
+				pendingBufferViews.push( this.getDependency( 'bufferView', accessorDef.sparse.values.bufferView ) );
+
+			}
+
+			return Promise.all( pendingBufferViews ).then( function ( bufferViews ) {
+
+				const bufferView = bufferViews[ 0 ];
+
+				const itemSize = WEBGL_TYPE_SIZES[ accessorDef.type ];
+				const TypedArray = WEBGL_COMPONENT_TYPES[ accessorDef.componentType ];
+
+				// For VEC3: itemSize is 3, elementBytes is 4, itemBytes is 12.
+				const elementBytes = TypedArray.BYTES_PER_ELEMENT;
+				const itemBytes = elementBytes * itemSize;
+				const byteOffset = accessorDef.byteOffset || 0;
+				const byteStride = accessorDef.bufferView !== undefined ? json.bufferViews[ accessorDef.bufferView ].byteStride : undefined;
+				const normalized = accessorDef.normalized === true;
+				let array, bufferAttribute;
+
+				// The buffer is not interleaved if the stride is the item size in bytes.
+				if ( byteStride && byteStride !== itemBytes ) {
+
+					// Each "slice" of the buffer, as defined by 'count' elements of 'byteStride' bytes, gets its own InterleavedBuffer
+					// This makes sure that IBA.count reflects accessor.count properly
+					const ibSlice = Math.floor( byteOffset / byteStride );
+					const ibCacheKey = 'InterleavedBuffer:' + accessorDef.bufferView + ':' + accessorDef.componentType + ':' + ibSlice + ':' + accessorDef.count;
+					let ib = parser.cache.get( ibCacheKey );
+
+					if ( ! ib ) {
+
+						array = new TypedArray( bufferView, ibSlice * byteStride, accessorDef.count * byteStride / elementBytes );
+
+						// Integer parameters to IB/IBA are in array elements, not bytes.
+						ib = new three.InterleavedBuffer( array, byteStride / elementBytes );
+
+						parser.cache.add( ibCacheKey, ib );
+
+					}
+
+					bufferAttribute = new three.InterleavedBufferAttribute( ib, itemSize, ( byteOffset % byteStride ) / elementBytes, normalized );
+
+				} else {
+
+					if ( bufferView === null ) {
+
+						array = new TypedArray( accessorDef.count * itemSize );
+
+					} else {
+
+						array = new TypedArray( bufferView, byteOffset, accessorDef.count * itemSize );
+
+					}
+
+					bufferAttribute = new three.BufferAttribute( array, itemSize, normalized );
+
+				}
+
+				// https://github.com/KhronosGroup/glTF/blob/master/specification/2.0/README.md#sparse-accessors
+				if ( accessorDef.sparse !== undefined ) {
+
+					const itemSizeIndices = WEBGL_TYPE_SIZES.SCALAR;
+					const TypedArrayIndices = WEBGL_COMPONENT_TYPES[ accessorDef.sparse.indices.componentType ];
+
+					const byteOffsetIndices = accessorDef.sparse.indices.byteOffset || 0;
+					const byteOffsetValues = accessorDef.sparse.values.byteOffset || 0;
+
+					const sparseIndices = new TypedArrayIndices( bufferViews[ 1 ], byteOffsetIndices, accessorDef.sparse.count * itemSizeIndices );
+					const sparseValues = new TypedArray( bufferViews[ 2 ], byteOffsetValues, accessorDef.sparse.count * itemSize );
+
+					if ( bufferView !== null ) {
+
+						// Avoid modifying the original ArrayBuffer, if the bufferView wasn't initialized with zeroes.
+						bufferAttribute = new three.BufferAttribute( bufferAttribute.array.slice(), bufferAttribute.itemSize, bufferAttribute.normalized );
+
+					}
+
+					// Ignore normalized since we copy from sparse
+					bufferAttribute.normalized = false;
+
+					for ( let i = 0, il = sparseIndices.length; i < il; i ++ ) {
+
+						const index = sparseIndices[ i ];
+
+						bufferAttribute.setX( index, sparseValues[ i * itemSize ] );
+						if ( itemSize >= 2 ) bufferAttribute.setY( index, sparseValues[ i * itemSize + 1 ] );
+						if ( itemSize >= 3 ) bufferAttribute.setZ( index, sparseValues[ i * itemSize + 2 ] );
+						if ( itemSize >= 4 ) bufferAttribute.setW( index, sparseValues[ i * itemSize + 3 ] );
+						if ( itemSize >= 5 ) throw new Error( 'THREE.GLTFLoader: Unsupported itemSize in sparse BufferAttribute.' );
+
+					}
+
+					bufferAttribute.normalized = normalized;
+
+				}
+
+				return bufferAttribute;
+
+			} );
+
+		}
+
+		/**
+		 * Specification: https://github.com/KhronosGroup/glTF/tree/master/specification/2.0#textures
+		 *
+		 * @private
+		 * @param {number} textureIndex
+		 * @return {Promise<?Texture>}
+		 */
+		loadTexture( textureIndex ) {
+
+			const json = this.json;
+			const options = this.options;
+			const textureDef = json.textures[ textureIndex ];
+			const sourceIndex = textureDef.source;
+			const sourceDef = json.images[ sourceIndex ];
+
+			let loader = this.textureLoader;
+
+			if ( sourceDef.uri ) {
+
+				const handler = options.manager.getHandler( sourceDef.uri );
+				if ( handler !== null ) loader = handler;
+
+			}
+
+			return this.loadTextureImage( textureIndex, sourceIndex, loader );
+
+		}
+
+		loadTextureImage( textureIndex, sourceIndex, loader ) {
+
+			const parser = this;
+			const json = this.json;
+
+			const textureDef = json.textures[ textureIndex ];
+			const sourceDef = json.images[ sourceIndex ];
+
+			const cacheKey = ( sourceDef.uri || sourceDef.bufferView ) + ':' + textureDef.sampler;
+
+			if ( this.textureCache[ cacheKey ] ) {
+
+				// See https://github.com/mrdoob/three.js/issues/21559.
+				return this.textureCache[ cacheKey ];
+
+			}
+
+			const promise = this.loadImageSource( sourceIndex, loader ).then( function ( texture ) {
+
+				texture.flipY = false;
+
+				texture.name = textureDef.name || sourceDef.name || '';
+
+				if ( texture.name === '' && typeof sourceDef.uri === 'string' && sourceDef.uri.startsWith( 'data:image/' ) === false ) {
+
+					texture.name = sourceDef.uri;
+
+				}
+
+				const samplers = json.samplers || {};
+				const sampler = samplers[ textureDef.sampler ] || {};
+
+				texture.magFilter = WEBGL_FILTERS[ sampler.magFilter ] || three.LinearFilter;
+				texture.minFilter = WEBGL_FILTERS[ sampler.minFilter ] || three.LinearMipmapLinearFilter;
+				texture.wrapS = WEBGL_WRAPPINGS[ sampler.wrapS ] || three.RepeatWrapping;
+				texture.wrapT = WEBGL_WRAPPINGS[ sampler.wrapT ] || three.RepeatWrapping;
+				texture.generateMipmaps = ! texture.isCompressedTexture && texture.minFilter !== three.NearestFilter && texture.minFilter !== three.LinearFilter;
+
+				parser.associations.set( texture, { textures: textureIndex } );
+
+				return texture;
+
+			} ).catch( function () {
+
+				return null;
+
+			} );
+
+			this.textureCache[ cacheKey ] = promise;
+
+			return promise;
+
+		}
+
+		loadImageSource( sourceIndex, loader ) {
+
+			const parser = this;
+			const json = this.json;
+			const options = this.options;
+
+			if ( this.sourceCache[ sourceIndex ] !== undefined ) {
+
+				return this.sourceCache[ sourceIndex ].then( ( texture ) => texture.clone() );
+
+			}
+
+			const sourceDef = json.images[ sourceIndex ];
+
+			const URL = self.URL || self.webkitURL;
+
+			let sourceURI = sourceDef.uri || '';
+			let isObjectURL = false;
+
+			if ( sourceDef.bufferView !== undefined ) {
+
+				// Load binary image data from bufferView, if provided.
+
+				sourceURI = parser.getDependency( 'bufferView', sourceDef.bufferView ).then( function ( bufferView ) {
+
+					isObjectURL = true;
+					const blob = new Blob( [ bufferView ], { type: sourceDef.mimeType } );
+					sourceURI = URL.createObjectURL( blob );
+					return sourceURI;
+
+				} );
+
+			} else if ( sourceDef.uri === undefined ) {
+
+				throw new Error( 'THREE.GLTFLoader: Image ' + sourceIndex + ' is missing URI and bufferView' );
+
+			}
+
+			const promise = Promise.resolve( sourceURI ).then( function ( sourceURI ) {
+
+				return new Promise( function ( resolve, reject ) {
+
+					let onLoad = resolve;
+
+					if ( loader.isImageBitmapLoader === true ) {
+
+						onLoad = function ( imageBitmap ) {
+
+							const texture = new three.Texture( imageBitmap );
+							texture.needsUpdate = true;
+
+							resolve( texture );
+
+						};
+
+					}
+
+					loader.load( three.LoaderUtils.resolveURL( sourceURI, options.path ), onLoad, undefined, reject );
+
+				} );
+
+			} ).then( function ( texture ) {
+
+				// Clean up resources and configure Texture.
+
+				if ( isObjectURL === true ) {
+
+					URL.revokeObjectURL( sourceURI );
+
+				}
+
+				assignExtrasToUserData( texture, sourceDef );
+
+				texture.userData.mimeType = sourceDef.mimeType || getImageURIMimeType( sourceDef.uri );
+
+				return texture;
+
+			} ).catch( function ( error ) {
+
+				console.error( 'THREE.GLTFLoader: Couldn\'t load texture', sourceURI );
+				throw error;
+
+			} );
+
+			this.sourceCache[ sourceIndex ] = promise;
+			return promise;
+
+		}
+
+		/**
+		 * Asynchronously assigns a texture to the given material parameters.
+		 *
+		 * @private
+		 * @param {Object} materialParams
+		 * @param {string} mapName
+		 * @param {Object} mapDef
+		 * @param {string} [colorSpace]
+		 * @return {Promise<Texture>}
+		 */
+		assignTexture( materialParams, mapName, mapDef, colorSpace ) {
+
+			const parser = this;
+
+			return this.getDependency( 'texture', mapDef.index ).then( function ( texture ) {
+
+				if ( ! texture ) return null;
+
+				if ( mapDef.texCoord !== undefined && mapDef.texCoord > 0 ) {
+
+					texture = texture.clone();
+					texture.channel = mapDef.texCoord;
+
+				}
+
+				if ( parser.extensions[ EXTENSIONS.KHR_TEXTURE_TRANSFORM ] ) {
+
+					const transform = mapDef.extensions !== undefined ? mapDef.extensions[ EXTENSIONS.KHR_TEXTURE_TRANSFORM ] : undefined;
+
+					if ( transform ) {
+
+						const gltfReference = parser.associations.get( texture );
+						texture = parser.extensions[ EXTENSIONS.KHR_TEXTURE_TRANSFORM ].extendTexture( texture, transform );
+						parser.associations.set( texture, gltfReference );
+
+					}
+
+				}
+
+				if ( colorSpace !== undefined ) {
+
+					texture.colorSpace = colorSpace;
+
+				}
+
+				materialParams[ mapName ] = texture;
+
+				return texture;
+
+			} );
+
+		}
+
+		/**
+		 * Assigns final material to a Mesh, Line, or Points instance. The instance
+		 * already has a material (generated from the glTF material options alone)
+		 * but reuse of the same glTF material may require multiple threejs materials
+		 * to accommodate different primitive types, defines, etc. New materials will
+		 * be created if necessary, and reused from a cache.
+		 *
+		 * @private
+		 * @param {Object3D} mesh Mesh, Line, or Points instance.
+		 */
+		assignFinalMaterial( mesh ) {
+
+			const geometry = mesh.geometry;
+			let material = mesh.material;
+
+			const useDerivativeTangents = geometry.attributes.tangent === undefined;
+			const useVertexColors = geometry.attributes.color !== undefined;
+			const useFlatShading = geometry.attributes.normal === undefined;
+
+			if ( mesh.isPoints ) {
+
+				const cacheKey = 'PointsMaterial:' + material.uuid;
+
+				let pointsMaterial = this.cache.get( cacheKey );
+
+				if ( ! pointsMaterial ) {
+
+					pointsMaterial = new three.PointsMaterial();
+					three.Material.prototype.copy.call( pointsMaterial, material );
+					pointsMaterial.color.copy( material.color );
+					pointsMaterial.map = material.map;
+					pointsMaterial.sizeAttenuation = false; // glTF spec says points should be 1px
+
+					this.cache.add( cacheKey, pointsMaterial );
+
+				}
+
+				material = pointsMaterial;
+
+			} else if ( mesh.isLine ) {
+
+				const cacheKey = 'LineBasicMaterial:' + material.uuid;
+
+				let lineMaterial = this.cache.get( cacheKey );
+
+				if ( ! lineMaterial ) {
+
+					lineMaterial = new three.LineBasicMaterial();
+					three.Material.prototype.copy.call( lineMaterial, material );
+					lineMaterial.color.copy( material.color );
+					lineMaterial.map = material.map;
+
+					this.cache.add( cacheKey, lineMaterial );
+
+				}
+
+				material = lineMaterial;
+
+			}
+
+			// Clone the material if it will be modified
+			if ( useDerivativeTangents || useVertexColors || useFlatShading ) {
+
+				let cacheKey = 'ClonedMaterial:' + material.uuid + ':';
+
+				if ( useDerivativeTangents ) cacheKey += 'derivative-tangents:';
+				if ( useVertexColors ) cacheKey += 'vertex-colors:';
+				if ( useFlatShading ) cacheKey += 'flat-shading:';
+
+				let cachedMaterial = this.cache.get( cacheKey );
+
+				if ( ! cachedMaterial ) {
+
+					cachedMaterial = material.clone();
+
+					if ( useVertexColors ) cachedMaterial.vertexColors = true;
+					if ( useFlatShading ) cachedMaterial.flatShading = true;
+
+					if ( useDerivativeTangents ) {
+
+						// https://github.com/mrdoob/three.js/issues/11438#issuecomment-507003995
+						if ( cachedMaterial.normalScale ) cachedMaterial.normalScale.y *= -1;
+						if ( cachedMaterial.clearcoatNormalScale ) cachedMaterial.clearcoatNormalScale.y *= -1;
+
+					}
+
+					this.cache.add( cacheKey, cachedMaterial );
+
+					this.associations.set( cachedMaterial, this.associations.get( material ) );
+
+				}
+
+				material = cachedMaterial;
+
+			}
+
+			mesh.material = material;
+
+		}
+
+		getMaterialType( /* materialIndex */ ) {
+
+			return three.MeshStandardMaterial;
+
+		}
+
+		/**
+		 * Specification: https://github.com/KhronosGroup/glTF/blob/master/specification/2.0/README.md#materials
+		 *
+		 * @private
+		 * @param {number} materialIndex
+		 * @return {Promise<Material>}
+		 */
+		loadMaterial( materialIndex ) {
+
+			const parser = this;
+			const json = this.json;
+			const extensions = this.extensions;
+			const materialDef = json.materials[ materialIndex ];
+
+			let materialType;
+			const materialParams = {};
+			const materialExtensions = materialDef.extensions || {};
+
+			const pending = [];
+
+			if ( materialExtensions[ EXTENSIONS.KHR_MATERIALS_UNLIT ] ) {
+
+				const kmuExtension = extensions[ EXTENSIONS.KHR_MATERIALS_UNLIT ];
+				materialType = kmuExtension.getMaterialType();
+				pending.push( kmuExtension.extendParams( materialParams, materialDef, parser ) );
+
+			} else {
+
+				// Specification:
+				// https://github.com/KhronosGroup/glTF/tree/master/specification/2.0#metallic-roughness-material
+
+				const metallicRoughness = materialDef.pbrMetallicRoughness || {};
+
+				materialParams.color = new three.Color( 1.0, 1.0, 1.0 );
+				materialParams.opacity = 1.0;
+
+				if ( Array.isArray( metallicRoughness.baseColorFactor ) ) {
+
+					const array = metallicRoughness.baseColorFactor;
+
+					materialParams.color.setRGB( array[ 0 ], array[ 1 ], array[ 2 ], three.LinearSRGBColorSpace );
+					materialParams.opacity = array[ 3 ];
+
+				}
+
+				if ( metallicRoughness.baseColorTexture !== undefined ) {
+
+					pending.push( parser.assignTexture( materialParams, 'map', metallicRoughness.baseColorTexture, three.SRGBColorSpace ) );
+
+				}
+
+				materialParams.metalness = metallicRoughness.metallicFactor !== undefined ? metallicRoughness.metallicFactor : 1.0;
+				materialParams.roughness = metallicRoughness.roughnessFactor !== undefined ? metallicRoughness.roughnessFactor : 1.0;
+
+				if ( metallicRoughness.metallicRoughnessTexture !== undefined ) {
+
+					pending.push( parser.assignTexture( materialParams, 'metalnessMap', metallicRoughness.metallicRoughnessTexture ) );
+					pending.push( parser.assignTexture( materialParams, 'roughnessMap', metallicRoughness.metallicRoughnessTexture ) );
+
+				}
+
+				materialType = this._invokeOne( function ( ext ) {
+
+					return ext.getMaterialType && ext.getMaterialType( materialIndex );
+
+				} );
+
+				pending.push( Promise.all( this._invokeAll( function ( ext ) {
+
+					return ext.extendMaterialParams && ext.extendMaterialParams( materialIndex, materialParams );
+
+				} ) ) );
+
+			}
+
+			if ( materialDef.doubleSided === true ) {
+
+				materialParams.side = three.DoubleSide;
+
+			}
+
+			const alphaMode = materialDef.alphaMode || ALPHA_MODES.OPAQUE;
+
+			if ( alphaMode === ALPHA_MODES.BLEND ) {
+
+				materialParams.transparent = true;
+
+				// See: https://github.com/mrdoob/three.js/issues/17706
+				materialParams.depthWrite = false;
+
+			} else {
+
+				materialParams.transparent = false;
+
+				if ( alphaMode === ALPHA_MODES.MASK ) {
+
+					materialParams.alphaTest = materialDef.alphaCutoff !== undefined ? materialDef.alphaCutoff : 0.5;
+
+				}
+
+			}
+
+			if ( materialDef.normalTexture !== undefined && materialType !== three.MeshBasicMaterial ) {
+
+				pending.push( parser.assignTexture( materialParams, 'normalMap', materialDef.normalTexture ) );
+
+				materialParams.normalScale = new three.Vector2( 1, 1 );
+
+				if ( materialDef.normalTexture.scale !== undefined ) {
+
+					const scale = materialDef.normalTexture.scale;
+
+					materialParams.normalScale.set( scale, scale );
+
+				}
+
+			}
+
+			if ( materialDef.occlusionTexture !== undefined && materialType !== three.MeshBasicMaterial ) {
+
+				pending.push( parser.assignTexture( materialParams, 'aoMap', materialDef.occlusionTexture ) );
+
+				if ( materialDef.occlusionTexture.strength !== undefined ) {
+
+					materialParams.aoMapIntensity = materialDef.occlusionTexture.strength;
+
+				}
+
+			}
+
+			if ( materialDef.emissiveFactor !== undefined && materialType !== three.MeshBasicMaterial ) {
+
+				const emissiveFactor = materialDef.emissiveFactor;
+				materialParams.emissive = new three.Color().setRGB( emissiveFactor[ 0 ], emissiveFactor[ 1 ], emissiveFactor[ 2 ], three.LinearSRGBColorSpace );
+
+			}
+
+			if ( materialDef.emissiveTexture !== undefined && materialType !== three.MeshBasicMaterial ) {
+
+				pending.push( parser.assignTexture( materialParams, 'emissiveMap', materialDef.emissiveTexture, three.SRGBColorSpace ) );
+
+			}
+
+			return Promise.all( pending ).then( function () {
+
+				const material = new materialType( materialParams );
+
+				if ( materialDef.name ) material.name = materialDef.name;
+
+				assignExtrasToUserData( material, materialDef );
+
+				parser.associations.set( material, { materials: materialIndex } );
+
+				if ( materialDef.extensions ) addUnknownExtensionsToUserData( extensions, material, materialDef );
+
+				return material;
+
+			} );
+
+		}
+
+		/**
+		 * When Object3D instances are targeted by animation, they need unique names.
+		 *
+		 * @private
+		 * @param {string} originalName
+		 * @return {string}
+		 */
+		createUniqueName( originalName ) {
+
+			const sanitizedName = three.PropertyBinding.sanitizeNodeName( originalName || '' );
+
+			if ( sanitizedName in this.nodeNamesUsed ) {
+
+				return sanitizedName + '_' + ( ++ this.nodeNamesUsed[ sanitizedName ] );
+
+			} else {
+
+				this.nodeNamesUsed[ sanitizedName ] = 0;
+
+				return sanitizedName;
+
+			}
+
+		}
+
+		/**
+		 * Specification: https://github.com/KhronosGroup/glTF/blob/master/specification/2.0/README.md#geometry
+		 *
+		 * Creates BufferGeometries from primitives.
+		 *
+		 * @private
+		 * @param {Array<GLTF.Primitive>} primitives
+		 * @return {Promise<Array<BufferGeometry>>}
+		 */
+		loadGeometries( primitives ) {
+
+			const parser = this;
+			const extensions = this.extensions;
+			const cache = this.primitiveCache;
+
+			function createDracoPrimitive( primitive ) {
+
+				return extensions[ EXTENSIONS.KHR_DRACO_MESH_COMPRESSION ]
+					.decodePrimitive( primitive, parser )
+					.then( function ( geometry ) {
+
+						return addPrimitiveAttributes( geometry, primitive, parser );
+
+					} );
+
+			}
+
+			const pending = [];
+
+			for ( let i = 0, il = primitives.length; i < il; i ++ ) {
+
+				const primitive = primitives[ i ];
+				const cacheKey = createPrimitiveKey( primitive );
+
+				// See if we've already created this geometry
+				const cached = cache[ cacheKey ];
+
+				if ( cached ) {
+
+					// Use the cached geometry if it exists
+					pending.push( cached.promise );
+
+				} else {
+
+					let geometryPromise;
+
+					if ( primitive.extensions && primitive.extensions[ EXTENSIONS.KHR_DRACO_MESH_COMPRESSION ] ) {
+
+						// Use DRACO geometry if available
+						geometryPromise = createDracoPrimitive( primitive );
+
+					} else {
+
+						// Otherwise create a new geometry
+						geometryPromise = addPrimitiveAttributes( new three.BufferGeometry(), primitive, parser );
+
+					}
+
+					// Cache this geometry
+					cache[ cacheKey ] = { primitive: primitive, promise: geometryPromise };
+
+					pending.push( geometryPromise );
+
+				}
+
+			}
+
+			return Promise.all( pending );
+
+		}
+
+		/**
+		 * Specification: https://github.com/KhronosGroup/glTF/blob/master/specification/2.0/README.md#meshes
+		 *
+		 * @private
+		 * @param {number} meshIndex
+		 * @return {Promise<Group|Mesh|SkinnedMesh|Line|Points>}
+		 */
+		loadMesh( meshIndex ) {
+
+			const parser = this;
+			const json = this.json;
+			const extensions = this.extensions;
+
+			const meshDef = json.meshes[ meshIndex ];
+			const primitives = meshDef.primitives;
+
+			const pending = [];
+
+			for ( let i = 0, il = primitives.length; i < il; i ++ ) {
+
+				const material = primitives[ i ].material === undefined
+					? createDefaultMaterial( this.cache )
+					: this.getDependency( 'material', primitives[ i ].material );
+
+				pending.push( material );
+
+			}
+
+			pending.push( parser.loadGeometries( primitives ) );
+
+			return Promise.all( pending ).then( function ( results ) {
+
+				const materials = results.slice( 0, results.length - 1 );
+				const geometries = results[ results.length - 1 ];
+
+				const meshes = [];
+
+				for ( let i = 0, il = geometries.length; i < il; i ++ ) {
+
+					const geometry = geometries[ i ];
+					const primitive = primitives[ i ];
+
+					// 1. create Mesh
+
+					let mesh;
+
+					const material = materials[ i ];
+
+					if ( primitive.mode === WEBGL_CONSTANTS.TRIANGLES ||
+							primitive.mode === WEBGL_CONSTANTS.TRIANGLE_STRIP ||
+							primitive.mode === WEBGL_CONSTANTS.TRIANGLE_FAN ||
+							primitive.mode === undefined ) {
+
+						// .isSkinnedMesh isn't in glTF spec. See ._markDefs()
+						mesh = meshDef.isSkinnedMesh === true
+							? new three.SkinnedMesh( geometry, material )
+							: new three.Mesh( geometry, material );
+
+						if ( mesh.isSkinnedMesh === true ) {
+
+							// normalize skin weights to fix malformed assets (see #15319)
+							mesh.normalizeSkinWeights();
+
+						}
+
+						if ( primitive.mode === WEBGL_CONSTANTS.TRIANGLE_STRIP ) {
+
+							mesh.geometry = toTrianglesDrawMode( mesh.geometry, three.TriangleStripDrawMode );
+
+						} else if ( primitive.mode === WEBGL_CONSTANTS.TRIANGLE_FAN ) {
+
+							mesh.geometry = toTrianglesDrawMode( mesh.geometry, three.TriangleFanDrawMode );
+
+						}
+
+					} else if ( primitive.mode === WEBGL_CONSTANTS.LINES ) {
+
+						mesh = new three.LineSegments( geometry, material );
+
+					} else if ( primitive.mode === WEBGL_CONSTANTS.LINE_STRIP ) {
+
+						mesh = new three.Line( geometry, material );
+
+					} else if ( primitive.mode === WEBGL_CONSTANTS.LINE_LOOP ) {
+
+						mesh = new three.LineLoop( geometry, material );
+
+					} else if ( primitive.mode === WEBGL_CONSTANTS.POINTS ) {
+
+						mesh = new three.Points( geometry, material );
+
+					} else {
+
+						throw new Error( 'THREE.GLTFLoader: Primitive mode unsupported: ' + primitive.mode );
+
+					}
+
+					if ( Object.keys( mesh.geometry.morphAttributes ).length > 0 ) {
+
+						updateMorphTargets( mesh, meshDef );
+
+					}
+
+					mesh.name = parser.createUniqueName( meshDef.name || ( 'mesh_' + meshIndex ) );
+
+					assignExtrasToUserData( mesh, meshDef );
+
+					if ( primitive.extensions ) addUnknownExtensionsToUserData( extensions, mesh, primitive );
+
+					parser.assignFinalMaterial( mesh );
+
+					meshes.push( mesh );
+
+				}
+
+				for ( let i = 0, il = meshes.length; i < il; i ++ ) {
+
+					parser.associations.set( meshes[ i ], {
+						meshes: meshIndex,
+						primitives: i
+					} );
+
+				}
+
+				if ( meshes.length === 1 ) {
+
+					if ( meshDef.extensions ) addUnknownExtensionsToUserData( extensions, meshes[ 0 ], meshDef );
+
+					return meshes[ 0 ];
+
+				}
+
+				const group = new three.Group();
+
+				if ( meshDef.extensions ) addUnknownExtensionsToUserData( extensions, group, meshDef );
+
+				parser.associations.set( group, { meshes: meshIndex } );
+
+				for ( let i = 0, il = meshes.length; i < il; i ++ ) {
+
+					group.add( meshes[ i ] );
+
+				}
+
+				return group;
+
+			} );
+
+		}
+
+		/**
+		 * Specification: https://github.com/KhronosGroup/glTF/tree/master/specification/2.0#cameras
+		 *
+		 * @private
+		 * @param {number} cameraIndex
+		 * @return {Promise<Camera>|undefined}
+		 */
+		loadCamera( cameraIndex ) {
+
+			let camera;
+			const cameraDef = this.json.cameras[ cameraIndex ];
+			const params = cameraDef[ cameraDef.type ];
+
+			if ( ! params ) {
+
+				console.warn( 'THREE.GLTFLoader: Missing camera parameters.' );
+				return;
+
+			}
+
+			if ( cameraDef.type === 'perspective' ) {
+
+				camera = new three.PerspectiveCamera( three.MathUtils.radToDeg( params.yfov ), params.aspectRatio || 1, params.znear || 1, params.zfar || 2e6 );
+
+			} else if ( cameraDef.type === 'orthographic' ) {
+
+				camera = new three.OrthographicCamera( - params.xmag, params.xmag, params.ymag, - params.ymag, params.znear, params.zfar );
+
+			}
+
+			if ( cameraDef.name ) camera.name = this.createUniqueName( cameraDef.name );
+
+			assignExtrasToUserData( camera, cameraDef );
+
+			return Promise.resolve( camera );
+
+		}
+
+		/**
+		 * Specification: https://github.com/KhronosGroup/glTF/tree/master/specification/2.0#skins
+		 *
+		 * @private
+		 * @param {number} skinIndex
+		 * @return {Promise<Skeleton>}
+		 */
+		loadSkin( skinIndex ) {
+
+			const skinDef = this.json.skins[ skinIndex ];
+
+			const pending = [];
+
+			for ( let i = 0, il = skinDef.joints.length; i < il; i ++ ) {
+
+				pending.push( this._loadNodeShallow( skinDef.joints[ i ] ) );
+
+			}
+
+			if ( skinDef.inverseBindMatrices !== undefined ) {
+
+				pending.push( this.getDependency( 'accessor', skinDef.inverseBindMatrices ) );
+
+			} else {
+
+				pending.push( null );
+
+			}
+
+			return Promise.all( pending ).then( function ( results ) {
+
+				const inverseBindMatrices = results.pop();
+				const jointNodes = results;
+
+				// Note that bones (joint nodes) may or may not be in the
+				// scene graph at this time.
+
+				const bones = [];
+				const boneInverses = [];
+
+				for ( let i = 0, il = jointNodes.length; i < il; i ++ ) {
+
+					const jointNode = jointNodes[ i ];
+
+					if ( jointNode ) {
+
+						bones.push( jointNode );
+
+						const mat = new three.Matrix4();
+
+						if ( inverseBindMatrices !== null ) {
+
+							mat.fromArray( inverseBindMatrices.array, i * 16 );
+
+						}
+
+						boneInverses.push( mat );
+
+					} else {
+
+						console.warn( 'THREE.GLTFLoader: Joint "%s" could not be found.', skinDef.joints[ i ] );
+
+					}
+
+				}
+
+				return new three.Skeleton( bones, boneInverses );
+
+			} );
+
+		}
+
+		/**
+		 * Specification: https://github.com/KhronosGroup/glTF/tree/master/specification/2.0#animations
+		 *
+		 * @private
+		 * @param {number} animationIndex
+		 * @return {Promise<AnimationClip>}
+		 */
+		loadAnimation( animationIndex ) {
+
+			const json = this.json;
+			const parser = this;
+
+			const animationDef = json.animations[ animationIndex ];
+			const animationName = animationDef.name ? animationDef.name : 'animation_' + animationIndex;
+
+			const pendingNodes = [];
+			const pendingInputAccessors = [];
+			const pendingOutputAccessors = [];
+			const pendingSamplers = [];
+			const pendingTargets = [];
+
+			for ( let i = 0, il = animationDef.channels.length; i < il; i ++ ) {
+
+				const channel = animationDef.channels[ i ];
+				const sampler = animationDef.samplers[ channel.sampler ];
+				const target = channel.target;
+				const name = target.node;
+				const input = animationDef.parameters !== undefined ? animationDef.parameters[ sampler.input ] : sampler.input;
+				const output = animationDef.parameters !== undefined ? animationDef.parameters[ sampler.output ] : sampler.output;
+
+				if ( target.node === undefined ) continue;
+
+				pendingNodes.push( this.getDependency( 'node', name ) );
+				pendingInputAccessors.push( this.getDependency( 'accessor', input ) );
+				pendingOutputAccessors.push( this.getDependency( 'accessor', output ) );
+				pendingSamplers.push( sampler );
+				pendingTargets.push( target );
+
+			}
+
+			return Promise.all( [
+
+				Promise.all( pendingNodes ),
+				Promise.all( pendingInputAccessors ),
+				Promise.all( pendingOutputAccessors ),
+				Promise.all( pendingSamplers ),
+				Promise.all( pendingTargets )
+
+			] ).then( function ( dependencies ) {
+
+				const nodes = dependencies[ 0 ];
+				const inputAccessors = dependencies[ 1 ];
+				const outputAccessors = dependencies[ 2 ];
+				const samplers = dependencies[ 3 ];
+				const targets = dependencies[ 4 ];
+
+				const tracks = [];
+
+				for ( let i = 0, il = nodes.length; i < il; i ++ ) {
+
+					const node = nodes[ i ];
+					const inputAccessor = inputAccessors[ i ];
+					const outputAccessor = outputAccessors[ i ];
+					const sampler = samplers[ i ];
+					const target = targets[ i ];
+
+					if ( node === undefined ) continue;
+
+					if ( node.updateMatrix ) {
+
+						node.updateMatrix();
+
+					}
+
+					const createdTracks = parser._createAnimationTracks( node, inputAccessor, outputAccessor, sampler, target );
+
+					if ( createdTracks ) {
+
+						for ( let k = 0; k < createdTracks.length; k ++ ) {
+
+							tracks.push( createdTracks[ k ] );
+
+						}
+
+					}
+
+				}
+
+				const animation = new three.AnimationClip( animationName, undefined, tracks );
+
+				assignExtrasToUserData( animation, animationDef );
+
+				return animation;
+
+			} );
+
+		}
+
+		createNodeMesh( nodeIndex ) {
+
+			const json = this.json;
+			const parser = this;
+			const nodeDef = json.nodes[ nodeIndex ];
+
+			if ( nodeDef.mesh === undefined ) return null;
+
+			return parser.getDependency( 'mesh', nodeDef.mesh ).then( function ( mesh ) {
+
+				const node = parser._getNodeRef( parser.meshCache, nodeDef.mesh, mesh );
+
+				// if weights are provided on the node, override weights on the mesh.
+				if ( nodeDef.weights !== undefined ) {
+
+					node.traverse( function ( o ) {
+
+						if ( ! o.isMesh ) return;
+
+						for ( let i = 0, il = nodeDef.weights.length; i < il; i ++ ) {
+
+							o.morphTargetInfluences[ i ] = nodeDef.weights[ i ];
+
+						}
+
+					} );
+
+				}
+
+				return node;
+
+			} );
+
+		}
+
+		/**
+		 * Specification: https://github.com/KhronosGroup/glTF/tree/master/specification/2.0#nodes-and-hierarchy
+		 *
+		 * @private
+		 * @param {number} nodeIndex
+		 * @return {Promise<Object3D>}
+		 */
+		loadNode( nodeIndex ) {
+
+			const json = this.json;
+			const parser = this;
+
+			const nodeDef = json.nodes[ nodeIndex ];
+
+			const nodePending = parser._loadNodeShallow( nodeIndex );
+
+			const childPending = [];
+			const childrenDef = nodeDef.children || [];
+
+			for ( let i = 0, il = childrenDef.length; i < il; i ++ ) {
+
+				childPending.push( parser.getDependency( 'node', childrenDef[ i ] ) );
+
+			}
+
+			const skeletonPending = nodeDef.skin === undefined
+				? Promise.resolve( null )
+				: parser.getDependency( 'skin', nodeDef.skin );
+
+			return Promise.all( [
+				nodePending,
+				Promise.all( childPending ),
+				skeletonPending
+			] ).then( function ( results ) {
+
+				const node = results[ 0 ];
+				const children = results[ 1 ];
+				const skeleton = results[ 2 ];
+
+				if ( skeleton !== null ) {
+
+					// This full traverse should be fine because
+					// child glTF nodes have not been added to this node yet.
+					node.traverse( function ( mesh ) {
+
+						if ( ! mesh.isSkinnedMesh ) return;
+
+						mesh.bind( skeleton, _identityMatrix );
+
+					} );
+
+				}
+
+				for ( let i = 0, il = children.length; i < il; i ++ ) {
+
+					node.add( children[ i ] );
+
+				}
+
+				// Reconstruct pivot from container pattern created by GLTFExporter
+				// The container has position+pivot, rotation, scale; child has -pivot offset and mesh
+				if ( node.userData.pivot !== undefined && children.length > 0 ) {
+
+					const pivot = node.userData.pivot;
+					const pivotChild = children[ 0 ];
+
+					// Set pivot on container and adjust transforms
+					node.pivot = new three.Vector3().fromArray( pivot );
+
+					// Adjust container position: stored as position + pivot, so subtract pivot
+					node.position.x -= pivot[ 0 ];
+					node.position.y -= pivot[ 1 ];
+					node.position.z -= pivot[ 2 ];
+
+					// Remove the child's -pivot offset since pivot now handles it
+					pivotChild.position.set( 0, 0, 0 );
+
+					delete node.userData.pivot;
+
+				}
+
+				return node;
+
+			} );
+
+		}
+
+		// ._loadNodeShallow() parses a single node.
+		// skin and child nodes are created and added in .loadNode() (no '_' prefix).
+		_loadNodeShallow( nodeIndex ) {
+
+			const json = this.json;
+			const extensions = this.extensions;
+			const parser = this;
+
+			// This method is called from .loadNode() and .loadSkin().
+			// Cache a node to avoid duplication.
+
+			if ( this.nodeCache[ nodeIndex ] !== undefined ) {
+
+				return this.nodeCache[ nodeIndex ];
+
+			}
+
+			const nodeDef = json.nodes[ nodeIndex ];
+
+			// reserve node's name before its dependencies, so the root has the intended name.
+			const nodeName = nodeDef.name ? parser.createUniqueName( nodeDef.name ) : '';
+
+			const pending = [];
+
+			const meshPromise = parser._invokeOne( function ( ext ) {
+
+				return ext.createNodeMesh && ext.createNodeMesh( nodeIndex );
+
+			} );
+
+			if ( meshPromise ) {
+
+				pending.push( meshPromise );
+
+			}
+
+			if ( nodeDef.camera !== undefined ) {
+
+				pending.push( parser.getDependency( 'camera', nodeDef.camera ).then( function ( camera ) {
+
+					return parser._getNodeRef( parser.cameraCache, nodeDef.camera, camera );
+
+				} ) );
+
+			}
+
+			parser._invokeAll( function ( ext ) {
+
+				return ext.createNodeAttachment && ext.createNodeAttachment( nodeIndex );
+
+			} ).forEach( function ( promise ) {
+
+				pending.push( promise );
+
+			} );
+
+			this.nodeCache[ nodeIndex ] = Promise.all( pending ).then( function ( objects ) {
+
+				let node;
+
+				// .isBone isn't in glTF spec. See ._markDefs
+				if ( nodeDef.isBone === true ) {
+
+					node = new three.Bone();
+
+				} else if ( objects.length > 1 ) {
+
+					node = new three.Group();
+
+				} else if ( objects.length === 1 ) {
+
+					node = objects[ 0 ];
+
+				} else {
+
+					node = new three.Object3D();
+
+				}
+
+				if ( node !== objects[ 0 ] ) {
+
+					for ( let i = 0, il = objects.length; i < il; i ++ ) {
+
+						node.add( objects[ i ] );
+
+					}
+
+				}
+
+				if ( nodeDef.name ) {
+
+					node.userData.name = nodeDef.name;
+					node.name = nodeName;
+
+				}
+
+				assignExtrasToUserData( node, nodeDef );
+
+				if ( nodeDef.extensions ) addUnknownExtensionsToUserData( extensions, node, nodeDef );
+
+				if ( nodeDef.matrix !== undefined ) {
+
+					const matrix = new three.Matrix4();
+					matrix.fromArray( nodeDef.matrix );
+					node.applyMatrix4( matrix );
+
+				} else {
+
+					if ( nodeDef.translation !== undefined ) {
+
+						node.position.fromArray( nodeDef.translation );
+
+					}
+
+					if ( nodeDef.rotation !== undefined ) {
+
+						node.quaternion.fromArray( nodeDef.rotation );
+
+					}
+
+					if ( nodeDef.scale !== undefined ) {
+
+						node.scale.fromArray( nodeDef.scale );
+
+					}
+
+				}
+
+				if ( ! parser.associations.has( node ) ) {
+
+					parser.associations.set( node, {} );
+
+				} else if ( nodeDef.mesh !== undefined && parser.meshCache.refs[ nodeDef.mesh ] > 1 ) {
+
+					const mapping = parser.associations.get( node );
+					parser.associations.set( node, { ...mapping } );
+
+				}
+
+				parser.associations.get( node ).nodes = nodeIndex;
+
+				return node;
+
+			} );
+
+			return this.nodeCache[ nodeIndex ];
+
+		}
+
+		/**
+		 * Specification: https://github.com/KhronosGroup/glTF/tree/master/specification/2.0#scenes
+		 *
+		 * @private
+		 * @param {number} sceneIndex
+		 * @return {Promise<Group>}
+		 */
+		loadScene( sceneIndex ) {
+
+			const extensions = this.extensions;
+			const sceneDef = this.json.scenes[ sceneIndex ];
+			const parser = this;
+
+			// Loader returns Group, not Scene.
+			// See: https://github.com/mrdoob/three.js/issues/18342#issuecomment-578981172
+			const scene = new three.Group();
+			if ( sceneDef.name ) scene.name = parser.createUniqueName( sceneDef.name );
+
+			assignExtrasToUserData( scene, sceneDef );
+
+			if ( sceneDef.extensions ) addUnknownExtensionsToUserData( extensions, scene, sceneDef );
+
+			const nodeIds = sceneDef.nodes || [];
+
+			const pending = [];
+
+			for ( let i = 0, il = nodeIds.length; i < il; i ++ ) {
+
+				pending.push( parser.getDependency( 'node', nodeIds[ i ] ) );
+
+			}
+
+			return Promise.all( pending ).then( function ( nodes ) {
+
+				for ( let i = 0, il = nodes.length; i < il; i ++ ) {
+
+					const node = nodes[ i ];
+
+					// If the node already has a parent, it means it's being reused across multiple scenes.
+					// Clone it to avoid the second scene's add() removing it from the first scene.
+					// See: https://github.com/mrdoob/three.js/issues/27993
+					if ( node.parent !== null ) {
+
+						scene.add( clone( node ) );
+
+					} else {
+
+						scene.add( node );
+
+					}
+
+				}
+
+				// Removes dangling associations, associations that reference a node that
+				// didn't make it into the scene.
+				const reduceAssociations = ( node ) => {
+
+					const reducedAssociations = new Map();
+
+					for ( const [ key, value ] of parser.associations ) {
+
+						if ( key instanceof three.Material || key instanceof three.Texture ) {
+
+							reducedAssociations.set( key, value );
+
+						}
+
+					}
+
+					node.traverse( ( node ) => {
+
+						const mappings = parser.associations.get( node );
+
+						if ( mappings != null ) {
+
+							reducedAssociations.set( node, mappings );
+
+						}
+
+					} );
+
+					return reducedAssociations;
+
+				};
+
+				parser.associations = reduceAssociations( scene );
+
+				return scene;
+
+			} );
+
+		}
+
+		_createAnimationTracks( node, inputAccessor, outputAccessor, sampler, target ) {
+
+			const tracks = [];
+
+			const targetName = node.name ? node.name : node.uuid;
+			const targetNames = [];
+
+			function collectMorphTargets( object ) {
+
+				if ( object.morphTargetInfluences ) {
+
+					targetNames.push( object.name ? object.name : object.uuid );
+
+				}
+
+			}
+
+
+			if ( PATH_PROPERTIES[ target.path ] === PATH_PROPERTIES.weights ) {
+
+				collectMorphTargets( node );
+
+				// for multi-primitive meshes, the node is a Group containing the sub-meshes
+
+				if ( node.isGroup ) {
+
+					node.children.forEach( collectMorphTargets );
+
+				}
+
+			} else {
+
+				targetNames.push( targetName );
+
+			}
+
+			let TypedKeyframeTrack;
+
+			switch ( PATH_PROPERTIES[ target.path ] ) {
+
+				case PATH_PROPERTIES.weights:
+
+					TypedKeyframeTrack = three.NumberKeyframeTrack;
+					break;
+
+				case PATH_PROPERTIES.rotation:
+
+					TypedKeyframeTrack = three.QuaternionKeyframeTrack;
+					break;
+
+				case PATH_PROPERTIES.translation:
+				case PATH_PROPERTIES.scale:
+
+					TypedKeyframeTrack = three.VectorKeyframeTrack;
+					break;
+
+				default:
+
+					switch ( outputAccessor.itemSize ) {
+
+						case 1:
+							TypedKeyframeTrack = three.NumberKeyframeTrack;
+							break;
+						case 2:
+						case 3:
+						default:
+							TypedKeyframeTrack = three.VectorKeyframeTrack;
+							break;
+
+					}
+
+					break;
+
+			}
+
+			const interpolation = sampler.interpolation !== undefined ? INTERPOLATION[ sampler.interpolation ] : three.InterpolateLinear;
+
+
+			const outputArray = this._getArrayFromAccessor( outputAccessor );
+
+			for ( let j = 0, jl = targetNames.length; j < jl; j ++ ) {
+
+				const track = new TypedKeyframeTrack(
+					targetNames[ j ] + '.' + PATH_PROPERTIES[ target.path ],
+					inputAccessor.array,
+					outputArray,
+					interpolation
+				);
+
+				// Override interpolation with custom factory method.
+				if ( sampler.interpolation === 'CUBICSPLINE' ) {
+
+					this._createCubicSplineTrackInterpolant( track );
+
+				}
+
+				tracks.push( track );
+
+			}
+
+			return tracks;
+
+		}
+
+		_getArrayFromAccessor( accessor ) {
+
+			let outputArray = accessor.array;
+
+			if ( accessor.normalized ) {
+
+				const scale = getNormalizedComponentScale( outputArray.constructor );
+				const scaled = new Float32Array( outputArray.length );
+
+				for ( let j = 0, jl = outputArray.length; j < jl; j ++ ) {
+
+					scaled[ j ] = outputArray[ j ] * scale;
+
+				}
+
+				outputArray = scaled;
+
+			}
+
+			return outputArray;
+
+		}
+
+		_createCubicSplineTrackInterpolant( track ) {
+
+			track.createInterpolant = function InterpolantFactoryMethodGLTFCubicSpline( result ) {
+
+				// A CUBICSPLINE keyframe in glTF has three output values for each input value,
+				// representing inTangent, splineVertex, and outTangent. As a result, track.getValueSize()
+				// must be divided by three to get the interpolant's sampleSize argument.
+
+				const interpolantType = ( this instanceof three.QuaternionKeyframeTrack ) ? GLTFCubicSplineQuaternionInterpolant : GLTFCubicSplineInterpolant;
+
+				return new interpolantType( this.times, this.values, this.getValueSize() / 3, result );
+
+			};
+
+			// Mark as CUBICSPLINE. `track.getInterpolation()` doesn't support custom interpolants.
+			track.createInterpolant.isInterpolantFactoryMethodGLTFCubicSpline = true;
+
+		}
+
+	}
+
+	/**
+	 *
+	 * @private
+	 * @param {BufferGeometry} geometry
+	 * @param {GLTF.Primitive} primitiveDef
+	 * @param {GLTFParser} parser
+	 */
+	function computeBounds( geometry, primitiveDef, parser ) {
+
+		const attributes = primitiveDef.attributes;
+
+		const box = new three.Box3();
+
+		if ( attributes.POSITION !== undefined ) {
+
+			const accessor = parser.json.accessors[ attributes.POSITION ];
+
+			const min = accessor.min;
+			const max = accessor.max;
+
+			// glTF requires 'min' and 'max', but VRM (which extends glTF) currently ignores that requirement.
+
+			if ( min !== undefined && max !== undefined ) {
+
+				box.set(
+					new three.Vector3( min[ 0 ], min[ 1 ], min[ 2 ] ),
+					new three.Vector3( max[ 0 ], max[ 1 ], max[ 2 ] )
+				);
+
+				if ( accessor.normalized ) {
+
+					const boxScale = getNormalizedComponentScale( WEBGL_COMPONENT_TYPES[ accessor.componentType ] );
+					box.min.multiplyScalar( boxScale );
+					box.max.multiplyScalar( boxScale );
+
+				}
+
+			} else {
+
+				console.warn( 'THREE.GLTFLoader: Missing min/max properties for accessor POSITION.' );
+
+				return;
+
+			}
+
+		} else {
+
+			return;
+
+		}
+
+		const targets = primitiveDef.targets;
+
+		if ( targets !== undefined ) {
+
+			const maxDisplacement = new three.Vector3();
+			const vector = new three.Vector3();
+
+			for ( let i = 0, il = targets.length; i < il; i ++ ) {
+
+				const target = targets[ i ];
+
+				if ( target.POSITION !== undefined ) {
+
+					const accessor = parser.json.accessors[ target.POSITION ];
+					const min = accessor.min;
+					const max = accessor.max;
+
+					// glTF requires 'min' and 'max', but VRM (which extends glTF) currently ignores that requirement.
+
+					if ( min !== undefined && max !== undefined ) {
+
+						// we need to get max of absolute components because target weight is [-1,1]
+						vector.setX( Math.max( Math.abs( min[ 0 ] ), Math.abs( max[ 0 ] ) ) );
+						vector.setY( Math.max( Math.abs( min[ 1 ] ), Math.abs( max[ 1 ] ) ) );
+						vector.setZ( Math.max( Math.abs( min[ 2 ] ), Math.abs( max[ 2 ] ) ) );
+
+
+						if ( accessor.normalized ) {
+
+							const boxScale = getNormalizedComponentScale( WEBGL_COMPONENT_TYPES[ accessor.componentType ] );
+							vector.multiplyScalar( boxScale );
+
+						}
+
+						// Note: this assumes that the sum of all weights is at most 1. This isn't quite correct - it's more conservative
+						// to assume that each target can have a max weight of 1. However, for some use cases - notably, when morph targets
+						// are used to implement key-frame animations and as such only two are active at a time - this results in very large
+						// boxes. So for now we make a box that's sometimes a touch too small but is hopefully mostly of reasonable size.
+						maxDisplacement.max( vector );
+
+					} else {
+
+						console.warn( 'THREE.GLTFLoader: Missing min/max properties for accessor POSITION.' );
+
+					}
+
+				}
+
+			}
+
+			// As per comment above this box isn't conservative, but has a reasonable size for a very large number of morph targets.
+			box.expandByVector( maxDisplacement );
+
+		}
+
+		geometry.boundingBox = box;
+
+		const sphere = new three.Sphere();
+
+		box.getCenter( sphere.center );
+		sphere.radius = box.min.distanceTo( box.max ) / 2;
+
+		geometry.boundingSphere = sphere;
+
+	}
+
+	/**
+	 *
+	 * @private
+	 * @param {BufferGeometry} geometry
+	 * @param {GLTF.Primitive} primitiveDef
+	 * @param {GLTFParser} parser
+	 * @return {Promise<BufferGeometry>}
+	 */
+	function addPrimitiveAttributes( geometry, primitiveDef, parser ) {
+
+		const attributes = primitiveDef.attributes;
+
+		const pending = [];
+
+		function assignAttributeAccessor( accessorIndex, attributeName ) {
+
+			return parser.getDependency( 'accessor', accessorIndex )
+				.then( function ( accessor ) {
+
+					geometry.setAttribute( attributeName, accessor );
+
+				} );
+
+		}
+
+		for ( const gltfAttributeName in attributes ) {
+
+			const threeAttributeName = ATTRIBUTES[ gltfAttributeName ] || gltfAttributeName.toLowerCase();
+
+			// Skip attributes already provided by e.g. Draco extension.
+			if ( threeAttributeName in geometry.attributes ) continue;
+
+			pending.push( assignAttributeAccessor( attributes[ gltfAttributeName ], threeAttributeName ) );
+
+		}
+
+		if ( primitiveDef.indices !== undefined && ! geometry.index ) {
+
+			const accessor = parser.getDependency( 'accessor', primitiveDef.indices ).then( function ( accessor ) {
+
+				geometry.setIndex( accessor );
+
+			} );
+
+			pending.push( accessor );
+
+		}
+
+		if ( three.ColorManagement.workingColorSpace !== three.LinearSRGBColorSpace && 'COLOR_0' in attributes ) {
+
+			console.warn( `THREE.GLTFLoader: Converting vertex colors from "srgb-linear" to "${three.ColorManagement.workingColorSpace}" not supported.` );
+
+		}
+
+		assignExtrasToUserData( geometry, primitiveDef );
+
+		computeBounds( geometry, primitiveDef, parser );
+
+		return Promise.all( pending ).then( function () {
+
+			return primitiveDef.targets !== undefined
+				? addMorphTargets( geometry, primitiveDef.targets, parser )
+				: geometry;
+
+		} );
+
+	}
+
 	function getDefaultExportFromCjs (x) {
 		return x && x.__esModule && Object.prototype.hasOwnProperty.call(x, 'default') ? x['default'] : x;
 	}
@@ -2686,5467 +7621,7 @@
 	}
 
 	var robustPnpExports = requireRobustPnp();
-	var pointInPolygon = /*@__PURE__*/getDefaultExportFromCjs(robustPnpExports);
-
-	/*!
-	fflate - fast JavaScript compression/decompression
-	<https://101arrowz.github.io/fflate>
-	Licensed under MIT. https://github.com/101arrowz/fflate/blob/master/LICENSE
-	version 0.8.2
-	*/
-
-
-	// aliases for shorter compressed code (most minifers don't do this)
-	var u8 = Uint8Array, u16 = Uint16Array, i32 = Int32Array;
-	// fixed length extra bits
-	var fleb = new u8([0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 0, /* unused */ 0, 0, /* impossible */ 0]);
-	// fixed distance extra bits
-	var fdeb = new u8([0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13, 13, /* unused */ 0, 0]);
-	// code length index map
-	var clim = new u8([16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15]);
-	// get base, reverse index map from extra bits
-	var freb = function (eb, start) {
-	    var b = new u16(31);
-	    for (var i = 0; i < 31; ++i) {
-	        b[i] = start += 1 << eb[i - 1];
-	    }
-	    // numbers here are at max 18 bits
-	    var r = new i32(b[30]);
-	    for (var i = 1; i < 30; ++i) {
-	        for (var j = b[i]; j < b[i + 1]; ++j) {
-	            r[j] = ((j - b[i]) << 5) | i;
-	        }
-	    }
-	    return { b: b, r: r };
-	};
-	var _a = freb(fleb, 2), fl = _a.b, revfl = _a.r;
-	// we can ignore the fact that the other numbers are wrong; they never happen anyway
-	fl[28] = 258, revfl[258] = 28;
-	var _b = freb(fdeb, 0), fd = _b.b;
-	// map of value to reverse (assuming 16 bits)
-	var rev = new u16(32768);
-	for (var i = 0; i < 32768; ++i) {
-	    // reverse table algorithm from SO
-	    var x = ((i & 0xAAAA) >> 1) | ((i & 0x5555) << 1);
-	    x = ((x & 0xCCCC) >> 2) | ((x & 0x3333) << 2);
-	    x = ((x & 0xF0F0) >> 4) | ((x & 0x0F0F) << 4);
-	    rev[i] = (((x & 0xFF00) >> 8) | ((x & 0x00FF) << 8)) >> 1;
-	}
-	// create huffman tree from u8 "map": index -> code length for code index
-	// mb (max bits) must be at most 15
-	// TODO: optimize/split up?
-	var hMap = (function (cd, mb, r) {
-	    var s = cd.length;
-	    // index
-	    var i = 0;
-	    // u16 "map": index -> # of codes with bit length = index
-	    var l = new u16(mb);
-	    // length of cd must be 288 (total # of codes)
-	    for (; i < s; ++i) {
-	        if (cd[i])
-	            ++l[cd[i] - 1];
-	    }
-	    // u16 "map": index -> minimum code for bit length = index
-	    var le = new u16(mb);
-	    for (i = 1; i < mb; ++i) {
-	        le[i] = (le[i - 1] + l[i - 1]) << 1;
-	    }
-	    var co;
-	    if (r) {
-	        // u16 "map": index -> number of actual bits, symbol for code
-	        co = new u16(1 << mb);
-	        // bits to remove for reverser
-	        var rvb = 15 - mb;
-	        for (i = 0; i < s; ++i) {
-	            // ignore 0 lengths
-	            if (cd[i]) {
-	                // num encoding both symbol and bits read
-	                var sv = (i << 4) | cd[i];
-	                // free bits
-	                var r_1 = mb - cd[i];
-	                // start value
-	                var v = le[cd[i] - 1]++ << r_1;
-	                // m is end value
-	                for (var m = v | ((1 << r_1) - 1); v <= m; ++v) {
-	                    // every 16 bit value starting with the code yields the same result
-	                    co[rev[v] >> rvb] = sv;
-	                }
-	            }
-	        }
-	    }
-	    else {
-	        co = new u16(s);
-	        for (i = 0; i < s; ++i) {
-	            if (cd[i]) {
-	                co[i] = rev[le[cd[i] - 1]++] >> (15 - cd[i]);
-	            }
-	        }
-	    }
-	    return co;
-	});
-	// fixed length tree
-	var flt = new u8(288);
-	for (var i = 0; i < 144; ++i)
-	    flt[i] = 8;
-	for (var i = 144; i < 256; ++i)
-	    flt[i] = 9;
-	for (var i = 256; i < 280; ++i)
-	    flt[i] = 7;
-	for (var i = 280; i < 288; ++i)
-	    flt[i] = 8;
-	// fixed distance tree
-	var fdt = new u8(32);
-	for (var i = 0; i < 32; ++i)
-	    fdt[i] = 5;
-	// fixed length map
-	var flrm = /*#__PURE__*/ hMap(flt, 9, 1);
-	// fixed distance map
-	var fdrm = /*#__PURE__*/ hMap(fdt, 5, 1);
-	// find max of array
-	var max = function (a) {
-	    var m = a[0];
-	    for (var i = 1; i < a.length; ++i) {
-	        if (a[i] > m)
-	            m = a[i];
-	    }
-	    return m;
-	};
-	// read d, starting at bit p and mask with m
-	var bits = function (d, p, m) {
-	    var o = (p / 8) | 0;
-	    return ((d[o] | (d[o + 1] << 8)) >> (p & 7)) & m;
-	};
-	// read d, starting at bit p continuing for at least 16 bits
-	var bits16 = function (d, p) {
-	    var o = (p / 8) | 0;
-	    return ((d[o] | (d[o + 1] << 8) | (d[o + 2] << 16)) >> (p & 7));
-	};
-	// get end of byte
-	var shft = function (p) { return ((p + 7) / 8) | 0; };
-	// typed array slice - allows garbage collector to free original reference,
-	// while being more compatible than .slice
-	var slc = function (v, s, e) {
-	    if (e == null || e > v.length)
-	        e = v.length;
-	    // can't use .constructor in case user-supplied
-	    return new u8(v.subarray(s, e));
-	};
-	// error codes
-	var ec = [
-	    'unexpected EOF',
-	    'invalid block type',
-	    'invalid length/literal',
-	    'invalid distance',
-	    'stream finished',
-	    'no stream handler',
-	    ,
-	    'no callback',
-	    'invalid UTF-8 data',
-	    'extra field too long',
-	    'date not in range 1980-2099',
-	    'filename too long',
-	    'stream finishing',
-	    'invalid zip data'
-	    // determined by unknown compression method
-	];
-	var err = function (ind, msg, nt) {
-	    var e = new Error(msg || ec[ind]);
-	    e.code = ind;
-	    if (Error.captureStackTrace)
-	        Error.captureStackTrace(e, err);
-	    if (!nt)
-	        throw e;
-	    return e;
-	};
-	// expands raw DEFLATE data
-	var inflt = function (dat, st, buf, dict) {
-	    // source length       dict length
-	    var sl = dat.length, dl = 0;
-	    if (!sl || st.f && !st.l)
-	        return buf || new u8(0);
-	    var noBuf = !buf;
-	    // have to estimate size
-	    var resize = noBuf || st.i != 2;
-	    // no state
-	    var noSt = st.i;
-	    // Assumes roughly 33% compression ratio average
-	    if (noBuf)
-	        buf = new u8(sl * 3);
-	    // ensure buffer can fit at least l elements
-	    var cbuf = function (l) {
-	        var bl = buf.length;
-	        // need to increase size to fit
-	        if (l > bl) {
-	            // Double or set to necessary, whichever is greater
-	            var nbuf = new u8(Math.max(bl * 2, l));
-	            nbuf.set(buf);
-	            buf = nbuf;
-	        }
-	    };
-	    //  last chunk         bitpos           bytes
-	    var final = st.f || 0, pos = st.p || 0, bt = st.b || 0, lm = st.l, dm = st.d, lbt = st.m, dbt = st.n;
-	    // total bits
-	    var tbts = sl * 8;
-	    do {
-	        if (!lm) {
-	            // BFINAL - this is only 1 when last chunk is next
-	            final = bits(dat, pos, 1);
-	            // type: 0 = no compression, 1 = fixed huffman, 2 = dynamic huffman
-	            var type = bits(dat, pos + 1, 3);
-	            pos += 3;
-	            if (!type) {
-	                // go to end of byte boundary
-	                var s = shft(pos) + 4, l = dat[s - 4] | (dat[s - 3] << 8), t = s + l;
-	                if (t > sl) {
-	                    if (noSt)
-	                        err(0);
-	                    break;
-	                }
-	                // ensure size
-	                if (resize)
-	                    cbuf(bt + l);
-	                // Copy over uncompressed data
-	                buf.set(dat.subarray(s, t), bt);
-	                // Get new bitpos, update byte count
-	                st.b = bt += l, st.p = pos = t * 8, st.f = final;
-	                continue;
-	            }
-	            else if (type == 1)
-	                lm = flrm, dm = fdrm, lbt = 9, dbt = 5;
-	            else if (type == 2) {
-	                //  literal                            lengths
-	                var hLit = bits(dat, pos, 31) + 257, hcLen = bits(dat, pos + 10, 15) + 4;
-	                var tl = hLit + bits(dat, pos + 5, 31) + 1;
-	                pos += 14;
-	                // length+distance tree
-	                var ldt = new u8(tl);
-	                // code length tree
-	                var clt = new u8(19);
-	                for (var i = 0; i < hcLen; ++i) {
-	                    // use index map to get real code
-	                    clt[clim[i]] = bits(dat, pos + i * 3, 7);
-	                }
-	                pos += hcLen * 3;
-	                // code lengths bits
-	                var clb = max(clt), clbmsk = (1 << clb) - 1;
-	                // code lengths map
-	                var clm = hMap(clt, clb, 1);
-	                for (var i = 0; i < tl;) {
-	                    var r = clm[bits(dat, pos, clbmsk)];
-	                    // bits read
-	                    pos += r & 15;
-	                    // symbol
-	                    var s = r >> 4;
-	                    // code length to copy
-	                    if (s < 16) {
-	                        ldt[i++] = s;
-	                    }
-	                    else {
-	                        //  copy   count
-	                        var c = 0, n = 0;
-	                        if (s == 16)
-	                            n = 3 + bits(dat, pos, 3), pos += 2, c = ldt[i - 1];
-	                        else if (s == 17)
-	                            n = 3 + bits(dat, pos, 7), pos += 3;
-	                        else if (s == 18)
-	                            n = 11 + bits(dat, pos, 127), pos += 7;
-	                        while (n--)
-	                            ldt[i++] = c;
-	                    }
-	                }
-	                //    length tree                 distance tree
-	                var lt = ldt.subarray(0, hLit), dt = ldt.subarray(hLit);
-	                // max length bits
-	                lbt = max(lt);
-	                // max dist bits
-	                dbt = max(dt);
-	                lm = hMap(lt, lbt, 1);
-	                dm = hMap(dt, dbt, 1);
-	            }
-	            else
-	                err(1);
-	            if (pos > tbts) {
-	                if (noSt)
-	                    err(0);
-	                break;
-	            }
-	        }
-	        // Make sure the buffer can hold this + the largest possible addition
-	        // Maximum chunk size (practically, theoretically infinite) is 2^17
-	        if (resize)
-	            cbuf(bt + 131072);
-	        var lms = (1 << lbt) - 1, dms = (1 << dbt) - 1;
-	        var lpos = pos;
-	        for (;; lpos = pos) {
-	            // bits read, code
-	            var c = lm[bits16(dat, pos) & lms], sym = c >> 4;
-	            pos += c & 15;
-	            if (pos > tbts) {
-	                if (noSt)
-	                    err(0);
-	                break;
-	            }
-	            if (!c)
-	                err(2);
-	            if (sym < 256)
-	                buf[bt++] = sym;
-	            else if (sym == 256) {
-	                lpos = pos, lm = null;
-	                break;
-	            }
-	            else {
-	                var add = sym - 254;
-	                // no extra bits needed if less
-	                if (sym > 264) {
-	                    // index
-	                    var i = sym - 257, b = fleb[i];
-	                    add = bits(dat, pos, (1 << b) - 1) + fl[i];
-	                    pos += b;
-	                }
-	                // dist
-	                var d = dm[bits16(dat, pos) & dms], dsym = d >> 4;
-	                if (!d)
-	                    err(3);
-	                pos += d & 15;
-	                var dt = fd[dsym];
-	                if (dsym > 3) {
-	                    var b = fdeb[dsym];
-	                    dt += bits16(dat, pos) & (1 << b) - 1, pos += b;
-	                }
-	                if (pos > tbts) {
-	                    if (noSt)
-	                        err(0);
-	                    break;
-	                }
-	                if (resize)
-	                    cbuf(bt + 131072);
-	                var end = bt + add;
-	                if (bt < dt) {
-	                    var shift = dl - dt, dend = Math.min(dt, end);
-	                    if (shift + bt < 0)
-	                        err(3);
-	                    for (; bt < dend; ++bt)
-	                        buf[bt] = dict[shift + bt];
-	                }
-	                for (; bt < end; ++bt)
-	                    buf[bt] = buf[bt - dt];
-	            }
-	        }
-	        st.l = lm, st.p = lpos, st.b = bt, st.f = final;
-	        if (lm)
-	            final = 1, st.m = lbt, st.d = dm, st.n = dbt;
-	    } while (!final);
-	    // don't reallocate for streams or user buffers
-	    return bt != buf.length && noBuf ? slc(buf, 0, bt) : buf.subarray(0, bt);
-	};
-	// empty
-	var et = /*#__PURE__*/ new u8(0);
-	// zlib start
-	var zls = function (d, dict) {
-	    if ((d[0] & 15) != 8 || (d[0] >> 4) > 7 || ((d[0] << 8 | d[1]) % 31))
-	        err(6, 'invalid zlib data');
-	    if ((d[1] >> 5 & 1) == 1)
-	        err(6, 'invalid zlib data: ' + (d[1] & 32 ? 'need' : 'unexpected') + ' dictionary');
-	    return (d[1] >> 3 & 4) + 2;
-	};
-	/**
-	 * Expands Zlib data
-	 * @param data The data to decompress
-	 * @param opts The decompression options
-	 * @returns The decompressed version of the data
-	 */
-	function unzlibSync(data, opts) {
-	    return inflt(data.subarray(zls(data), -4), { i: 2 }, opts, opts);
-	}
-	// text decoder
-	var td = typeof TextDecoder != 'undefined' && /*#__PURE__*/ new TextDecoder();
-	// text decoder stream
-	var tds = 0;
-	try {
-	    td.decode(et, { stream: true });
-	    tds = 1;
-	}
-	catch (e) { }
-
-	/**
-	 * @module NURBSUtils
-	 * @three_import import * as NURBSUtils from 'three/addons/curves/NURBSUtils.js';
-	 */
-
-	/**
-	 * Finds knot vector span.
-	 *
-	 * @param {number} p - The degree.
-	 * @param {number} u - The parametric value.
-	 * @param {Array<number>} U - The knot vector.
-	 * @return {number} The span.
-	 */
-	function findSpan( p, u, U ) {
-
-		const n = U.length - p - 1;
-
-		if ( u >= U[ n ] ) {
-
-			return n - 1;
-
-		}
-
-		if ( u <= U[ p ] ) {
-
-			return p;
-
-		}
-
-		let low = p;
-		let high = n;
-		let mid = Math.floor( ( low + high ) / 2 );
-
-		while ( u < U[ mid ] || u >= U[ mid + 1 ] ) {
-
-			if ( u < U[ mid ] ) {
-
-				high = mid;
-
-			} else {
-
-				low = mid;
-
-			}
-
-			mid = Math.floor( ( low + high ) / 2 );
-
-		}
-
-		return mid;
-
-	}
-
-	/**
-	 * Calculates basis functions. See The NURBS Book, page 70, algorithm A2.2.
-	 *
-	 * @param {number} span - The span in which `u` lies.
-	 * @param {number} u - The parametric value.
-	 * @param {number} p - The degree.
-	 * @param {Array<number>} U - The knot vector.
-	 * @return {Array<number>} Array[p+1] with basis functions values.
-	 */
-	function calcBasisFunctions( span, u, p, U ) {
-
-		const N = [];
-		const left = [];
-		const right = [];
-		N[ 0 ] = 1.0;
-
-		for ( let j = 1; j <= p; ++ j ) {
-
-			left[ j ] = u - U[ span + 1 - j ];
-			right[ j ] = U[ span + j ] - u;
-
-			let saved = 0.0;
-
-			for ( let r = 0; r < j; ++ r ) {
-
-				const rv = right[ r + 1 ];
-				const lv = left[ j - r ];
-				const temp = N[ r ] / ( rv + lv );
-				N[ r ] = saved + rv * temp;
-				saved = lv * temp;
-
-			}
-
-			N[ j ] = saved;
-
-		}
-
-		return N;
-
-	}
-
-	/**
-	 * Calculates B-Spline curve points. See The NURBS Book, page 82, algorithm A3.1.
-	 *
-	 * @param {number} p - The degree of the B-Spline.
-	 * @param {Array<number>} U - The knot vector.
-	 * @param {Array<Vector4>} P - The control points
-	 * @param {number} u - The parametric point.
-	 * @return {Vector4} The point for given `u`.
-	 */
-	function calcBSplinePoint( p, U, P, u ) {
-
-		const span = findSpan( p, u, U );
-		const N = calcBasisFunctions( span, u, p, U );
-		const C = new three.Vector4( 0, 0, 0, 0 );
-
-		for ( let j = 0; j <= p; ++ j ) {
-
-			const point = P[ span - p + j ];
-			const Nj = N[ j ];
-			const wNj = point.w * Nj;
-			C.x += point.x * wNj;
-			C.y += point.y * wNj;
-			C.z += point.z * wNj;
-			C.w += point.w * Nj;
-
-		}
-
-		return C;
-
-	}
-
-	/**
-	 * Calculates basis functions derivatives. See The NURBS Book, page 72, algorithm A2.3.
-	 *
-	 * @param {number} span - The span in which `u` lies.
-	 * @param {number} u - The parametric point.
-	 * @param {number} p - The degree.
-	 * @param {number} n - number of derivatives to calculate
-	 * @param {Array<number>} U - The knot vector.
-	 * @return {Array<Array<number>>} An array[n+1][p+1] with basis functions derivatives.
-	 */
-	function calcBasisFunctionDerivatives( span, u, p, n, U ) {
-
-		const zeroArr = [];
-		for ( let i = 0; i <= p; ++ i )
-			zeroArr[ i ] = 0.0;
-
-		const ders = [];
-
-		for ( let i = 0; i <= n; ++ i )
-			ders[ i ] = zeroArr.slice( 0 );
-
-		const ndu = [];
-
-		for ( let i = 0; i <= p; ++ i )
-			ndu[ i ] = zeroArr.slice( 0 );
-
-		ndu[ 0 ][ 0 ] = 1.0;
-
-		const left = zeroArr.slice( 0 );
-		const right = zeroArr.slice( 0 );
-
-		for ( let j = 1; j <= p; ++ j ) {
-
-			left[ j ] = u - U[ span + 1 - j ];
-			right[ j ] = U[ span + j ] - u;
-
-			let saved = 0.0;
-
-			for ( let r = 0; r < j; ++ r ) {
-
-				const rv = right[ r + 1 ];
-				const lv = left[ j - r ];
-				ndu[ j ][ r ] = rv + lv;
-
-				const temp = ndu[ r ][ j - 1 ] / ndu[ j ][ r ];
-				ndu[ r ][ j ] = saved + rv * temp;
-				saved = lv * temp;
-
-			}
-
-			ndu[ j ][ j ] = saved;
-
-		}
-
-		for ( let j = 0; j <= p; ++ j ) {
-
-			ders[ 0 ][ j ] = ndu[ j ][ p ];
-
-		}
-
-		for ( let r = 0; r <= p; ++ r ) {
-
-			let s1 = 0;
-			let s2 = 1;
-
-			const a = [];
-			for ( let i = 0; i <= p; ++ i ) {
-
-				a[ i ] = zeroArr.slice( 0 );
-
-			}
-
-			a[ 0 ][ 0 ] = 1.0;
-
-			for ( let k = 1; k <= n; ++ k ) {
-
-				let d = 0.0;
-				const rk = r - k;
-				const pk = p - k;
-
-				if ( r >= k ) {
-
-					a[ s2 ][ 0 ] = a[ s1 ][ 0 ] / ndu[ pk + 1 ][ rk ];
-					d = a[ s2 ][ 0 ] * ndu[ rk ][ pk ];
-
-				}
-
-				const j1 = ( rk >= -1 ) ? 1 : - rk;
-				const j2 = ( r - 1 <= pk ) ? k - 1 : p - r;
-
-				for ( let j = j1; j <= j2; ++ j ) {
-
-					a[ s2 ][ j ] = ( a[ s1 ][ j ] - a[ s1 ][ j - 1 ] ) / ndu[ pk + 1 ][ rk + j ];
-					d += a[ s2 ][ j ] * ndu[ rk + j ][ pk ];
-
-				}
-
-				if ( r <= pk ) {
-
-					a[ s2 ][ k ] = - a[ s1 ][ k - 1 ] / ndu[ pk + 1 ][ r ];
-					d += a[ s2 ][ k ] * ndu[ r ][ pk ];
-
-				}
-
-				ders[ k ][ r ] = d;
-
-				const j = s1;
-				s1 = s2;
-				s2 = j;
-
-			}
-
-		}
-
-		let r = p;
-
-		for ( let k = 1; k <= n; ++ k ) {
-
-			for ( let j = 0; j <= p; ++ j ) {
-
-				ders[ k ][ j ] *= r;
-
-			}
-
-			r *= p - k;
-
-		}
-
-		return ders;
-
-	}
-
-	/**
-	 * Calculates derivatives of a B-Spline. See The NURBS Book, page 93, algorithm A3.2.
-	 *
-	 * @param {number} p - The degree.
-	 * @param {Array<number>} U - The knot vector.
-	 * @param {Array<Vector4>} P - The control points
-	 * @param {number} u - The parametric point.
-	 * @param {number} nd - The number of derivatives.
-	 * @return {Array<Vector4>} An array[d+1] with derivatives.
-	 */
-	function calcBSplineDerivatives( p, U, P, u, nd ) {
-
-		const du = nd < p ? nd : p;
-		const CK = [];
-		const span = findSpan( p, u, U );
-		const nders = calcBasisFunctionDerivatives( span, u, p, du, U );
-		const Pw = [];
-
-		for ( let i = 0; i < P.length; ++ i ) {
-
-			const point = P[ i ].clone();
-			const w = point.w;
-
-			point.x *= w;
-			point.y *= w;
-			point.z *= w;
-
-			Pw[ i ] = point;
-
-		}
-
-		for ( let k = 0; k <= du; ++ k ) {
-
-			const point = Pw[ span - p ].clone().multiplyScalar( nders[ k ][ 0 ] );
-
-			for ( let j = 1; j <= p; ++ j ) {
-
-				point.add( Pw[ span - p + j ].clone().multiplyScalar( nders[ k ][ j ] ) );
-
-			}
-
-			CK[ k ] = point;
-
-		}
-
-		for ( let k = du + 1; k <= nd + 1; ++ k ) {
-
-			CK[ k ] = new three.Vector4( 0, 0, 0 );
-
-		}
-
-		return CK;
-
-	}
-
-	/**
-	 * Calculates "K over I".
-	 *
-	 * @param {number} k - The K value.
-	 * @param {number} i - The I value.
-	 * @return {number} k!/(i!(k-i)!)
-	 */
-	function calcKoverI( k, i ) {
-
-		let nom = 1;
-
-		for ( let j = 2; j <= k; ++ j ) {
-
-			nom *= j;
-
-		}
-
-		let denom = 1;
-
-		for ( let j = 2; j <= i; ++ j ) {
-
-			denom *= j;
-
-		}
-
-		for ( let j = 2; j <= k - i; ++ j ) {
-
-			denom *= j;
-
-		}
-
-		return nom / denom;
-
-	}
-
-	/**
-	 * Calculates derivatives (0-nd) of rational curve. See The NURBS Book, page 127, algorithm A4.2.
-	 *
-	 * @param {Array<Vector4>} Pders - Array with derivatives.
-	 * @return {Array<Vector3>} An array with derivatives for rational curve.
-	 */
-	function calcRationalCurveDerivatives( Pders ) {
-
-		const nd = Pders.length;
-		const Aders = [];
-		const wders = [];
-
-		for ( let i = 0; i < nd; ++ i ) {
-
-			const point = Pders[ i ];
-			Aders[ i ] = new three.Vector3( point.x, point.y, point.z );
-			wders[ i ] = point.w;
-
-		}
-
-		const CK = [];
-
-		for ( let k = 0; k < nd; ++ k ) {
-
-			const v = Aders[ k ].clone();
-
-			for ( let i = 1; i <= k; ++ i ) {
-
-				v.sub( CK[ k - i ].clone().multiplyScalar( calcKoverI( k, i ) * wders[ i ] ) );
-
-			}
-
-			CK[ k ] = v.divideScalar( wders[ 0 ] );
-
-		}
-
-		return CK;
-
-	}
-
-	/**
-	 * Calculates NURBS curve derivatives. See The NURBS Book, page 127, algorithm A4.2.
-	 *
-	 * @param {number} p - The degree.
-	 * @param {Array<number>} U - The knot vector.
-	 * @param {Array<Vector4>} P - The control points in homogeneous space.
-	 * @param {number} u - The parametric point.
-	 * @param {number} nd - The number of derivatives.
-	 * @return {Array<Vector3>} array with derivatives for rational curve.
-	 */
-	function calcNURBSDerivatives( p, U, P, u, nd ) {
-
-		const Pders = calcBSplineDerivatives( p, U, P, u, nd );
-		return calcRationalCurveDerivatives( Pders );
-
-	}
-
-	/**
-	 * This class represents a NURBS curve.
-	 *
-	 * Implementation is based on `(x, y [, z=0 [, w=1]])` control points with `w=weight`.
-	 *
-	 * @augments Curve
-	 * @three_import import { NURBSCurve } from 'three/addons/curves/NURBSCurve.js';
-	 */
-	class NURBSCurve extends three.Curve {
-
-		/**
-		 * Constructs a new NURBS curve.
-		 *
-		 * @param {number} degree - The NURBS degree.
-		 * @param {Array<number>} knots - The knots as a flat array of numbers.
-		 * @param {Array<Vector2|Vector3|Vector4>} controlPoints - An array holding control points.
-		 * @param {number} [startKnot] - Index of the start knot into the `knots` array.
-		 * @param {number} [endKnot] - Index of the end knot into the `knots` array.
-		 */
-		constructor( degree, knots, controlPoints, startKnot, endKnot ) {
-
-			super();
-
-			const knotsLength = knots ? knots.length - 1 : 0;
-			const pointsLength = controlPoints ? controlPoints.length : 0;
-
-			/**
-			 * The NURBS degree.
-			 *
-			 * @type {number}
-			 */
-			this.degree = degree;
-
-			/**
-			 * The knots as a flat array of numbers.
-			 *
-			 * @type {Array<number>}
-			 */
-			this.knots = knots;
-
-			/**
-			 * An array of control points.
-			 *
-			 * @type {Array<Vector4>}
-			 */
-			this.controlPoints = [];
-
-			/**
-			 * Index of the start knot into the `knots` array.
-			 *
-			 * @type {number}
-			 */
-			this.startKnot = startKnot || 0;
-
-			/**
-			 * Index of the end knot into the `knots` array.
-			 *
-			 * @type {number}
-			 */
-			this.endKnot = endKnot || knotsLength;
-
-			for ( let i = 0; i < pointsLength; ++ i ) {
-
-				// ensure Vector4 for control points
-				const point = controlPoints[ i ];
-				this.controlPoints[ i ] = new three.Vector4( point.x, point.y, point.z, point.w );
-
-			}
-
-		}
-
-		/**
-		 * This method returns a vector in 3D space for the given interpolation factor.
-		 *
-		 * @param {number} t - A interpolation factor representing a position on the curve. Must be in the range `[0,1]`.
-		 * @param {Vector3} [optionalTarget] - The optional target vector the result is written to.
-		 * @return {Vector3} The position on the curve.
-		 */
-		getPoint( t, optionalTarget = new three.Vector3() ) {
-
-			const point = optionalTarget;
-
-			const u = this.knots[ this.startKnot ] + t * ( this.knots[ this.endKnot ] - this.knots[ this.startKnot ] ); // linear mapping t->u
-
-			// following results in (wx, wy, wz, w) homogeneous point
-			const hpoint = calcBSplinePoint( this.degree, this.knots, this.controlPoints, u );
-
-			if ( hpoint.w !== 1.0 ) {
-
-				// project to 3D space: (wx, wy, wz, w) -> (x, y, z, 1)
-				hpoint.divideScalar( hpoint.w );
-
-			}
-
-			return point.set( hpoint.x, hpoint.y, hpoint.z );
-
-		}
-
-		/**
-		 * Returns a unit vector tangent for the given interpolation factor.
-		 *
-		 * @param {number} t - The interpolation factor.
-		 * @param {Vector3} [optionalTarget] - The optional target vector the result is written to.
-		 * @return {Vector3} The tangent vector.
-		 */
-		getTangent( t, optionalTarget = new three.Vector3() ) {
-
-			const tangent = optionalTarget;
-
-			const u = this.knots[ 0 ] + t * ( this.knots[ this.knots.length - 1 ] - this.knots[ 0 ] );
-			const ders = calcNURBSDerivatives( this.degree, this.knots, this.controlPoints, u, 1 );
-			tangent.copy( ders[ 1 ] ).normalize();
-
-			return tangent;
-
-		}
-
-		toJSON() {
-
-			const data = super.toJSON();
-
-			data.degree = this.degree;
-			data.knots = [ ...this.knots ];
-			data.controlPoints = this.controlPoints.map( p => p.toArray() );
-			data.startKnot = this.startKnot;
-			data.endKnot = this.endKnot;
-
-			return data;
-
-		}
-
-		fromJSON( json ) {
-
-			super.fromJSON( json );
-
-			this.degree = json.degree;
-			this.knots = [ ...json.knots ];
-			this.controlPoints = json.controlPoints.map( p => new three.Vector4( p[ 0 ], p[ 1 ], p[ 2 ], p[ 3 ] ) );
-			this.startKnot = json.startKnot;
-			this.endKnot = json.endKnot;
-
-			return this;
-
-		}
-
-	}
-
-	let fbxTree;
-	let connections;
-	let sceneGraph;
-
-	/**
-	 * A loader for the FBX format.
-	 *
-	 * Requires FBX file to be >= 7.0 and in ASCII or >= 6400 in Binary format.
-	 * Versions lower than this may load but will probably have errors.
-	 *
-	 * Needs Support:
-	 * - Morph normals / blend shape normals
-	 *
-	 * FBX format references:
-	 * - [C++ SDK reference](https://help.autodesk.com/view/FBX/2017/ENU/?guid=__cpp_ref_index_html)
-	 *
-	 * Binary format specification:
-	 * - [FBX binary file format specification](https://code.blender.org/2013/08/fbx-binary-file-format-specification/)
-	 *
-	 * ```js
-	 * const loader = new FBXLoader();
-	 * const object = await loader.loadAsync( 'models/fbx/stanford-bunny.fbx' );
-	 * scene.add( object );
-	 * ```
-	 *
-	 * @augments Loader
-	 * @three_import import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
-	 */
-	class FBXLoader extends three.Loader {
-
-		/**
-		 * Constructs a new FBX loader.
-		 *
-		 * @param {LoadingManager} [manager] - The loading manager.
-		 */
-		constructor( manager ) {
-
-			super( manager );
-
-		}
-
-		/**
-		 * Starts loading from the given URL and passes the loaded FBX asset
-		 * to the `onLoad()` callback.
-		 *
-		 * @param {string} url - The path/URL of the file to be loaded. This can also be a data URI.
-		 * @param {function(Group)} onLoad - Executed when the loading process has been finished.
-		 * @param {onProgressCallback} onProgress - Executed while the loading is in progress.
-		 * @param {onErrorCallback} onError - Executed when errors occur.
-		 */
-		load( url, onLoad, onProgress, onError ) {
-
-			const scope = this;
-
-			const path = ( scope.path === '' ) ? three.LoaderUtils.extractUrlBase( url ) : scope.path;
-
-			const loader = new three.FileLoader( this.manager );
-			loader.setPath( scope.path );
-			loader.setResponseType( 'arraybuffer' );
-			loader.setRequestHeader( scope.requestHeader );
-			loader.setWithCredentials( scope.withCredentials );
-
-			loader.load( url, function ( buffer ) {
-
-				try {
-
-					onLoad( scope.parse( buffer, path ) );
-
-				} catch ( e ) {
-
-					if ( onError ) {
-
-						onError( e );
-
-					} else {
-
-						console.error( e );
-
-					}
-
-					scope.manager.itemError( url );
-
-				}
-
-			}, onProgress, onError );
-
-		}
-
-		/**
-		 * Parses the given FBX data and returns the resulting group.
-		 *
-		 * @param {ArrayBuffer} FBXBuffer - The raw FBX data as an array buffer.
-		 * @param {string} path - The URL base path.
-		 * @return {Group} An object representing the parsed asset.
-		 */
-		parse( FBXBuffer, path ) {
-
-			if ( isFbxFormatBinary( FBXBuffer ) ) {
-
-				fbxTree = new BinaryParser().parse( FBXBuffer );
-
-			} else {
-
-				const FBXText = convertArrayBufferToString( FBXBuffer );
-
-				if ( ! isFbxFormatASCII( FBXText ) ) {
-
-					throw new Error( 'THREE.FBXLoader: Unknown format.' );
-
-				}
-
-				if ( getFbxVersion( FBXText ) < 7000 ) {
-
-					throw new Error( 'THREE.FBXLoader: FBX version not supported, FileVersion: ' + getFbxVersion( FBXText ) );
-
-				}
-
-				fbxTree = new TextParser().parse( FBXText );
-
-			}
-
-			// console.log( fbxTree );
-
-			const textureLoader = new three.TextureLoader( this.manager ).setPath( this.resourcePath || path ).setCrossOrigin( this.crossOrigin );
-
-			return new FBXTreeParser( textureLoader, this.manager ).parse( fbxTree );
-
-		}
-
-	}
-
-	// Parse the FBXTree object returned by the BinaryParser or TextParser and return a Group
-	class FBXTreeParser {
-
-		constructor( textureLoader, manager ) {
-
-			this.textureLoader = textureLoader;
-			this.manager = manager;
-
-		}
-
-		parse() {
-
-			connections = this.parseConnections();
-
-			const images = this.parseImages();
-			const textures = this.parseTextures( images );
-			const materials = this.parseMaterials( textures );
-			const deformers = this.parseDeformers();
-			const geometryMap = new GeometryParser().parse( deformers );
-
-			this.parseScene( deformers, geometryMap, materials );
-
-			return sceneGraph;
-
-		}
-
-		// Parses FBXTree.Connections which holds parent-child connections between objects (e.g. material -> texture, model->geometry )
-		// and details the connection type
-		parseConnections() {
-
-			const connectionMap = new Map();
-
-			if ( 'Connections' in fbxTree ) {
-
-				const rawConnections = fbxTree.Connections.connections;
-
-				rawConnections.forEach( function ( rawConnection ) {
-
-					const fromID = rawConnection[ 0 ];
-					const toID = rawConnection[ 1 ];
-					const relationship = rawConnection[ 2 ];
-
-					if ( ! connectionMap.has( fromID ) ) {
-
-						connectionMap.set( fromID, {
-							parents: [],
-							children: []
-						} );
-
-					}
-
-					const parentRelationship = { ID: toID, relationship: relationship };
-					connectionMap.get( fromID ).parents.push( parentRelationship );
-
-					if ( ! connectionMap.has( toID ) ) {
-
-						connectionMap.set( toID, {
-							parents: [],
-							children: []
-						} );
-
-					}
-
-					const childRelationship = { ID: fromID, relationship: relationship };
-					connectionMap.get( toID ).children.push( childRelationship );
-
-				} );
-
-			}
-
-			return connectionMap;
-
-		}
-
-		// Parse FBXTree.Objects.Video for embedded image data
-		// These images are connected to textures in FBXTree.Objects.Textures
-		// via FBXTree.Connections.
-		parseImages() {
-
-			const images = {};
-			const blobs = {};
-
-			if ( 'Video' in fbxTree.Objects ) {
-
-				const videoNodes = fbxTree.Objects.Video;
-
-				for ( const nodeID in videoNodes ) {
-
-					const videoNode = videoNodes[ nodeID ];
-
-					const id = parseInt( nodeID );
-
-					images[ id ] = videoNode.RelativeFilename || videoNode.Filename;
-
-					// raw image data is in videoNode.Content
-					if ( 'Content' in videoNode ) {
-
-						const arrayBufferContent = ( videoNode.Content instanceof ArrayBuffer ) && ( videoNode.Content.byteLength > 0 );
-						const base64Content = ( typeof videoNode.Content === 'string' ) && ( videoNode.Content !== '' );
-
-						if ( arrayBufferContent || base64Content ) {
-
-							const image = this.parseImage( videoNodes[ nodeID ] );
-
-							blobs[ videoNode.RelativeFilename || videoNode.Filename ] = image;
-
-						}
-
-					}
-
-				}
-
-			}
-
-			for ( const id in images ) {
-
-				const filename = images[ id ];
-
-				if ( blobs[ filename ] !== undefined ) images[ id ] = blobs[ filename ];
-				else images[ id ] = images[ id ].split( '\\' ).pop();
-
-			}
-
-			return images;
-
-		}
-
-		// Parse embedded image data in FBXTree.Video.Content
-		parseImage( videoNode ) {
-
-			const content = videoNode.Content;
-			const fileName = videoNode.RelativeFilename || videoNode.Filename;
-			const extension = fileName.slice( fileName.lastIndexOf( '.' ) + 1 ).toLowerCase();
-
-			let type;
-
-			switch ( extension ) {
-
-				case 'bmp':
-
-					type = 'image/bmp';
-					break;
-
-				case 'jpg':
-				case 'jpeg':
-
-					type = 'image/jpeg';
-					break;
-
-				case 'png':
-
-					type = 'image/png';
-					break;
-
-				case 'tif':
-
-					type = 'image/tiff';
-					break;
-
-				case 'tga':
-
-					if ( this.manager.getHandler( '.tga' ) === null ) {
-
-						console.warn( 'FBXLoader: TGA loader not found, skipping ', fileName );
-
-					}
-
-					type = 'image/tga';
-					break;
-
-				case 'webp':
-
-					type = 'image/webp';
-					break;
-
-				default:
-
-					console.warn( 'FBXLoader: Image type "' + extension + '" is not supported.' );
-					return;
-
-			}
-
-			if ( typeof content === 'string' ) { // ASCII format
-
-				return 'data:' + type + ';base64,' + content;
-
-			} else { // Binary Format
-
-				const array = new Uint8Array( content );
-				return window.URL.createObjectURL( new Blob( [ array ], { type: type } ) );
-
-			}
-
-		}
-
-		// Parse nodes in FBXTree.Objects.Texture
-		// These contain details such as UV scaling, cropping, rotation etc and are connected
-		// to images in FBXTree.Objects.Video
-		parseTextures( images ) {
-
-			const textureMap = new Map();
-
-			if ( 'Texture' in fbxTree.Objects ) {
-
-				const textureNodes = fbxTree.Objects.Texture;
-				for ( const nodeID in textureNodes ) {
-
-					const texture = this.parseTexture( textureNodes[ nodeID ], images );
-					textureMap.set( parseInt( nodeID ), texture );
-
-				}
-
-			}
-
-			return textureMap;
-
-		}
-
-		// Parse individual node in FBXTree.Objects.Texture
-		parseTexture( textureNode, images ) {
-
-			const texture = this.loadTexture( textureNode, images );
-
-			texture.ID = textureNode.id;
-
-			texture.name = textureNode.attrName;
-
-			const wrapModeU = textureNode.WrapModeU;
-			const wrapModeV = textureNode.WrapModeV;
-
-			const valueU = wrapModeU !== undefined ? wrapModeU.value : 0;
-			const valueV = wrapModeV !== undefined ? wrapModeV.value : 0;
-
-			// http://download.autodesk.com/us/fbx/SDKdocs/FBX_SDK_Help/files/fbxsdkref/class_k_fbx_texture.html#889640e63e2e681259ea81061b85143a
-			// 0: repeat(default), 1: clamp
-
-			texture.wrapS = valueU === 0 ? three.RepeatWrapping : three.ClampToEdgeWrapping;
-			texture.wrapT = valueV === 0 ? three.RepeatWrapping : three.ClampToEdgeWrapping;
-
-			if ( 'Scaling' in textureNode ) {
-
-				const values = textureNode.Scaling.value;
-
-				texture.repeat.x = values[ 0 ];
-				texture.repeat.y = values[ 1 ];
-
-			}
-
-			if ( 'Translation' in textureNode ) {
-
-				const values = textureNode.Translation.value;
-
-				texture.offset.x = values[ 0 ];
-				texture.offset.y = values[ 1 ];
-
-			}
-
-			return texture;
-
-		}
-
-		// load a texture specified as a blob or data URI, or via an external URL using TextureLoader
-		loadTexture( textureNode, images ) {
-
-			const extension = textureNode.FileName.split( '.' ).pop().toLowerCase();
-
-			let loader = this.manager.getHandler( `.${extension}` );
-			if ( loader === null ) loader = this.textureLoader;
-
-			const loaderPath = loader.path;
-
-			if ( ! loaderPath ) {
-
-				loader.setPath( this.textureLoader.path );
-
-			}
-
-			const children = connections.get( textureNode.id ).children;
-
-			let fileName;
-
-			if ( children !== undefined && children.length > 0 && images[ children[ 0 ].ID ] !== undefined ) {
-
-				fileName = images[ children[ 0 ].ID ];
-
-				if ( fileName.indexOf( 'blob:' ) === 0 || fileName.indexOf( 'data:' ) === 0 ) {
-
-					loader.setPath( undefined );
-
-				}
-
-			}
-
-			if ( fileName === undefined ) {
-
-				console.warn( 'FBXLoader: Undefined filename, creating placeholder texture.' );
-				return new three.Texture();
-
-			}
-
-			const texture = loader.load( fileName );
-
-			// revert to initial path
-			loader.setPath( loaderPath );
-
-			return texture;
-
-		}
-
-		// Parse nodes in FBXTree.Objects.Material
-		parseMaterials( textureMap ) {
-
-			const materialMap = new Map();
-
-			if ( 'Material' in fbxTree.Objects ) {
-
-				const materialNodes = fbxTree.Objects.Material;
-
-				for ( const nodeID in materialNodes ) {
-
-					const material = this.parseMaterial( materialNodes[ nodeID ], textureMap );
-
-					if ( material !== null ) materialMap.set( parseInt( nodeID ), material );
-
-				}
-
-			}
-
-			return materialMap;
-
-		}
-
-		// Parse single node in FBXTree.Objects.Material
-		// Materials are connected to texture maps in FBXTree.Objects.Textures
-		// FBX format currently only supports Lambert and Phong shading models
-		parseMaterial( materialNode, textureMap ) {
-
-			const ID = materialNode.id;
-			const name = materialNode.attrName;
-			let type = materialNode.ShadingModel;
-
-			// Case where FBX wraps shading model in property object.
-			if ( typeof type === 'object' ) {
-
-				type = type.value;
-
-			}
-
-			// Ignore unused materials which don't have any connections.
-			if ( ! connections.has( ID ) ) return null;
-
-			const parameters = this.parseParameters( materialNode, textureMap, ID );
-
-			let material;
-
-			switch ( type.toLowerCase() ) {
-
-				case 'phong':
-					material = new three.MeshPhongMaterial();
-					break;
-				case 'lambert':
-					material = new three.MeshLambertMaterial();
-					break;
-				default:
-					console.warn( 'THREE.FBXLoader: unknown material type "%s". Defaulting to MeshPhongMaterial.', type );
-					material = new three.MeshPhongMaterial();
-					break;
-
-			}
-
-			material.setValues( parameters );
-			material.name = name;
-
-			return material;
-
-		}
-
-		// Parse FBX material and return parameters suitable for a three.js material
-		// Also parse the texture map and return any textures associated with the material
-		parseParameters( materialNode, textureMap, ID ) {
-
-			const parameters = {};
-
-			if ( materialNode.BumpFactor ) {
-
-				parameters.bumpScale = materialNode.BumpFactor.value;
-
-			}
-
-			if ( materialNode.Diffuse ) {
-
-				parameters.color = three.ColorManagement.colorSpaceToWorking( new three.Color().fromArray( materialNode.Diffuse.value ), three.SRGBColorSpace );
-
-			} else if ( materialNode.DiffuseColor && ( materialNode.DiffuseColor.type === 'Color' || materialNode.DiffuseColor.type === 'ColorRGB' ) ) {
-
-				// The blender exporter exports diffuse here instead of in materialNode.Diffuse
-				parameters.color = three.ColorManagement.colorSpaceToWorking( new three.Color().fromArray( materialNode.DiffuseColor.value ), three.SRGBColorSpace );
-
-			}
-
-			if ( materialNode.DisplacementFactor ) {
-
-				parameters.displacementScale = materialNode.DisplacementFactor.value;
-
-			}
-
-			if ( materialNode.Emissive ) {
-
-				parameters.emissive = three.ColorManagement.colorSpaceToWorking( new three.Color().fromArray( materialNode.Emissive.value ), three.SRGBColorSpace );
-
-			} else if ( materialNode.EmissiveColor && ( materialNode.EmissiveColor.type === 'Color' || materialNode.EmissiveColor.type === 'ColorRGB' ) ) {
-
-				// The blender exporter exports emissive color here instead of in materialNode.Emissive
-				parameters.emissive = three.ColorManagement.colorSpaceToWorking( new three.Color().fromArray( materialNode.EmissiveColor.value ), three.SRGBColorSpace );
-
-			}
-
-			if ( materialNode.EmissiveFactor ) {
-
-				parameters.emissiveIntensity = parseFloat( materialNode.EmissiveFactor.value );
-
-			}
-
-			// the transparency handling is implemented based on Blender's approach:
-			// https://github.com/blender/blender/blob/main/scripts/addons_core/io_scene_fbx/import_fbx.py
-
-			parameters.opacity = 1 - ( materialNode.TransparencyFactor ? parseFloat( materialNode.TransparencyFactor.value ) : 0 );
-
-			if ( parameters.opacity === 1 || parameters.opacity === 0 ) {
-
-				parameters.opacity = ( materialNode.Opacity ? parseFloat( materialNode.Opacity.value ) : null );
-
-				if ( parameters.opacity === null ) {
-
-					// Default to opaque. Some exporters (e.g. 3ds Max) define TransparentColor
-					// as white (1,1,1) without intending transparency, which makes the Unity-style
-					// fallback of `1 - TransparentColor.r` produce incorrect zero opacity.
-					parameters.opacity = 1;
-
-				}
-
-			}
-
-			if ( parameters.opacity < 1.0 ) {
-
-				parameters.transparent = true;
-
-			}
-
-			if ( materialNode.ReflectionFactor ) {
-
-				parameters.reflectivity = materialNode.ReflectionFactor.value;
-
-			}
-
-			if ( materialNode.Shininess ) {
-
-				parameters.shininess = materialNode.Shininess.value;
-
-			}
-
-			if ( materialNode.Specular ) {
-
-				parameters.specular = three.ColorManagement.colorSpaceToWorking( new three.Color().fromArray( materialNode.Specular.value ), three.SRGBColorSpace );
-
-			} else if ( materialNode.SpecularColor && materialNode.SpecularColor.type === 'Color' ) {
-
-				// The blender exporter exports specular color here instead of in materialNode.Specular
-				parameters.specular = three.ColorManagement.colorSpaceToWorking( new three.Color().fromArray( materialNode.SpecularColor.value ), three.SRGBColorSpace );
-
-			}
-
-			const scope = this;
-			connections.get( ID ).children.forEach( function ( child ) {
-
-				const type = child.relationship;
-
-				switch ( type ) {
-
-					case 'Bump':
-						parameters.bumpMap = scope.getTexture( textureMap, child.ID );
-						break;
-
-					case 'Maya|TEX_ao_map':
-						parameters.aoMap = scope.getTexture( textureMap, child.ID );
-						break;
-
-					case 'DiffuseColor':
-					case 'Maya|TEX_color_map':
-						parameters.map = scope.getTexture( textureMap, child.ID );
-						if ( parameters.map !== undefined ) {
-
-							parameters.map.colorSpace = three.SRGBColorSpace;
-
-						}
-
-						break;
-
-					case 'DisplacementColor':
-						parameters.displacementMap = scope.getTexture( textureMap, child.ID );
-						break;
-
-					case 'EmissiveColor':
-						parameters.emissiveMap = scope.getTexture( textureMap, child.ID );
-						if ( parameters.emissiveMap !== undefined ) {
-
-							parameters.emissiveMap.colorSpace = three.SRGBColorSpace;
-
-						}
-
-						break;
-
-					case 'NormalMap':
-					case 'Maya|TEX_normal_map':
-						parameters.normalMap = scope.getTexture( textureMap, child.ID );
-						break;
-
-					case 'ReflectionColor':
-						parameters.envMap = scope.getTexture( textureMap, child.ID );
-						if ( parameters.envMap !== undefined ) {
-
-							parameters.envMap.mapping = three.EquirectangularReflectionMapping;
-							parameters.envMap.colorSpace = three.SRGBColorSpace;
-
-						}
-
-						break;
-
-					case 'SpecularColor':
-						parameters.specularMap = scope.getTexture( textureMap, child.ID );
-						if ( parameters.specularMap !== undefined ) {
-
-							parameters.specularMap.colorSpace = three.SRGBColorSpace;
-
-						}
-
-						break;
-
-					case 'TransparentColor':
-					case 'TransparencyFactor':
-						parameters.alphaMap = scope.getTexture( textureMap, child.ID );
-						parameters.transparent = true;
-						break;
-
-					case 'AmbientColor':
-					case 'ShininessExponent': // AKA glossiness map
-					case 'SpecularFactor': // AKA specularLevel
-					case 'VectorDisplacementColor': // NOTE: Seems to be a copy of DisplacementColor
-					default:
-						console.warn( 'THREE.FBXLoader: %s map is not supported in three.js, skipping texture.', type );
-						break;
-
-				}
-
-			} );
-
-			return parameters;
-
-		}
-
-		// get a texture from the textureMap for use by a material.
-		getTexture( textureMap, id ) {
-
-			// if the texture is a layered texture, just use the first layer and issue a warning
-			if ( 'LayeredTexture' in fbxTree.Objects && id in fbxTree.Objects.LayeredTexture ) {
-
-				console.warn( 'THREE.FBXLoader: layered textures are not supported in three.js. Discarding all but first layer.' );
-				id = connections.get( id ).children[ 0 ].ID;
-
-			}
-
-			return textureMap.get( id );
-
-		}
-
-		// Parse nodes in FBXTree.Objects.Deformer
-		// Deformer node can contain skinning or Vertex Cache animation data, however only skinning is supported here
-		// Generates map of Skeleton-like objects for use later when generating and binding skeletons.
-		parseDeformers() {
-
-			const skeletons = {};
-			const morphTargets = {};
-
-			if ( 'Deformer' in fbxTree.Objects ) {
-
-				const DeformerNodes = fbxTree.Objects.Deformer;
-
-				for ( const nodeID in DeformerNodes ) {
-
-					const deformerNode = DeformerNodes[ nodeID ];
-
-					const relationships = connections.get( parseInt( nodeID ) );
-
-					if ( deformerNode.attrType === 'Skin' ) {
-
-						const skeleton = this.parseSkeleton( relationships, DeformerNodes );
-						skeleton.ID = nodeID;
-
-						if ( relationships.parents.length > 1 ) console.warn( 'THREE.FBXLoader: skeleton attached to more than one geometry is not supported.' );
-						skeleton.geometryID = relationships.parents[ 0 ].ID;
-
-						skeletons[ nodeID ] = skeleton;
-
-					} else if ( deformerNode.attrType === 'BlendShape' ) {
-
-						const morphTarget = {
-							id: nodeID,
-						};
-
-						morphTarget.rawTargets = this.parseMorphTargets( relationships, DeformerNodes );
-						morphTarget.id = nodeID;
-
-						if ( relationships.parents.length > 1 ) console.warn( 'THREE.FBXLoader: morph target attached to more than one geometry is not supported.' );
-
-						morphTargets[ nodeID ] = morphTarget;
-
-					}
-
-				}
-
-			}
-
-			return {
-
-				skeletons: skeletons,
-				morphTargets: morphTargets,
-
-			};
-
-		}
-
-		// Parse single nodes in FBXTree.Objects.Deformer
-		// The top level skeleton node has type 'Skin' and sub nodes have type 'Cluster'
-		// Each skin node represents a skeleton and each cluster node represents a bone
-		parseSkeleton( relationships, deformerNodes ) {
-
-			const rawBones = [];
-
-			relationships.children.forEach( function ( child ) {
-
-				const boneNode = deformerNodes[ child.ID ];
-
-				if ( boneNode.attrType !== 'Cluster' ) return;
-
-				const rawBone = {
-
-					ID: child.ID,
-					indices: [],
-					weights: [],
-					transformLink: new three.Matrix4().fromArray( boneNode.TransformLink.a ),
-
-				};
-
-				if ( 'Indexes' in boneNode ) {
-
-					rawBone.indices = boneNode.Indexes.a;
-					rawBone.weights = boneNode.Weights.a;
-
-				}
-
-				rawBones.push( rawBone );
-
-			} );
-
-			return {
-
-				rawBones: rawBones,
-				bones: []
-
-			};
-
-		}
-
-		// The top level morph deformer node has type "BlendShape" and sub nodes have type "BlendShapeChannel"
-		parseMorphTargets( relationships, deformerNodes ) {
-
-			const rawMorphTargets = [];
-
-			for ( let i = 0; i < relationships.children.length; i ++ ) {
-
-				const child = relationships.children[ i ];
-
-				const morphTargetNode = deformerNodes[ child.ID ];
-
-				const rawMorphTarget = {
-
-					name: morphTargetNode.attrName,
-					initialWeight: morphTargetNode.DeformPercent,
-					id: morphTargetNode.id,
-					fullWeights: morphTargetNode.FullWeights.a
-
-				};
-
-				if ( morphTargetNode.attrType !== 'BlendShapeChannel' ) return;
-
-				rawMorphTarget.geoID = connections.get( parseInt( child.ID ) ).children.filter( function ( child ) {
-
-					return child.relationship === undefined;
-
-				} )[ 0 ].ID;
-
-				rawMorphTargets.push( rawMorphTarget );
-
-			}
-
-			return rawMorphTargets;
-
-		}
-
-		// create the main Group() to be returned by the loader
-		parseScene( deformers, geometryMap, materialMap ) {
-
-			sceneGraph = new three.Group();
-
-			const modelMap = this.parseModels( deformers.skeletons, geometryMap, materialMap );
-
-			const modelNodes = fbxTree.Objects.Model;
-
-			const scope = this;
-			modelMap.forEach( function ( model ) {
-
-				const modelNode = modelNodes[ model.ID ];
-				scope.setLookAtProperties( model, modelNode );
-
-				const parentConnections = connections.get( model.ID ).parents;
-
-				parentConnections.forEach( function ( connection ) {
-
-					const parent = modelMap.get( connection.ID );
-					if ( parent !== undefined ) parent.add( model );
-
-				} );
-
-				if ( model.parent === null ) {
-
-					sceneGraph.add( model );
-
-				}
-
-
-			} );
-
-			this.addGlobalSceneSettings();
-
-			sceneGraph.traverse( function ( node ) {
-
-				if ( node.userData.transformData ) {
-
-					if ( node.parent ) {
-
-						node.userData.transformData.parentMatrix = node.parent.matrix;
-						node.userData.transformData.parentMatrixWorld = node.parent.matrixWorld;
-
-					}
-
-					const transform = generateTransform( node.userData.transformData );
-
-					node.applyMatrix4( transform );
-					node.updateWorldMatrix();
-
-				}
-
-			} );
-
-			// Like Blender's FBX importer, use the BindPose section to set the
-			// rest pose for bones that are not part of a skin cluster. The BindPose
-			// provides a more authoritative rest pose than the Lcl properties which
-			// may represent an animation frame rather than the true rest state.
-			// Bones WITH clusters will get their bind pose from TransformLink
-			// (set via bindSkeleton below), which takes priority.
-			const bindPoseMatrices = this.parsePoseNodes();
-			const clusterBoneIDs = new Set();
-
-			for ( const ID in deformers.skeletons ) {
-
-				deformers.skeletons[ ID ].rawBones.forEach( function ( _, i ) {
-
-					const bone = deformers.skeletons[ ID ].bones[ i ];
-					if ( bone ) clusterBoneIDs.add( bone.ID );
-
-				} );
-
-			}
-
-			const tempMatrix = new three.Matrix4();
-
-			sceneGraph.traverse( function ( node ) {
-
-				if ( node.isBone && node.ID !== undefined && ! clusterBoneIDs.has( node.ID ) ) {
-
-					const bindPose = bindPoseMatrices[ node.ID ];
-
-					if ( bindPose !== undefined ) {
-
-						if ( node.parent ) {
-
-							tempMatrix.copy( node.parent.matrixWorld ).invert();
-							tempMatrix.multiply( bindPose );
-
-						} else {
-
-							tempMatrix.copy( bindPose );
-
-						}
-
-						tempMatrix.decompose( node.position, node.quaternion, node.scale );
-						node.updateMatrix();
-						node.matrixWorld.copy( bindPose );
-
-					}
-
-				}
-
-			} );
-
-			// Bind skeletons after transforms are applied so that bind matrices
-			// are computed from the final scene state. This ensures the rest pose
-			// is correct even when the FBX file's Cluster TransformLink matrices
-			// differ from the reconstructed bone transforms (common in files
-			// without a BindPose section).
-			this.bindSkeleton( deformers.skeletons, geometryMap, modelMap );
-
-			const animations = new AnimationParser().parse();
-
-			// if all the models where already combined in a single group, just return that
-			if ( sceneGraph.children.length === 1 && sceneGraph.children[ 0 ].isGroup ) {
-
-				sceneGraph.children[ 0 ].animations = animations;
-				sceneGraph = sceneGraph.children[ 0 ];
-
-			}
-
-			sceneGraph.animations = animations;
-
-			// Apply coordinate system correction. FBX files can use different
-			// up-axis conventions (Y-up or Z-up). Three.js uses Y-up, so rotate
-			// the scene when the file uses Z-up (UpAxis === 2).
-
-			if ( 'GlobalSettings' in fbxTree && 'UpAxis' in fbxTree.GlobalSettings ) {
-
-				const upAxis = fbxTree.GlobalSettings.UpAxis.value;
-
-				if ( upAxis === 2 ) {
-
-					console.warn( 'THREE.FBXLoader: You are loading an asset with a Z-UP coordinate system. The loader just rotates the asset to transform it into Y-UP. The vertex data are not converted.' );
-
-					sceneGraph.rotation.set( - Math.PI / 2, 0, 0 );
-
-				}
-
-			}
-
-		}
-
-		// parse nodes in FBXTree.Objects.Model
-		parseModels( skeletons, geometryMap, materialMap ) {
-
-			const modelMap = new Map();
-			const modelNodes = fbxTree.Objects.Model;
-
-			for ( const nodeID in modelNodes ) {
-
-				const id = parseInt( nodeID );
-				const node = modelNodes[ nodeID ];
-				const relationships = connections.get( id );
-
-				let model = this.buildSkeleton( relationships, skeletons, id, node.attrName );
-
-				if ( ! model ) {
-
-					switch ( node.attrType ) {
-
-						case 'Camera':
-							model = this.createCamera( relationships );
-							break;
-						case 'Light':
-							model = this.createLight( relationships );
-							break;
-						case 'Mesh':
-							model = this.createMesh( relationships, geometryMap, materialMap );
-							break;
-						case 'NurbsCurve':
-							model = this.createCurve( relationships, geometryMap );
-							break;
-						case 'LimbNode':
-						case 'Root':
-							model = new three.Bone();
-							break;
-						case 'Null':
-						default:
-							model = new three.Group();
-							break;
-
-					}
-
-					model.name = node.attrName ? three.PropertyBinding.sanitizeNodeName( node.attrName ) : '';
-					model.userData.originalName = node.attrName;
-
-					model.ID = id;
-
-				}
-
-				this.getTransformData( model, node );
-				modelMap.set( id, model );
-
-			}
-
-			return modelMap;
-
-		}
-
-		buildSkeleton( relationships, skeletons, id, name ) {
-
-			let bone = null;
-
-			relationships.parents.forEach( function ( parent ) {
-
-				for ( const ID in skeletons ) {
-
-					const skeleton = skeletons[ ID ];
-
-					skeleton.rawBones.forEach( function ( rawBone, i ) {
-
-						if ( rawBone.ID === parent.ID ) {
-
-							const subBone = bone;
-							bone = new three.Bone();
-
-							bone.matrixWorld.copy( rawBone.transformLink );
-
-							// set name and id here - otherwise in cases where "subBone" is created it will not have a name / id
-
-							bone.name = name ? three.PropertyBinding.sanitizeNodeName( name ) : '';
-							bone.userData.originalName = name;
-							bone.ID = id;
-
-							skeleton.bones[ i ] = bone;
-
-							// In cases where a bone is shared between multiple meshes
-							// duplicate the bone here and add it as a child of the first bone
-							if ( subBone !== null ) {
-
-								bone.add( subBone );
-
-							}
-
-						}
-
-					} );
-
-				}
-
-			} );
-
-			return bone;
-
-		}
-
-		// create a PerspectiveCamera or OrthographicCamera
-		createCamera( relationships ) {
-
-			let model;
-			let cameraAttribute;
-
-			relationships.children.forEach( function ( child ) {
-
-				const attr = fbxTree.Objects.NodeAttribute[ child.ID ];
-
-				if ( attr !== undefined ) {
-
-					cameraAttribute = attr;
-
-				}
-
-			} );
-
-			if ( cameraAttribute === undefined ) {
-
-				model = new three.Object3D();
-
-			} else {
-
-				let type = 0;
-				if ( cameraAttribute.CameraProjectionType !== undefined && cameraAttribute.CameraProjectionType.value === 1 ) {
-
-					type = 1;
-
-				}
-
-				let nearClippingPlane = 1;
-				if ( cameraAttribute.NearPlane !== undefined ) {
-
-					nearClippingPlane = cameraAttribute.NearPlane.value / 1000;
-
-				}
-
-				let farClippingPlane = 1000;
-				if ( cameraAttribute.FarPlane !== undefined ) {
-
-					farClippingPlane = cameraAttribute.FarPlane.value / 1000;
-
-				}
-
-
-				let width = window.innerWidth;
-				let height = window.innerHeight;
-
-				if ( cameraAttribute.AspectWidth !== undefined && cameraAttribute.AspectHeight !== undefined ) {
-
-					width = cameraAttribute.AspectWidth.value;
-					height = cameraAttribute.AspectHeight.value;
-
-				}
-
-				const aspect = width / height;
-
-				let fov = 45;
-				if ( cameraAttribute.FieldOfView !== undefined ) {
-
-					fov = cameraAttribute.FieldOfView.value;
-
-				}
-
-				const focalLength = cameraAttribute.FocalLength ? cameraAttribute.FocalLength.value : null;
-
-				switch ( type ) {
-
-					case 0: // Perspective
-						model = new three.PerspectiveCamera( fov, aspect, nearClippingPlane, farClippingPlane );
-						if ( focalLength !== null ) model.setFocalLength( focalLength );
-						break;
-
-					case 1: // Orthographic
-						console.warn( 'THREE.FBXLoader: Orthographic cameras not supported yet.' );
-						model = new three.Object3D();
-						break;
-
-					default:
-						console.warn( 'THREE.FBXLoader: Unknown camera type ' + type + '.' );
-						model = new three.Object3D();
-						break;
-
-				}
-
-			}
-
-			return model;
-
-		}
-
-		// Create a DirectionalLight, PointLight or SpotLight
-		createLight( relationships ) {
-
-			let model;
-			let lightAttribute;
-
-			relationships.children.forEach( function ( child ) {
-
-				const attr = fbxTree.Objects.NodeAttribute[ child.ID ];
-
-				if ( attr !== undefined ) {
-
-					lightAttribute = attr;
-
-				}
-
-			} );
-
-			if ( lightAttribute === undefined ) {
-
-				model = new three.Object3D();
-
-			} else {
-
-				let type;
-
-				// LightType can be undefined for Point lights
-				if ( lightAttribute.LightType === undefined ) {
-
-					type = 0;
-
-				} else {
-
-					type = lightAttribute.LightType.value;
-
-				}
-
-				let color = 0xffffff;
-
-				if ( lightAttribute.Color !== undefined ) {
-
-					color = three.ColorManagement.colorSpaceToWorking( new three.Color().fromArray( lightAttribute.Color.value ), three.SRGBColorSpace );
-
-				}
-
-				let intensity = ( lightAttribute.Intensity === undefined ) ? 1 : lightAttribute.Intensity.value / 100;
-
-				// light disabled
-				if ( lightAttribute.CastLightOnObject !== undefined && lightAttribute.CastLightOnObject.value === 0 ) {
-
-					intensity = 0;
-
-				}
-
-				let distance = 0;
-				if ( lightAttribute.FarAttenuationEnd !== undefined ) {
-
-					if ( lightAttribute.EnableFarAttenuation !== undefined && lightAttribute.EnableFarAttenuation.value === 0 ) {
-
-						distance = 0;
-
-					} else {
-
-						distance = lightAttribute.FarAttenuationEnd.value;
-
-					}
-
-				}
-
-				// TODO: could this be calculated linearly from FarAttenuationStart to FarAttenuationEnd?
-				const decay = 1;
-
-				switch ( type ) {
-
-					case 0: // Point
-						model = new three.PointLight( color, intensity, distance, decay );
-						break;
-
-					case 1: // Directional
-						model = new three.DirectionalLight( color, intensity );
-						break;
-
-					case 2: // Spot
-						let angle = Math.PI / 3;
-						let penumbra = 0;
-
-						if ( lightAttribute.OuterAngle !== undefined ) {
-
-							angle = three.MathUtils.degToRad( lightAttribute.OuterAngle.value );
-
-							if ( lightAttribute.InnerAngle !== undefined ) {
-
-								penumbra = 1 - ( lightAttribute.InnerAngle.value / lightAttribute.OuterAngle.value );
-								penumbra = Math.max( 0, penumbra ); // penumbra must be in the range [0,1]
-
-							}
-
-						} else if ( lightAttribute.InnerAngle !== undefined ) {
-
-							// fallback if only InnerAngle is defined
-
-							angle = three.MathUtils.degToRad( lightAttribute.InnerAngle.value );
-
-						}
-
-						model = new three.SpotLight( color, intensity, distance, angle, penumbra, decay );
-						break;
-
-					default:
-						console.warn( 'THREE.FBXLoader: Unknown light type ' + lightAttribute.LightType.value + ', defaulting to a PointLight.' );
-						model = new three.PointLight( color, intensity );
-						break;
-
-				}
-
-				if ( lightAttribute.CastShadows !== undefined && lightAttribute.CastShadows.value === 1 ) {
-
-					model.castShadow = true;
-
-				}
-
-			}
-
-			return model;
-
-		}
-
-		createMesh( relationships, geometryMap, materialMap ) {
-
-			let model;
-			let geometry = null;
-			let material = null;
-			const materials = [];
-
-			// get geometry and materials(s) from connections
-			relationships.children.forEach( function ( child ) {
-
-				if ( geometryMap.has( child.ID ) ) {
-
-					geometry = geometryMap.get( child.ID );
-
-				}
-
-				if ( materialMap.has( child.ID ) ) {
-
-					materials.push( materialMap.get( child.ID ) );
-
-				}
-
-			} );
-
-			if ( materials.length > 1 ) {
-
-				material = materials;
-
-			} else if ( materials.length > 0 ) {
-
-				material = materials[ 0 ];
-
-			} else {
-
-				material = new three.MeshPhongMaterial( {
-					name: three.Loader.DEFAULT_MATERIAL_NAME,
-					color: 0xcccccc
-				} );
-				materials.push( material );
-
-			}
-
-			if ( 'color' in geometry.attributes ) {
-
-				materials.forEach( function ( material ) {
-
-					material.vertexColors = true;
-
-				} );
-
-			}
-
-			// Sanitization: If geometry has groups, then it must match the provided material array.
-			// If not, we need to clean up the `group.materialIndex` properties inside the groups and point at a (new) default material.
-			// This isn't well defined; Unity creates default material, while Blender implicitly uses the previous material in the list.
-			if ( geometry.groups.length > 0 ) {
-
-				let needsDefaultMaterial = false;
-
-				for ( let i = 0, il = geometry.groups.length; i < il; i ++ ) {
-
-					const group = geometry.groups[ i ];
-
-					if ( group.materialIndex < 0 || group.materialIndex >= materials.length ) {
-
-						group.materialIndex = materials.length;
-						needsDefaultMaterial = true;
-
-					}
-
-				}
-
-				if ( needsDefaultMaterial ) {
-
-					const defaultMaterial = new three.MeshPhongMaterial();
-					materials.push( defaultMaterial );
-
-				}
-
-			}
-
-			if ( geometry.FBX_Deformer ) {
-
-				model = new three.SkinnedMesh( geometry, material );
-				model.normalizeSkinWeights();
-
-			} else {
-
-				model = new three.Mesh( geometry, material );
-
-			}
-
-			return model;
-
-		}
-
-		createCurve( relationships, geometryMap ) {
-
-			const geometry = relationships.children.reduce( function ( geo, child ) {
-
-				if ( geometryMap.has( child.ID ) ) geo = geometryMap.get( child.ID );
-
-				return geo;
-
-			}, null );
-
-			// FBX does not list materials for Nurbs lines, so we'll just put our own in here.
-			const material = new three.LineBasicMaterial( {
-				name: three.Loader.DEFAULT_MATERIAL_NAME,
-				color: 0x3300ff,
-				linewidth: 1
-			} );
-			return new three.Line( geometry, material );
-
-		}
-
-		// parse the model node for transform data
-		getTransformData( model, modelNode ) {
-
-			const transformData = {};
-
-			if ( 'InheritType' in modelNode ) transformData.inheritType = parseInt( modelNode.InheritType.value );
-
-			if ( 'RotationOrder' in modelNode ) transformData.eulerOrder = getEulerOrder( modelNode.RotationOrder.value );
-			else transformData.eulerOrder = getEulerOrder( 0 );
-
-			if ( 'Lcl_Translation' in modelNode ) transformData.translation = modelNode.Lcl_Translation.value;
-
-			if ( 'PreRotation' in modelNode ) transformData.preRotation = modelNode.PreRotation.value;
-			if ( 'Lcl_Rotation' in modelNode ) transformData.rotation = modelNode.Lcl_Rotation.value;
-			if ( 'PostRotation' in modelNode ) transformData.postRotation = modelNode.PostRotation.value;
-
-			if ( 'Lcl_Scaling' in modelNode ) transformData.scale = modelNode.Lcl_Scaling.value;
-
-			if ( 'ScalingOffset' in modelNode ) transformData.scalingOffset = modelNode.ScalingOffset.value;
-			if ( 'ScalingPivot' in modelNode ) transformData.scalingPivot = modelNode.ScalingPivot.value;
-
-			if ( 'RotationOffset' in modelNode ) transformData.rotationOffset = modelNode.RotationOffset.value;
-			if ( 'RotationPivot' in modelNode ) transformData.rotationPivot = modelNode.RotationPivot.value;
-
-			model.userData.transformData = transformData;
-
-		}
-
-		setLookAtProperties( model, modelNode ) {
-
-			if ( 'LookAtProperty' in modelNode ) {
-
-				const children = connections.get( model.ID ).children;
-
-				children.forEach( function ( child ) {
-
-					if ( child.relationship === 'LookAtProperty' ) {
-
-						const lookAtTarget = fbxTree.Objects.Model[ child.ID ];
-
-						if ( 'Lcl_Translation' in lookAtTarget ) {
-
-							const pos = lookAtTarget.Lcl_Translation.value;
-
-							// DirectionalLight, SpotLight
-							if ( model.target !== undefined ) {
-
-								model.target.position.fromArray( pos );
-								sceneGraph.add( model.target );
-
-							} else { // Cameras and other Object3Ds
-
-								model.lookAt( new three.Vector3().fromArray( pos ) );
-
-							}
-
-						}
-
-					}
-
-				} );
-
-			}
-
-		}
-
-		bindSkeleton( skeletons, geometryMap, modelMap ) {
-
-			for ( const ID in skeletons ) {
-
-				const skeleton = skeletons[ ID ];
-
-				// Compute bone inverses from TransformLink rather than from the
-				// bones' current matrixWorld. The TransformLink matrices represent
-				// each bone's global transform at the time the skin weights were
-				// painted, which may differ from the scene-reconstructed transforms.
-				const boneInverses = [];
-
-				for ( let i = 0, l = skeleton.bones.length; i < l; i ++ ) {
-
-					const inverse = new three.Matrix4();
-
-					if ( skeleton.bones[ i ] && skeleton.rawBones[ i ] ) {
-
-						inverse.copy( skeleton.rawBones[ i ].transformLink ).invert();
-
-					}
-
-					boneInverses.push( inverse );
-
-				}
-
-				const parents = connections.get( parseInt( skeleton.ID ) ).parents;
-
-				parents.forEach( function ( parent ) {
-
-					if ( geometryMap.has( parent.ID ) ) {
-
-						const geoID = parent.ID;
-						const geoRelationships = connections.get( geoID );
-
-						geoRelationships.parents.forEach( function ( geoConnParent ) {
-
-							if ( modelMap.has( geoConnParent.ID ) ) {
-
-								const model = modelMap.get( geoConnParent.ID );
-
-								// Use the mesh's current matrixWorld as bind matrix.
-								// The BindPose section is intentionally not used here
-								// since it may contain scale/rotation from the model
-								// hierarchy that is inconsistent with the TransformLink-
-								// based bone inverses. Always provide a bind matrix to
-								// prevent bind() from calling calculateInverses() which
-								// would overwrite the bone inverses computed above.
-								model.updateMatrixWorld( true );
-
-								model.bind( new three.Skeleton( skeleton.bones, boneInverses ), model.matrixWorld );
-
-							}
-
-						} );
-
-					}
-
-				} );
-
-			}
-
-		}
-
-		// Parse BindPose nodes and return a map of node ID to bind matrix.
-		parsePoseNodes() {
-
-			const bindMatrices = {};
-
-			if ( 'Pose' in fbxTree.Objects ) {
-
-				const BindPoseNode = fbxTree.Objects.Pose;
-
-				for ( const nodeID in BindPoseNode ) {
-
-					if ( BindPoseNode[ nodeID ].attrType === 'BindPose' && BindPoseNode[ nodeID ].NbPoseNodes > 0 ) {
-
-						const poseNodes = BindPoseNode[ nodeID ].PoseNode;
-
-						if ( Array.isArray( poseNodes ) ) {
-
-							poseNodes.forEach( function ( poseNode ) {
-
-								bindMatrices[ poseNode.Node ] = new three.Matrix4().fromArray( poseNode.Matrix.a );
-
-							} );
-
-						} else {
-
-							bindMatrices[ poseNodes.Node ] = new three.Matrix4().fromArray( poseNodes.Matrix.a );
-
-						}
-
-					}
-
-				}
-
-			}
-
-			return bindMatrices;
-
-		}
-
-		addGlobalSceneSettings() {
-
-			if ( 'GlobalSettings' in fbxTree ) {
-
-				if ( 'AmbientColor' in fbxTree.GlobalSettings ) {
-
-					// Parse ambient color - if it's not set to black (default), create an ambient light
-
-					const ambientColor = fbxTree.GlobalSettings.AmbientColor.value;
-					const r = ambientColor[ 0 ];
-					const g = ambientColor[ 1 ];
-					const b = ambientColor[ 2 ];
-
-					if ( r !== 0 || g !== 0 || b !== 0 ) {
-
-						const color = new three.Color().setRGB( r, g, b, three.SRGBColorSpace );
-						sceneGraph.add( new three.AmbientLight( color, 1 ) );
-
-					}
-
-				}
-
-				if ( 'UnitScaleFactor' in fbxTree.GlobalSettings ) {
-
-					sceneGraph.userData.unitScaleFactor = fbxTree.GlobalSettings.UnitScaleFactor.value;
-
-				}
-
-			}
-
-		}
-
-	}
-
-	// parse Geometry data from FBXTree and return map of BufferGeometries
-	class GeometryParser {
-
-		constructor() {
-
-			this.negativeMaterialIndices = false;
-
-		}
-
-		// Parse nodes in FBXTree.Objects.Geometry
-		parse( deformers ) {
-
-			const geometryMap = new Map();
-
-			if ( 'Geometry' in fbxTree.Objects ) {
-
-				const geoNodes = fbxTree.Objects.Geometry;
-
-				for ( const nodeID in geoNodes ) {
-
-					const relationships = connections.get( parseInt( nodeID ) );
-					const geo = this.parseGeometry( relationships, geoNodes[ nodeID ], deformers );
-
-					geometryMap.set( parseInt( nodeID ), geo );
-
-				}
-
-			}
-
-			// report warnings
-
-			if ( this.negativeMaterialIndices === true ) {
-
-				console.warn( 'THREE.FBXLoader: The FBX file contains invalid (negative) material indices. The asset might not render as expected.' );
-
-			}
-
-			return geometryMap;
-
-		}
-
-		// Parse single node in FBXTree.Objects.Geometry
-		parseGeometry( relationships, geoNode, deformers ) {
-
-			switch ( geoNode.attrType ) {
-
-				case 'Mesh':
-					return this.parseMeshGeometry( relationships, geoNode, deformers );
-
-				case 'NurbsCurve':
-					return this.parseNurbsGeometry( geoNode );
-
-			}
-
-		}
-
-		// Parse single node mesh geometry in FBXTree.Objects.Geometry
-		parseMeshGeometry( relationships, geoNode, deformers ) {
-
-			const skeletons = deformers.skeletons;
-			const morphTargets = [];
-
-			const modelNodes = relationships.parents.map( function ( parent ) {
-
-				return fbxTree.Objects.Model[ parent.ID ];
-
-			} );
-
-			// don't create geometry if it is not associated with any models
-			if ( modelNodes.length === 0 ) return;
-
-			const skeleton = relationships.children.reduce( function ( skeleton, child ) {
-
-				if ( skeletons[ child.ID ] !== undefined ) skeleton = skeletons[ child.ID ];
-
-				return skeleton;
-
-			}, null );
-
-			relationships.children.forEach( function ( child ) {
-
-				if ( deformers.morphTargets[ child.ID ] !== undefined ) {
-
-					morphTargets.push( deformers.morphTargets[ child.ID ] );
-
-				}
-
-			} );
-
-			// Assume one model and get the preRotation from that
-			// if there is more than one model associated with the geometry this may cause problems
-			const modelNode = modelNodes[ 0 ];
-
-			const transformData = {};
-
-			if ( 'RotationOrder' in modelNode ) transformData.eulerOrder = getEulerOrder( modelNode.RotationOrder.value );
-			if ( 'InheritType' in modelNode ) transformData.inheritType = parseInt( modelNode.InheritType.value );
-
-			if ( 'GeometricTranslation' in modelNode ) transformData.translation = modelNode.GeometricTranslation.value;
-			if ( 'GeometricRotation' in modelNode ) transformData.rotation = modelNode.GeometricRotation.value;
-			if ( 'GeometricScaling' in modelNode ) transformData.scale = modelNode.GeometricScaling.value;
-
-			const transform = generateTransform( transformData );
-
-			return this.genGeometry( geoNode, skeleton, morphTargets, transform );
-
-		}
-
-		// Generate a BufferGeometry from a node in FBXTree.Objects.Geometry
-		genGeometry( geoNode, skeleton, morphTargets, preTransform ) {
-
-			const geo = new three.BufferGeometry();
-			if ( geoNode.attrName ) geo.name = geoNode.attrName;
-
-			const geoInfo = this.parseGeoNode( geoNode, skeleton );
-			const buffers = this.genBuffers( geoInfo );
-
-			const positionAttribute = new three.Float32BufferAttribute( buffers.vertex, 3 );
-
-			positionAttribute.applyMatrix4( preTransform );
-
-			geo.setAttribute( 'position', positionAttribute );
-
-			if ( buffers.colors.length > 0 ) {
-
-				geo.setAttribute( 'color', new three.Float32BufferAttribute( buffers.colors, 3 ) );
-
-			}
-
-			if ( skeleton ) {
-
-				geo.setAttribute( 'skinIndex', new three.Uint16BufferAttribute( buffers.weightsIndices, 4 ) );
-
-				geo.setAttribute( 'skinWeight', new three.Float32BufferAttribute( buffers.vertexWeights, 4 ) );
-
-				// used later to bind the skeleton to the model
-				geo.FBX_Deformer = skeleton;
-
-			}
-
-			if ( buffers.normal.length > 0 ) {
-
-				const normalMatrix = new three.Matrix3().getNormalMatrix( preTransform );
-
-				const normalAttribute = new three.Float32BufferAttribute( buffers.normal, 3 );
-				normalAttribute.applyNormalMatrix( normalMatrix );
-
-				geo.setAttribute( 'normal', normalAttribute );
-
-			}
-
-			buffers.uvs.forEach( function ( uvBuffer, i ) {
-
-				const name = i === 0 ? 'uv' : `uv${ i }`;
-
-				geo.setAttribute( name, new three.Float32BufferAttribute( buffers.uvs[ i ], 2 ) );
-
-			} );
-
-			if ( geoInfo.material && geoInfo.material.mappingType !== 'AllSame' ) {
-
-				// Convert the material indices of each vertex into rendering groups on the geometry.
-				let prevMaterialIndex = buffers.materialIndex[ 0 ];
-				let startIndex = 0;
-
-				buffers.materialIndex.forEach( function ( currentIndex, i ) {
-
-					if ( currentIndex !== prevMaterialIndex ) {
-
-						geo.addGroup( startIndex, i - startIndex, prevMaterialIndex );
-
-						prevMaterialIndex = currentIndex;
-						startIndex = i;
-
-					}
-
-				} );
-
-				// the loop above doesn't add the last group, do that here.
-				if ( geo.groups.length > 0 ) {
-
-					const lastGroup = geo.groups[ geo.groups.length - 1 ];
-					const lastIndex = lastGroup.start + lastGroup.count;
-
-					if ( lastIndex !== buffers.materialIndex.length ) {
-
-						geo.addGroup( lastIndex, buffers.materialIndex.length - lastIndex, prevMaterialIndex );
-
-					}
-
-				}
-
-				// case where there are multiple materials but the whole geometry is only
-				// using one of them
-				if ( geo.groups.length === 0 ) {
-
-					geo.addGroup( 0, buffers.materialIndex.length, buffers.materialIndex[ 0 ] );
-
-				}
-
-			}
-
-			this.addMorphTargets( geo, geoNode, morphTargets, preTransform );
-
-			return geo;
-
-		}
-
-		parseGeoNode( geoNode, skeleton ) {
-
-			const geoInfo = {};
-
-			geoInfo.vertexPositions = ( geoNode.Vertices !== undefined ) ? geoNode.Vertices.a : [];
-			geoInfo.vertexIndices = ( geoNode.PolygonVertexIndex !== undefined ) ? geoNode.PolygonVertexIndex.a : [];
-
-			if ( geoNode.LayerElementColor && geoNode.LayerElementColor[ 0 ].Colors ) {
-
-				geoInfo.color = this.parseVertexColors( geoNode.LayerElementColor[ 0 ] );
-
-			}
-
-			if ( geoNode.LayerElementMaterial ) {
-
-				geoInfo.material = this.parseMaterialIndices( geoNode.LayerElementMaterial[ 0 ] );
-
-			}
-
-			if ( geoNode.LayerElementNormal ) {
-
-				geoInfo.normal = this.parseNormals( geoNode.LayerElementNormal[ 0 ] );
-
-			}
-
-			if ( geoNode.LayerElementUV ) {
-
-				geoInfo.uv = [];
-
-				let i = 0;
-				while ( geoNode.LayerElementUV[ i ] ) {
-
-					if ( geoNode.LayerElementUV[ i ].UV ) {
-
-						geoInfo.uv.push( this.parseUVs( geoNode.LayerElementUV[ i ] ) );
-
-					}
-
-					i ++;
-
-				}
-
-			}
-
-			geoInfo.weightTable = {};
-
-			if ( skeleton !== null ) {
-
-				geoInfo.skeleton = skeleton;
-
-				skeleton.rawBones.forEach( function ( rawBone, i ) {
-
-					// loop over the bone's vertex indices and weights
-					rawBone.indices.forEach( function ( index, j ) {
-
-						if ( geoInfo.weightTable[ index ] === undefined ) geoInfo.weightTable[ index ] = [];
-
-						geoInfo.weightTable[ index ].push( {
-
-							id: i,
-							weight: rawBone.weights[ j ],
-
-						} );
-
-					} );
-
-				} );
-
-			}
-
-			return geoInfo;
-
-		}
-
-		genBuffers( geoInfo ) {
-
-			const buffers = {
-				vertex: [],
-				normal: [],
-				colors: [],
-				uvs: [],
-				materialIndex: [],
-				vertexWeights: [],
-				weightsIndices: [],
-			};
-
-			let polygonIndex = 0;
-			let faceLength = 0;
-			let displayedWeightsWarning = false;
-
-			// these will hold data for a single face
-			let facePositionIndexes = [];
-			let faceNormals = [];
-			let faceColors = [];
-			let faceUVs = [];
-			let faceWeights = [];
-			let faceWeightIndices = [];
-
-			const scope = this;
-			geoInfo.vertexIndices.forEach( function ( vertexIndex, polygonVertexIndex ) {
-
-				let materialIndex;
-				let endOfFace = false;
-
-				// Face index and vertex index arrays are combined in a single array
-				// A cube with quad faces looks like this:
-				// PolygonVertexIndex: *24 {
-				//  a: 0, 1, 3, -3, 2, 3, 5, -5, 4, 5, 7, -7, 6, 7, 1, -1, 1, 7, 5, -4, 6, 0, 2, -5
-				//  }
-				// Negative numbers mark the end of a face - first face here is 0, 1, 3, -3
-				// to find index of last vertex bit shift the index: ^ - 1
-				if ( vertexIndex < 0 ) {
-
-					vertexIndex = vertexIndex ^ -1; // equivalent to ( x * -1 ) - 1
-					endOfFace = true;
-
-				}
-
-				let weightIndices = [];
-				let weights = [];
-
-				facePositionIndexes.push( vertexIndex * 3, vertexIndex * 3 + 1, vertexIndex * 3 + 2 );
-
-				if ( geoInfo.color ) {
-
-					const data = getData( polygonVertexIndex, polygonIndex, vertexIndex, geoInfo.color );
-
-					faceColors.push( data[ 0 ], data[ 1 ], data[ 2 ] );
-
-				}
-
-				if ( geoInfo.skeleton ) {
-
-					if ( geoInfo.weightTable[ vertexIndex ] !== undefined ) {
-
-						geoInfo.weightTable[ vertexIndex ].forEach( function ( wt ) {
-
-							weights.push( wt.weight );
-							weightIndices.push( wt.id );
-
-						} );
-
-
-					}
-
-					if ( weights.length > 4 ) {
-
-						if ( ! displayedWeightsWarning ) {
-
-							console.warn( 'THREE.FBXLoader: Vertex has more than 4 skinning weights assigned to vertex. Deleting additional weights.' );
-							displayedWeightsWarning = true;
-
-						}
-
-						const wIndex = [ 0, 0, 0, 0 ];
-						const Weight = [ 0, 0, 0, 0 ];
-
-						weights.forEach( function ( weight, weightIndex ) {
-
-							let currentWeight = weight;
-							let currentIndex = weightIndices[ weightIndex ];
-
-							Weight.forEach( function ( comparedWeight, comparedWeightIndex, comparedWeightArray ) {
-
-								if ( currentWeight > comparedWeight ) {
-
-									comparedWeightArray[ comparedWeightIndex ] = currentWeight;
-									currentWeight = comparedWeight;
-
-									const tmp = wIndex[ comparedWeightIndex ];
-									wIndex[ comparedWeightIndex ] = currentIndex;
-									currentIndex = tmp;
-
-								}
-
-							} );
-
-						} );
-
-						weightIndices = wIndex;
-						weights = Weight;
-
-					}
-
-					// if the weight array is shorter than 4 pad with 0s
-					while ( weights.length < 4 ) {
-
-						weights.push( 0 );
-						weightIndices.push( 0 );
-
-					}
-
-					for ( let i = 0; i < 4; ++ i ) {
-
-						faceWeights.push( weights[ i ] );
-						faceWeightIndices.push( weightIndices[ i ] );
-
-					}
-
-				}
-
-				if ( geoInfo.normal ) {
-
-					const data = getData( polygonVertexIndex, polygonIndex, vertexIndex, geoInfo.normal );
-
-					faceNormals.push( data[ 0 ], data[ 1 ], data[ 2 ] );
-
-				}
-
-				if ( geoInfo.material && geoInfo.material.mappingType !== 'AllSame' ) {
-
-					materialIndex = getData( polygonVertexIndex, polygonIndex, vertexIndex, geoInfo.material )[ 0 ];
-
-					if ( materialIndex < 0 ) {
-
-						scope.negativeMaterialIndices = true;
-						materialIndex = 0; // fallback
-
-					}
-
-				}
-
-				if ( geoInfo.uv ) {
-
-					geoInfo.uv.forEach( function ( uv, i ) {
-
-						const data = getData( polygonVertexIndex, polygonIndex, vertexIndex, uv );
-
-						if ( faceUVs[ i ] === undefined ) {
-
-							faceUVs[ i ] = [];
-
-						}
-
-						faceUVs[ i ].push( data[ 0 ] );
-						faceUVs[ i ].push( data[ 1 ] );
-
-					} );
-
-				}
-
-				faceLength ++;
-
-				if ( endOfFace ) {
-
-					scope.genFace( buffers, geoInfo, facePositionIndexes, materialIndex, faceNormals, faceColors, faceUVs, faceWeights, faceWeightIndices, faceLength );
-
-					polygonIndex ++;
-					faceLength = 0;
-
-					// reset arrays for the next face
-					facePositionIndexes = [];
-					faceNormals = [];
-					faceColors = [];
-					faceUVs = [];
-					faceWeights = [];
-					faceWeightIndices = [];
-
-				}
-
-			} );
-
-			return buffers;
-
-		}
-
-		// See https://www.khronos.org/opengl/wiki/Calculating_a_Surface_Normal
-		getNormalNewell( vertices ) {
-
-			const normal = new three.Vector3( 0.0, 0.0, 0.0 );
-
-			for ( let i = 0; i < vertices.length; i ++ ) {
-
-				const current = vertices[ i ];
-				const next = vertices[ ( i + 1 ) % vertices.length ];
-
-				normal.x += ( current.y - next.y ) * ( current.z + next.z );
-				normal.y += ( current.z - next.z ) * ( current.x + next.x );
-				normal.z += ( current.x - next.x ) * ( current.y + next.y );
-
-			}
-
-			normal.normalize();
-
-			return normal;
-
-		}
-
-		getNormalTangentAndBitangent( vertices ) {
-
-			const normalVector = this.getNormalNewell( vertices );
-			// Avoid up being equal or almost equal to normalVector
-			const up = Math.abs( normalVector.z ) > 0.5 ? new three.Vector3( 0.0, 1.0, 0.0 ) : new three.Vector3( 0.0, 0.0, 1.0 );
-			const tangent = up.cross( normalVector ).normalize();
-			const bitangent = normalVector.clone().cross( tangent ).normalize();
-
-			return {
-				normal: normalVector,
-				tangent: tangent,
-				bitangent: bitangent
-			};
-
-		}
-
-		flattenVertex( vertex, normalTangent, normalBitangent ) {
-
-			return new three.Vector2(
-				vertex.dot( normalTangent ),
-				vertex.dot( normalBitangent )
-			);
-
-		}
-
-		// Generate data for a single face in a geometry. If the face is a quad then split it into 2 tris
-		genFace( buffers, geoInfo, facePositionIndexes, materialIndex, faceNormals, faceColors, faceUVs, faceWeights, faceWeightIndices, faceLength ) {
-
-			let triangles;
-
-			if ( faceLength > 3 ) {
-
-				// Triangulate n-gon using earcut
-
-				const vertices = [];
-				// in morphing scenario vertexPositions represent morphPositions
-				// while baseVertexPositions represent the original geometry's positions
-				const positions = geoInfo.baseVertexPositions || geoInfo.vertexPositions;
-				for ( let i = 0; i < facePositionIndexes.length; i += 3 ) {
-
-					vertices.push(
-						new three.Vector3(
-							positions[ facePositionIndexes[ i ] ],
-							positions[ facePositionIndexes[ i + 1 ] ],
-							positions[ facePositionIndexes[ i + 2 ] ]
-						)
-					);
-
-				}
-
-				const { tangent, bitangent } = this.getNormalTangentAndBitangent( vertices );
-				const triangulationInput = [];
-
-				for ( const vertex of vertices ) {
-
-					triangulationInput.push( this.flattenVertex( vertex, tangent, bitangent ) );
-
-				}
-
-				// When vertices is an array of [0,0,0] elements (which is the case for vertices not participating in morph)
-				// the triangulationInput will be an array of [0,0] elements
-				// resulting in an array of 0 triangles being returned from ShapeUtils.triangulateShape
-				// leading to not pushing into buffers.vertex the redundant vertices (the vertices that are not morphed).
-				// That's why, in order to support morphing scenario, "positions" is looking first for baseVertexPositions,
-				// so that we don't end up with an array of 0 triangles for the faces not participating in morph.
-				triangles = three.ShapeUtils.triangulateShape( triangulationInput, [] );
-
-			} else {
-
-				// Regular triangle, skip earcut triangulation step
-				triangles = [[ 0, 1, 2 ]];
-
-			}
-
-			for ( const [ i0, i1, i2 ] of triangles ) {
-
-				buffers.vertex.push( geoInfo.vertexPositions[ facePositionIndexes[ i0 * 3 ] ] );
-				buffers.vertex.push( geoInfo.vertexPositions[ facePositionIndexes[ i0 * 3 + 1 ] ] );
-				buffers.vertex.push( geoInfo.vertexPositions[ facePositionIndexes[ i0 * 3 + 2 ] ] );
-
-				buffers.vertex.push( geoInfo.vertexPositions[ facePositionIndexes[ i1 * 3 ] ] );
-				buffers.vertex.push( geoInfo.vertexPositions[ facePositionIndexes[ i1 * 3 + 1 ] ] );
-				buffers.vertex.push( geoInfo.vertexPositions[ facePositionIndexes[ i1 * 3 + 2 ] ] );
-
-				buffers.vertex.push( geoInfo.vertexPositions[ facePositionIndexes[ i2 * 3 ] ] );
-				buffers.vertex.push( geoInfo.vertexPositions[ facePositionIndexes[ i2 * 3 + 1 ] ] );
-				buffers.vertex.push( geoInfo.vertexPositions[ facePositionIndexes[ i2 * 3 + 2 ] ] );
-
-				if ( geoInfo.skeleton ) {
-
-					buffers.vertexWeights.push( faceWeights[ i0 * 4 ] );
-					buffers.vertexWeights.push( faceWeights[ i0 * 4 + 1 ] );
-					buffers.vertexWeights.push( faceWeights[ i0 * 4 + 2 ] );
-					buffers.vertexWeights.push( faceWeights[ i0 * 4 + 3 ] );
-
-					buffers.vertexWeights.push( faceWeights[ i1 * 4 ] );
-					buffers.vertexWeights.push( faceWeights[ i1 * 4 + 1 ] );
-					buffers.vertexWeights.push( faceWeights[ i1 * 4 + 2 ] );
-					buffers.vertexWeights.push( faceWeights[ i1 * 4 + 3 ] );
-
-					buffers.vertexWeights.push( faceWeights[ i2 * 4 ] );
-					buffers.vertexWeights.push( faceWeights[ i2 * 4 + 1 ] );
-					buffers.vertexWeights.push( faceWeights[ i2 * 4 + 2 ] );
-					buffers.vertexWeights.push( faceWeights[ i2 * 4 + 3 ] );
-
-					buffers.weightsIndices.push( faceWeightIndices[ i0 * 4 ] );
-					buffers.weightsIndices.push( faceWeightIndices[ i0 * 4 + 1 ] );
-					buffers.weightsIndices.push( faceWeightIndices[ i0 * 4 + 2 ] );
-					buffers.weightsIndices.push( faceWeightIndices[ i0 * 4 + 3 ] );
-
-					buffers.weightsIndices.push( faceWeightIndices[ i1 * 4 ] );
-					buffers.weightsIndices.push( faceWeightIndices[ i1 * 4 + 1 ] );
-					buffers.weightsIndices.push( faceWeightIndices[ i1 * 4 + 2 ] );
-					buffers.weightsIndices.push( faceWeightIndices[ i1 * 4 + 3 ] );
-
-					buffers.weightsIndices.push( faceWeightIndices[ i2 * 4 ] );
-					buffers.weightsIndices.push( faceWeightIndices[ i2 * 4 + 1 ] );
-					buffers.weightsIndices.push( faceWeightIndices[ i2 * 4 + 2 ] );
-					buffers.weightsIndices.push( faceWeightIndices[ i2 * 4 + 3 ] );
-
-				}
-
-				if ( geoInfo.color ) {
-
-					buffers.colors.push( faceColors[ i0 * 3 ] );
-					buffers.colors.push( faceColors[ i0 * 3 + 1 ] );
-					buffers.colors.push( faceColors[ i0 * 3 + 2 ] );
-
-					buffers.colors.push( faceColors[ i1 * 3 ] );
-					buffers.colors.push( faceColors[ i1 * 3 + 1 ] );
-					buffers.colors.push( faceColors[ i1 * 3 + 2 ] );
-
-					buffers.colors.push( faceColors[ i2 * 3 ] );
-					buffers.colors.push( faceColors[ i2 * 3 + 1 ] );
-					buffers.colors.push( faceColors[ i2 * 3 + 2 ] );
-
-				}
-
-				if ( geoInfo.material && geoInfo.material.mappingType !== 'AllSame' ) {
-
-					buffers.materialIndex.push( materialIndex );
-					buffers.materialIndex.push( materialIndex );
-					buffers.materialIndex.push( materialIndex );
-
-				}
-
-				if ( geoInfo.normal ) {
-
-					buffers.normal.push( faceNormals[ i0 * 3 ] );
-					buffers.normal.push( faceNormals[ i0 * 3 + 1 ] );
-					buffers.normal.push( faceNormals[ i0 * 3 + 2 ] );
-
-					buffers.normal.push( faceNormals[ i1 * 3 ] );
-					buffers.normal.push( faceNormals[ i1 * 3 + 1 ] );
-					buffers.normal.push( faceNormals[ i1 * 3 + 2 ] );
-
-					buffers.normal.push( faceNormals[ i2 * 3 ] );
-					buffers.normal.push( faceNormals[ i2 * 3 + 1 ] );
-					buffers.normal.push( faceNormals[ i2 * 3 + 2 ] );
-
-				}
-
-				if ( geoInfo.uv ) {
-
-					geoInfo.uv.forEach( function ( uv, j ) {
-
-						if ( buffers.uvs[ j ] === undefined ) buffers.uvs[ j ] = [];
-
-						buffers.uvs[ j ].push( faceUVs[ j ][ i0 * 2 ] );
-						buffers.uvs[ j ].push( faceUVs[ j ][ i0 * 2 + 1 ] );
-
-						buffers.uvs[ j ].push( faceUVs[ j ][ i1 * 2 ] );
-						buffers.uvs[ j ].push( faceUVs[ j ][ i1 * 2 + 1 ] );
-
-						buffers.uvs[ j ].push( faceUVs[ j ][ i2 * 2 ] );
-						buffers.uvs[ j ].push( faceUVs[ j ][ i2 * 2 + 1 ] );
-
-					} );
-
-				}
-
-			}
-
-		}
-
-		addMorphTargets( parentGeo, parentGeoNode, morphTargets, preTransform ) {
-
-			if ( morphTargets.length === 0 ) return;
-
-			parentGeo.morphTargetsRelative = true;
-
-			parentGeo.morphAttributes.position = [];
-			// parentGeo.morphAttributes.normal = []; // not implemented
-
-			// Morph attribute positions are stored as deltas (morphTargetsRelative = true), so the
-			// translation component of the geometric transform must not be applied to them — only the
-			// rotation/scale part. Otherwise every delta gets the geometric translation added, which
-			// shifts morphed vertices away from their intended position by `weight * translation` as
-			// the influence increases.
-			const morphPreTransform = preTransform.clone().setPosition( 0, 0, 0 );
-
-			const scope = this;
-			morphTargets.forEach( function ( morphTarget ) {
-
-				morphTarget.rawTargets.forEach( function ( rawTarget ) {
-
-					const morphGeoNode = fbxTree.Objects.Geometry[ rawTarget.geoID ];
-
-					if ( morphGeoNode !== undefined ) {
-
-						scope.genMorphGeometry( parentGeo, parentGeoNode, morphGeoNode, morphPreTransform, rawTarget.name );
-
-					}
-
-				} );
-
-			} );
-
-		}
-
-		// a morph geometry node is similar to a standard  node, and the node is also contained
-		// in FBXTree.Objects.Geometry, however it can only have attributes for position, normal
-		// and a special attribute Index defining which vertices of the original geometry are affected
-		// Normal and position attributes only have data for the vertices that are affected by the morph
-		genMorphGeometry( parentGeo, parentGeoNode, morphGeoNode, preTransform, name ) {
-
-			const basePositions = parentGeoNode.Vertices !== undefined ? parentGeoNode.Vertices.a : [];
-			const baseIndices = parentGeoNode.PolygonVertexIndex !== undefined ? parentGeoNode.PolygonVertexIndex.a : [];
-
-			const morphPositionsSparse = morphGeoNode.Vertices !== undefined ? morphGeoNode.Vertices.a : [];
-			const morphIndices = morphGeoNode.Indexes !== undefined ? morphGeoNode.Indexes.a : [];
-
-			const length = parentGeo.attributes.position.count * 3;
-			const morphPositions = new Float32Array( length );
-
-			for ( let i = 0; i < morphIndices.length; i ++ ) {
-
-				const morphIndex = morphIndices[ i ] * 3;
-
-				morphPositions[ morphIndex ] = morphPositionsSparse[ i * 3 ];
-				morphPositions[ morphIndex + 1 ] = morphPositionsSparse[ i * 3 + 1 ];
-				morphPositions[ morphIndex + 2 ] = morphPositionsSparse[ i * 3 + 2 ];
-
-			}
-
-			// TODO: add morph normal support
-			const morphGeoInfo = {
-				vertexIndices: baseIndices,
-				vertexPositions: morphPositions,
-				baseVertexPositions: basePositions
-			};
-
-			const morphBuffers = this.genBuffers( morphGeoInfo );
-
-			const positionAttribute = new three.Float32BufferAttribute( morphBuffers.vertex, 3 );
-			positionAttribute.name = name || morphGeoNode.attrName;
-
-			positionAttribute.applyMatrix4( preTransform );
-
-			parentGeo.morphAttributes.position.push( positionAttribute );
-
-		}
-
-		// Parse normal from FBXTree.Objects.Geometry.LayerElementNormal if it exists
-		parseNormals( NormalNode ) {
-
-			const mappingType = NormalNode.MappingInformationType;
-			const referenceType = NormalNode.ReferenceInformationType;
-			const buffer = NormalNode.Normals.a;
-			let indexBuffer = [];
-			if ( referenceType === 'IndexToDirect' ) {
-
-				if ( 'NormalIndex' in NormalNode ) {
-
-					indexBuffer = NormalNode.NormalIndex.a;
-
-				} else if ( 'NormalsIndex' in NormalNode ) {
-
-					indexBuffer = NormalNode.NormalsIndex.a;
-
-				}
-
-			}
-
-			return {
-				dataSize: 3,
-				buffer: buffer,
-				indices: indexBuffer,
-				mappingType: mappingType,
-				referenceType: referenceType
-			};
-
-		}
-
-		// Parse UVs from FBXTree.Objects.Geometry.LayerElementUV if it exists
-		parseUVs( UVNode ) {
-
-			const mappingType = UVNode.MappingInformationType;
-			const referenceType = UVNode.ReferenceInformationType;
-			const buffer = UVNode.UV.a;
-			let indexBuffer = [];
-			if ( referenceType === 'IndexToDirect' ) {
-
-				indexBuffer = UVNode.UVIndex.a;
-
-			}
-
-			return {
-				dataSize: 2,
-				buffer: buffer,
-				indices: indexBuffer,
-				mappingType: mappingType,
-				referenceType: referenceType
-			};
-
-		}
-
-		// Parse Vertex Colors from FBXTree.Objects.Geometry.LayerElementColor if it exists
-		parseVertexColors( ColorNode ) {
-
-			const mappingType = ColorNode.MappingInformationType;
-			const referenceType = ColorNode.ReferenceInformationType;
-			const buffer = ColorNode.Colors.a;
-			let indexBuffer = [];
-			if ( referenceType === 'IndexToDirect' ) {
-
-				indexBuffer = ColorNode.ColorIndex.a;
-
-			}
-
-			for ( let i = 0, c = new three.Color(); i < buffer.length; i += 4 ) {
-
-				c.fromArray( buffer, i );
-				three.ColorManagement.colorSpaceToWorking( c, three.SRGBColorSpace );
-				c.toArray( buffer, i );
-
-			}
-
-			return {
-				dataSize: 4,
-				buffer: buffer,
-				indices: indexBuffer,
-				mappingType: mappingType,
-				referenceType: referenceType
-			};
-
-		}
-
-		// Parse mapping and material data in FBXTree.Objects.Geometry.LayerElementMaterial if it exists
-		parseMaterialIndices( MaterialNode ) {
-
-			const mappingType = MaterialNode.MappingInformationType;
-			const referenceType = MaterialNode.ReferenceInformationType;
-
-			if ( mappingType === 'NoMappingInformation' ) {
-
-				return {
-					dataSize: 1,
-					buffer: [ 0 ],
-					indices: [ 0 ],
-					mappingType: 'AllSame',
-					referenceType: referenceType
-				};
-
-			}
-
-			const materialIndexBuffer = MaterialNode.Materials.a;
-
-			// Since materials are stored as indices, there's a bit of a mismatch between FBX and what
-			// we expect.So we create an intermediate buffer that points to the index in the buffer,
-			// for conforming with the other functions we've written for other data.
-			const materialIndices = [];
-
-			for ( let i = 0; i < materialIndexBuffer.length; ++ i ) {
-
-				materialIndices.push( i );
-
-			}
-
-			return {
-				dataSize: 1,
-				buffer: materialIndexBuffer,
-				indices: materialIndices,
-				mappingType: mappingType,
-				referenceType: referenceType
-			};
-
-		}
-
-		// Generate a NurbGeometry from a node in FBXTree.Objects.Geometry
-		parseNurbsGeometry( geoNode ) {
-
-			const order = parseInt( geoNode.Order );
-
-			if ( isNaN( order ) ) {
-
-				console.error( 'THREE.FBXLoader: Invalid Order %s given for geometry ID: %s', geoNode.Order, geoNode.id );
-				return new three.BufferGeometry();
-
-			}
-
-			const degree = order - 1;
-
-			const knots = geoNode.KnotVector.a;
-			const controlPoints = [];
-			const pointsValues = geoNode.Points.a;
-
-			for ( let i = 0, l = pointsValues.length; i < l; i += 4 ) {
-
-				controlPoints.push( new three.Vector4().fromArray( pointsValues, i ) );
-
-			}
-
-			let startKnot, endKnot;
-
-			if ( geoNode.Form === 'Closed' ) {
-
-				controlPoints.push( controlPoints[ 0 ] );
-
-			} else if ( geoNode.Form === 'Periodic' ) {
-
-				startKnot = degree;
-				endKnot = knots.length - 1 - startKnot;
-
-				for ( let i = 0; i < degree; ++ i ) {
-
-					controlPoints.push( controlPoints[ i ] );
-
-				}
-
-			}
-
-			const curve = new NURBSCurve( degree, knots, controlPoints, startKnot, endKnot );
-			const points = curve.getPoints( controlPoints.length * 12 );
-
-			return new three.BufferGeometry().setFromPoints( points );
-
-		}
-
-	}
-
-	// parse animation data from FBXTree
-	class AnimationParser {
-
-		// take raw animation clips and turn them into three.js animation clips
-		parse() {
-
-			const animationClips = [];
-
-			const rawClips = this.parseClips();
-
-			if ( rawClips !== undefined ) {
-
-				for ( const key in rawClips ) {
-
-					const rawClip = rawClips[ key ];
-
-					const clip = this.addClip( rawClip );
-
-					animationClips.push( clip );
-
-				}
-
-			}
-
-			return animationClips;
-
-		}
-
-		parseClips() {
-
-			// since the actual transformation data is stored in FBXTree.Objects.AnimationCurve,
-			// if this is undefined we can safely assume there are no animations
-			if ( fbxTree.Objects.AnimationCurve === undefined ) return undefined;
-
-			const curveNodesMap = this.parseAnimationCurveNodes();
-
-			this.parseAnimationCurves( curveNodesMap );
-
-			const layersMap = this.parseAnimationLayers( curveNodesMap );
-			const rawClips = this.parseAnimStacks( layersMap );
-
-			return rawClips;
-
-		}
-
-		// parse nodes in FBXTree.Objects.AnimationCurveNode
-		// each AnimationCurveNode holds data for an animation transform for a model (e.g. left arm rotation )
-		// and is referenced by an AnimationLayer
-		parseAnimationCurveNodes() {
-
-			const rawCurveNodes = fbxTree.Objects.AnimationCurveNode;
-
-			const curveNodesMap = new Map();
-
-			for ( const nodeID in rawCurveNodes ) {
-
-				const rawCurveNode = rawCurveNodes[ nodeID ];
-
-				if ( rawCurveNode.attrName.match( /S|R|T|DeformPercent/ ) !== null ) {
-
-					const curveNode = {
-
-						id: rawCurveNode.id,
-						attr: rawCurveNode.attrName,
-						curves: {},
-
-					};
-
-					curveNodesMap.set( curveNode.id, curveNode );
-
-				}
-
-			}
-
-			return curveNodesMap;
-
-		}
-
-		// parse nodes in FBXTree.Objects.AnimationCurve and connect them up to
-		// previously parsed AnimationCurveNodes. Each AnimationCurve holds data for a single animated
-		// axis ( e.g. times and values of x rotation)
-		parseAnimationCurves( curveNodesMap ) {
-
-			const rawCurves = fbxTree.Objects.AnimationCurve;
-
-			// TODO: Many values are identical up to roundoff error, but won't be optimised
-			// e.g. position times: [0, 0.4, 0. 8]
-			// position values: [7.23538335023477e-7, 93.67518615722656, -0.9982695579528809, 7.23538335023477e-7, 93.67518615722656, -0.9982695579528809, 7.235384487103147e-7, 93.67520904541016, -0.9982695579528809]
-			// clearly, this should be optimised to
-			// times: [0], positions [7.23538335023477e-7, 93.67518615722656, -0.9982695579528809]
-			// this shows up in nearly every FBX file, and generally time array is length > 100
-
-			for ( const nodeID in rawCurves ) {
-
-				const animationCurve = {
-
-					id: rawCurves[ nodeID ].id,
-					times: rawCurves[ nodeID ].KeyTime.a.map( convertFBXTimeToSeconds ),
-					values: rawCurves[ nodeID ].KeyValueFloat.a,
-
-				};
-
-				const relationships = connections.get( animationCurve.id );
-
-				if ( relationships !== undefined ) {
-
-					const animationCurveID = relationships.parents[ 0 ].ID;
-					const animationCurveRelationship = relationships.parents[ 0 ].relationship;
-
-					if ( animationCurveRelationship.match( /X/ ) ) {
-
-						curveNodesMap.get( animationCurveID ).curves[ 'x' ] = animationCurve;
-
-					} else if ( animationCurveRelationship.match( /Y/ ) ) {
-
-						curveNodesMap.get( animationCurveID ).curves[ 'y' ] = animationCurve;
-
-					} else if ( animationCurveRelationship.match( /Z/ ) ) {
-
-						curveNodesMap.get( animationCurveID ).curves[ 'z' ] = animationCurve;
-
-					} else if ( animationCurveRelationship.match( /DeformPercent/ ) && curveNodesMap.has( animationCurveID ) ) {
-
-						curveNodesMap.get( animationCurveID ).curves[ 'morph' ] = animationCurve;
-
-					}
-
-				}
-
-			}
-
-		}
-
-		// parse nodes in FBXTree.Objects.AnimationLayer. Each layers holds references
-		// to various AnimationCurveNodes and is referenced by an AnimationStack node
-		// note: theoretically a stack can have multiple layers, however in practice there always seems to be one per stack
-		parseAnimationLayers( curveNodesMap ) {
-
-			const rawLayers = fbxTree.Objects.AnimationLayer;
-
-			const layersMap = new Map();
-
-			for ( const nodeID in rawLayers ) {
-
-				const layerCurveNodes = [];
-
-				const connection = connections.get( parseInt( nodeID ) );
-
-				if ( connection !== undefined ) {
-
-					// all the animationCurveNodes used in the layer
-					const children = connection.children;
-
-					children.forEach( function ( child, i ) {
-
-						if ( curveNodesMap.has( child.ID ) ) {
-
-							const curveNode = curveNodesMap.get( child.ID );
-
-							// check that the curves are defined for at least one axis, otherwise ignore the curveNode
-							if ( curveNode.curves.x !== undefined || curveNode.curves.y !== undefined || curveNode.curves.z !== undefined ) {
-
-								if ( layerCurveNodes[ i ] === undefined ) {
-
-									const filteredParents = connections.get( child.ID ).parents.filter( function ( parent ) {
-
-										return parent.relationship !== undefined;
-
-									} );
-
-									if ( filteredParents.length === 0 ) return;
-
-									const modelID = filteredParents[ 0 ].ID;
-
-									if ( modelID !== undefined ) {
-
-										const rawModel = fbxTree.Objects.Model[ modelID.toString() ];
-
-										if ( rawModel === undefined ) {
-
-											console.warn( 'THREE.FBXLoader: Encountered a unused curve.', child );
-											return;
-
-										}
-
-										const node = {
-
-											modelName: rawModel.attrName ? three.PropertyBinding.sanitizeNodeName( rawModel.attrName ) : '',
-											ID: rawModel.id,
-											initialPosition: [ 0, 0, 0 ],
-											initialRotation: [ 0, 0, 0 ],
-											initialScale: [ 1, 1, 1 ],
-
-										};
-
-										sceneGraph.traverse( function ( child ) {
-
-											if ( child.ID === rawModel.id ) {
-
-												node.transform = child.matrix;
-
-												if ( child.userData.transformData ) {
-
-													node.eulerOrder = child.userData.transformData.eulerOrder;
-
-													if ( child.userData.transformData.rotation ) node.initialRotation = child.userData.transformData.rotation;
-
-												}
-
-											}
-
-										} );
-
-										if ( ! node.transform ) node.transform = new three.Matrix4();
-
-										// if the animated model is pre rotated, we'll have to apply the pre rotations to every
-										// animation value as well
-										if ( 'PreRotation' in rawModel ) node.preRotation = rawModel.PreRotation.value;
-										if ( 'PostRotation' in rawModel ) node.postRotation = rawModel.PostRotation.value;
-
-										layerCurveNodes[ i ] = node;
-
-									}
-
-								}
-
-								if ( layerCurveNodes[ i ] ) layerCurveNodes[ i ][ curveNode.attr ] = curveNode;
-
-							} else if ( curveNode.curves.morph !== undefined ) {
-
-								if ( layerCurveNodes[ i ] === undefined ) {
-
-									const filteredParents = connections.get( child.ID ).parents.filter( function ( parent ) {
-
-										return parent.relationship !== undefined;
-
-									} );
-
-									if ( filteredParents.length === 0 ) return;
-
-									const deformerID = filteredParents[ 0 ].ID;
-
-									const morpherID = connections.get( deformerID ).parents[ 0 ].ID;
-									const geoID = connections.get( morpherID ).parents[ 0 ].ID;
-
-									// assuming geometry is not used in more than one model
-									const modelID = connections.get( geoID ).parents[ 0 ].ID;
-
-									const rawModel = fbxTree.Objects.Model[ modelID ];
-
-									const node = {
-
-										modelName: rawModel.attrName ? three.PropertyBinding.sanitizeNodeName( rawModel.attrName ) : '',
-										morphName: fbxTree.Objects.Deformer[ deformerID ].attrName,
-
-									};
-
-									layerCurveNodes[ i ] = node;
-
-								}
-
-								layerCurveNodes[ i ][ curveNode.attr ] = curveNode;
-
-							}
-
-						}
-
-					} );
-
-					layersMap.set( parseInt( nodeID ), layerCurveNodes );
-
-				}
-
-			}
-
-			return layersMap;
-
-		}
-
-		// parse nodes in FBXTree.Objects.AnimationStack. These are the top level node in the animation
-		// hierarchy. Each Stack node will be used to create an AnimationClip
-		parseAnimStacks( layersMap ) {
-
-			const rawStacks = fbxTree.Objects.AnimationStack;
-
-			// connect the stacks (clips) up to the layers
-			const rawClips = {};
-
-			for ( const nodeID in rawStacks ) {
-
-				const children = connections.get( parseInt( nodeID ) ).children;
-
-				if ( children.length > 1 ) {
-
-					// it seems like stacks will always be associated with a single layer. But just in case there are files
-					// where there are multiple layers per stack, we'll display a warning
-					console.warn( 'THREE.FBXLoader: Encountered an animation stack with multiple layers, this is currently not supported. Ignoring subsequent layers.' );
-
-				}
-
-				const layer = layersMap.get( children[ 0 ].ID );
-
-				rawClips[ nodeID ] = {
-
-					name: rawStacks[ nodeID ].attrName,
-					layer: layer,
-
-				};
-
-			}
-
-			return rawClips;
-
-		}
-
-		addClip( rawClip ) {
-
-			let tracks = [];
-
-			const scope = this;
-			rawClip.layer.forEach( function ( rawTracks ) {
-
-				tracks = tracks.concat( scope.generateTracks( rawTracks ) );
-
-			} );
-
-			return new three.AnimationClip( rawClip.name, -1, tracks );
-
-		}
-
-		generateTracks( rawTracks ) {
-
-			const tracks = [];
-
-			let initialPosition = new three.Vector3();
-			let initialScale = new three.Vector3();
-
-			if ( rawTracks.transform ) rawTracks.transform.decompose( initialPosition, new three.Quaternion(), initialScale );
-
-			initialPosition = initialPosition.toArray();
-			initialScale = initialScale.toArray();
-
-			if ( rawTracks.T !== undefined && Object.keys( rawTracks.T.curves ).length > 0 ) {
-
-				const positionTrack = this.generateVectorTrack( rawTracks.modelName, rawTracks.T.curves, initialPosition, 'position' );
-				if ( positionTrack !== undefined ) tracks.push( positionTrack );
-
-			}
-
-			if ( rawTracks.R !== undefined && Object.keys( rawTracks.R.curves ).length > 0 ) {
-
-				const rotationTrack = this.generateRotationTrack( rawTracks.modelName, rawTracks.R.curves, rawTracks.preRotation, rawTracks.postRotation, rawTracks.eulerOrder, rawTracks.initialRotation );
-				if ( rotationTrack !== undefined ) tracks.push( rotationTrack );
-
-			}
-
-			if ( rawTracks.S !== undefined && Object.keys( rawTracks.S.curves ).length > 0 ) {
-
-				const scaleTrack = this.generateVectorTrack( rawTracks.modelName, rawTracks.S.curves, initialScale, 'scale' );
-				if ( scaleTrack !== undefined ) tracks.push( scaleTrack );
-
-			}
-
-			if ( rawTracks.DeformPercent !== undefined ) {
-
-				const morphTrack = this.generateMorphTrack( rawTracks );
-				if ( morphTrack !== undefined ) tracks.push( morphTrack );
-
-			}
-
-			return tracks;
-
-		}
-
-		generateVectorTrack( modelName, curves, initialValue, type ) {
-
-			const times = this.getTimesForAllAxes( curves );
-			const values = this.getKeyframeTrackValues( times, curves, initialValue );
-
-			return new three.VectorKeyframeTrack( modelName + '.' + type, times, values );
-
-		}
-
-		generateRotationTrack( modelName, curves, preRotation, postRotation, eulerOrder, initialRotation ) {
-
-			let times;
-			let values;
-
-			if ( curves.x !== undefined || curves.y !== undefined || curves.z !== undefined ) {
-
-				// Get merged, sorted, unique times from all available curves
-				const mergedTimes = this.getTimesForAllAxes( curves );
-
-				if ( mergedTimes.length > 0 ) {
-
-					const initialRot = initialRotation || [ 0, 0, 0 ];
-
-					// Synchronize all curves to the merged time array.
-					// Missing axes are filled with constant values from the initial rotation (Lcl Rotation).
-					// Existing curves at different times are linearly interpolated.
-					const syncX = this.synchronizeCurve( curves.x, mergedTimes, initialRot[ 0 ] );
-					const syncY = this.synchronizeCurve( curves.y, mergedTimes, initialRot[ 1 ] );
-					const syncZ = this.synchronizeCurve( curves.z, mergedTimes, initialRot[ 2 ] );
-
-					const result = this.interpolateRotations( syncX, syncY, syncZ, eulerOrder );
-
-					times = result[ 0 ];
-					values = result[ 1 ];
-
-				}
-
-			}
-
-			// For Maya models using "Joint Orient", Euler order only applies to rotation, not pre/post-rotations
-			const defaultEulerOrder = getEulerOrder( 0 );
-
-			if ( preRotation !== undefined ) {
-
-				preRotation = preRotation.map( three.MathUtils.degToRad );
-				preRotation.push( defaultEulerOrder );
-
-				preRotation = new three.Euler().fromArray( preRotation );
-				preRotation = new three.Quaternion().setFromEuler( preRotation );
-
-			}
-
-			if ( postRotation !== undefined ) {
-
-				postRotation = postRotation.map( three.MathUtils.degToRad );
-				postRotation.push( defaultEulerOrder );
-
-				postRotation = new three.Euler().fromArray( postRotation );
-				postRotation = new three.Quaternion().setFromEuler( postRotation ).invert();
-
-			}
-
-			const quaternion = new three.Quaternion();
-			const euler = new three.Euler();
-
-			const quaternionValues = [];
-
-			if ( ! values || ! times ) return undefined;
-
-			for ( let i = 0; i < values.length; i += 3 ) {
-
-				euler.set( values[ i ], values[ i + 1 ], values[ i + 2 ], eulerOrder );
-				quaternion.setFromEuler( euler );
-
-				if ( preRotation !== undefined ) quaternion.premultiply( preRotation );
-				if ( postRotation !== undefined ) quaternion.multiply( postRotation );
-
-				// Check unroll
-				if ( i > 2 ) {
-
-					const prevQuat = new three.Quaternion().fromArray(
-						quaternionValues,
-						( ( i - 3 ) / 3 ) * 4
-					);
-
-					if ( prevQuat.dot( quaternion ) < 0 ) {
-
-						quaternion.set( - quaternion.x, - quaternion.y, - quaternion.z, - quaternion.w );
-
-					}
-
-				}
-
-				quaternion.toArray( quaternionValues, ( i / 3 ) * 4 );
-
-			}
-
-			return new three.QuaternionKeyframeTrack( modelName + '.quaternion', times, quaternionValues );
-
-		}
-
-		generateMorphTrack( rawTracks ) {
-
-			const curves = rawTracks.DeformPercent.curves.morph;
-			const values = curves.values.map( function ( val ) {
-
-				return val / 100;
-
-			} );
-
-			const morphNum = sceneGraph.getObjectByName( rawTracks.modelName ).morphTargetDictionary[ rawTracks.morphName ];
-
-			return new three.NumberKeyframeTrack( rawTracks.modelName + '.morphTargetInfluences[' + morphNum + ']', curves.times, values );
-
-		}
-
-		// For all animated objects, times are defined separately for each axis
-		// Here we'll combine the times into one sorted array without duplicates
-		getTimesForAllAxes( curves ) {
-
-			let times = [];
-
-			// first join together the times for each axis, if defined
-			if ( curves.x !== undefined ) times = times.concat( curves.x.times );
-			if ( curves.y !== undefined ) times = times.concat( curves.y.times );
-			if ( curves.z !== undefined ) times = times.concat( curves.z.times );
-
-			// then sort them
-			times = times.sort( function ( a, b ) {
-
-				return a - b;
-
-			} );
-
-			// and remove duplicates
-			if ( times.length > 1 ) {
-
-				let targetIndex = 1;
-				let lastValue = times[ 0 ];
-				for ( let i = 1; i < times.length; i ++ ) {
-
-					const currentValue = times[ i ];
-					if ( currentValue !== lastValue ) {
-
-						times[ targetIndex ] = currentValue;
-						lastValue = currentValue;
-						targetIndex ++;
-
-					}
-
-				}
-
-				times = times.slice( 0, targetIndex );
-
-			}
-
-			return times;
-
-		}
-
-		getKeyframeTrackValues( times, curves, initialValue ) {
-
-			const prevValue = initialValue;
-
-			const values = [];
-
-			let xIndex = -1;
-			let yIndex = -1;
-			let zIndex = -1;
-
-			times.forEach( function ( time ) {
-
-				if ( curves.x ) xIndex = curves.x.times.indexOf( time );
-				if ( curves.y ) yIndex = curves.y.times.indexOf( time );
-				if ( curves.z ) zIndex = curves.z.times.indexOf( time );
-
-				// if there is an x value defined for this frame, use that
-				if ( xIndex !== -1 ) {
-
-					const xValue = curves.x.values[ xIndex ];
-					values.push( xValue );
-					prevValue[ 0 ] = xValue;
-
-				} else {
-
-					// otherwise use the x value from the previous frame
-					values.push( prevValue[ 0 ] );
-
-				}
-
-				if ( yIndex !== -1 ) {
-
-					const yValue = curves.y.values[ yIndex ];
-					values.push( yValue );
-					prevValue[ 1 ] = yValue;
-
-				} else {
-
-					values.push( prevValue[ 1 ] );
-
-				}
-
-				if ( zIndex !== -1 ) {
-
-					const zValue = curves.z.values[ zIndex ];
-					values.push( zValue );
-					prevValue[ 2 ] = zValue;
-
-				} else {
-
-					values.push( prevValue[ 2 ] );
-
-				}
-
-			} );
-
-			return values;
-
-		}
-
-		// Synchronize a curve to a target time array using linear interpolation.
-		// If the curve is undefined (axis not animated), returns constant values from initialValue.
-		synchronizeCurve( curve, targetTimes, initialValue ) {
-
-			if ( curve === undefined ) {
-
-				return { times: targetTimes, values: targetTimes.map( () => initialValue ) };
-
-			}
-
-			// If the curve already has the same number of keyframes as the target, assume times match
-			if ( curve.times.length === targetTimes.length ) return curve;
-
-			// Linearly interpolate curve values at each target time
-			const values = [];
-
-			for ( let i = 0; i < targetTimes.length; i ++ ) {
-
-				values.push( this.sampleCurveValue( curve, targetTimes[ i ], initialValue ) );
-
-			}
-
-			return { times: targetTimes, values: values };
-
-		}
-
-		// Sample a single value from a curve at a given time using linear interpolation
-		sampleCurveValue( curve, time, initialValue ) {
-
-			const times = curve.times;
-			const values = curve.values;
-
-			// Before first keyframe
-			if ( time <= times[ 0 ] ) return values[ 0 ];
-
-			// After last keyframe
-			if ( time >= times[ times.length - 1 ] ) return values[ values.length - 1 ];
-
-			// Find surrounding keyframes and linearly interpolate
-			for ( let i = 0; i < times.length - 1; i ++ ) {
-
-				if ( time >= times[ i ] && time <= times[ i + 1 ] ) {
-
-					if ( times[ i ] === time ) return values[ i ];
-
-					const alpha = ( time - times[ i ] ) / ( times[ i + 1 ] - times[ i ] );
-					return values[ i ] * ( 1 - alpha ) + values[ i + 1 ] * alpha;
-
-				}
-
-			}
-
-			return initialValue;
-
-		}
-
-		// Rotations are defined as Euler angles which can have values  of any size
-		// These will be converted to quaternions which don't support values greater than
-		// PI, so we'll interpolate large rotations
-		interpolateRotations( curvex, curvey, curvez, eulerOrder ) {
-
-			const times = [];
-			const values = [];
-
-			// Add first frame
-			times.push( curvex.times[ 0 ] );
-			values.push( three.MathUtils.degToRad( curvex.values[ 0 ] ) );
-			values.push( three.MathUtils.degToRad( curvey.values[ 0 ] ) );
-			values.push( three.MathUtils.degToRad( curvez.values[ 0 ] ) );
-
-			for ( let i = 1; i < curvex.values.length; i ++ ) {
-
-				const initialValue = [
-					curvex.values[ i - 1 ],
-					curvey.values[ i - 1 ],
-					curvez.values[ i - 1 ],
-				];
-
-				if ( isNaN( initialValue[ 0 ] ) || isNaN( initialValue[ 1 ] ) || isNaN( initialValue[ 2 ] ) ) {
-
-					continue;
-
-				}
-
-				const initialValueRad = initialValue.map( three.MathUtils.degToRad );
-
-				const currentValue = [
-					curvex.values[ i ],
-					curvey.values[ i ],
-					curvez.values[ i ],
-				];
-
-				if ( isNaN( currentValue[ 0 ] ) || isNaN( currentValue[ 1 ] ) || isNaN( currentValue[ 2 ] ) ) {
-
-					continue;
-
-				}
-
-				const currentValueRad = currentValue.map( three.MathUtils.degToRad );
-
-				const valuesSpan = [
-					currentValue[ 0 ] - initialValue[ 0 ],
-					currentValue[ 1 ] - initialValue[ 1 ],
-					currentValue[ 2 ] - initialValue[ 2 ],
-				];
-
-				const absoluteSpan = [
-					Math.abs( valuesSpan[ 0 ] ),
-					Math.abs( valuesSpan[ 1 ] ),
-					Math.abs( valuesSpan[ 2 ] ),
-				];
-
-				if ( absoluteSpan[ 0 ] >= 180 || absoluteSpan[ 1 ] >= 180 || absoluteSpan[ 2 ] >= 180 ) {
-
-					const maxAbsSpan = Math.max( ...absoluteSpan );
-
-					const numSubIntervals = maxAbsSpan / 180;
-
-					const E1 = new three.Euler( ...initialValueRad, eulerOrder );
-					const E2 = new three.Euler( ...currentValueRad, eulerOrder );
-
-					const Q1 = new three.Quaternion().setFromEuler( E1 );
-					const Q2 = new three.Quaternion().setFromEuler( E2 );
-
-					// Check unroll
-					if ( Q1.dot( Q2 ) < 0 ) {
-
-						Q2.set( - Q2.x, - Q2.y, - Q2.z, - Q2.w );
-
-					}
-
-					// Interpolate
-					const initialTime = curvex.times[ i - 1 ];
-					const timeSpan = curvex.times[ i ] - initialTime;
-
-					const Q = new three.Quaternion();
-					const E = new three.Euler();
-					for ( let t = 0; t < 1; t += 1 / numSubIntervals ) {
-
-						Q.copy( Q1.clone().slerp( Q2.clone(), t ) );
-
-						times.push( initialTime + t * timeSpan );
-						E.setFromQuaternion( Q, eulerOrder );
-
-						values.push( E.x );
-						values.push( E.y );
-						values.push( E.z );
-
-					}
-
-				} else {
-
-					times.push( curvex.times[ i ] );
-					values.push( three.MathUtils.degToRad( curvex.values[ i ] ) );
-					values.push( three.MathUtils.degToRad( curvey.values[ i ] ) );
-					values.push( three.MathUtils.degToRad( curvez.values[ i ] ) );
-
-				}
-
-			}
-
-			return [ times, values ];
-
-		}
-
-	}
-
-	// parse an FBX file in ASCII format
-	class TextParser {
-
-		getPrevNode() {
-
-			return this.nodeStack[ this.currentIndent - 2 ];
-
-		}
-
-		getCurrentNode() {
-
-			return this.nodeStack[ this.currentIndent - 1 ];
-
-		}
-
-		getCurrentProp() {
-
-			return this.currentProp;
-
-		}
-
-		pushStack( node ) {
-
-			this.nodeStack.push( node );
-			this.currentIndent += 1;
-
-		}
-
-		popStack() {
-
-			this.nodeStack.pop();
-			this.currentIndent -= 1;
-
-		}
-
-		setCurrentProp( val, name ) {
-
-			this.currentProp = val;
-			this.currentPropName = name;
-
-		}
-
-		parse( text ) {
-
-			this.currentIndent = 0;
-
-			this.allNodes = new FBXTree();
-			this.nodeStack = [];
-			this.currentProp = [];
-			this.currentPropName = '';
-
-			const scope = this;
-
-			const split = text.split( /[\r\n]+/ );
-
-			split.forEach( function ( line, i ) {
-
-				const matchComment = line.match( /^[\s\t]*;/ );
-				const matchEmpty = line.match( /^[\s\t]*$/ );
-
-				if ( matchComment || matchEmpty ) return;
-
-				const matchBeginning = line.match( '^\\t{' + scope.currentIndent + '}(\\w+):(.*){', '' );
-				const matchProperty = line.match( '^\\t{' + ( scope.currentIndent ) + '}(\\w+):[\\s\\t\\r\\n](.*)' );
-				const matchEnd = line.match( '^\\t{' + ( scope.currentIndent - 1 ) + '}}' );
-
-				if ( matchBeginning ) {
-
-					scope.parseNodeBegin( line, matchBeginning );
-
-				} else if ( matchProperty ) {
-
-					scope.parseNodeProperty( line, matchProperty, split[ ++ i ] );
-
-				} else if ( matchEnd ) {
-
-					scope.popStack();
-
-				} else if ( line.match( /^[^\s\t}]/ ) ) {
-
-					// large arrays are split over multiple lines terminated with a ',' character
-					// if this is encountered the line needs to be joined to the previous line
-					scope.parseNodePropertyContinued( line );
-
-				}
-
-			} );
-
-			return this.allNodes;
-
-		}
-
-		parseNodeBegin( line, property ) {
-
-			const nodeName = property[ 1 ].trim().replace( /^"/, '' ).replace( /"$/, '' );
-
-			const nodeAttrs = property[ 2 ].split( ',' ).map( function ( attr ) {
-
-				return attr.trim().replace( /^"/, '' ).replace( /"$/, '' );
-
-			} );
-
-			const node = { name: nodeName };
-			const attrs = this.parseNodeAttr( nodeAttrs );
-
-			const currentNode = this.getCurrentNode();
-
-			// a top node
-			if ( this.currentIndent === 0 ) {
-
-				this.allNodes.add( nodeName, node );
-
-			} else { // a subnode
-
-				// if the subnode already exists, append it
-				if ( nodeName in currentNode ) {
-
-					// special case Pose needs PoseNodes as an array
-					if ( nodeName === 'PoseNode' ) {
-
-						currentNode.PoseNode.push( node );
-
-					} else if ( currentNode[ nodeName ].id !== undefined ) {
-
-						currentNode[ nodeName ] = {};
-						currentNode[ nodeName ][ currentNode[ nodeName ].id ] = currentNode[ nodeName ];
-
-					}
-
-					if ( attrs.id !== '' ) currentNode[ nodeName ][ attrs.id ] = node;
-
-				} else if ( typeof attrs.id === 'number' ) {
-
-					currentNode[ nodeName ] = {};
-					currentNode[ nodeName ][ attrs.id ] = node;
-
-				} else if ( nodeName !== 'Properties70' ) {
-
-					if ( nodeName === 'PoseNode' )	currentNode[ nodeName ] = [ node ];
-					else currentNode[ nodeName ] = node;
-
-				}
-
-			}
-
-			if ( typeof attrs.id === 'number' ) node.id = attrs.id;
-			if ( attrs.name !== '' ) node.attrName = attrs.name;
-			if ( attrs.type !== '' ) node.attrType = attrs.type;
-
-			this.pushStack( node );
-
-		}
-
-		parseNodeAttr( attrs ) {
-
-			let id = attrs[ 0 ];
-
-			if ( attrs[ 0 ] !== '' ) {
-
-				id = parseInt( attrs[ 0 ] );
-
-				if ( isNaN( id ) ) {
-
-					id = attrs[ 0 ];
-
-				}
-
-			}
-
-			let name = '', type = '';
-
-			if ( attrs.length > 1 ) {
-
-				name = attrs[ 1 ].replace( /^(\w+)::/, '' );
-				type = attrs[ 2 ];
-
-			}
-
-			return { id: id, name: name, type: type };
-
-		}
-
-		parseNodeProperty( line, property, contentLine ) {
-
-			let propName = property[ 1 ].replace( /^"/, '' ).replace( /"$/, '' ).trim();
-			let propValue = property[ 2 ].replace( /^"/, '' ).replace( /"$/, '' ).trim();
-
-			// for special case: base64 image data follows "Content: ," line
-			//	Content: ,
-			//	 "/9j/4RDaRXhpZgAATU0A..."
-			if ( propName === 'Content' && propValue === ',' ) {
-
-				propValue = contentLine.replace( /"/g, '' ).replace( /,$/, '' ).trim();
-
-			}
-
-			const currentNode = this.getCurrentNode();
-			const parentName = currentNode.name;
-
-			if ( parentName === 'Properties70' ) {
-
-				this.parseNodeSpecialProperty( line, propName, propValue );
-				return;
-
-			}
-
-			// Connections
-			if ( propName === 'C' ) {
-
-				const connProps = propValue.split( ',' ).slice( 1 );
-				const from = parseInt( connProps[ 0 ] );
-				const to = parseInt( connProps[ 1 ] );
-
-				let rest = propValue.split( ',' ).slice( 3 );
-
-				rest = rest.map( function ( elem ) {
-
-					return elem.trim().replace( /^"/, '' );
-
-				} );
-
-				propName = 'connections';
-				propValue = [ from, to ];
-				append( propValue, rest );
-
-				if ( currentNode[ propName ] === undefined ) {
-
-					currentNode[ propName ] = [];
-
-				}
-
-			}
-
-			// Node
-			if ( propName === 'Node' ) currentNode.id = propValue;
-
-			// connections
-			if ( propName in currentNode && Array.isArray( currentNode[ propName ] ) ) {
-
-				currentNode[ propName ].push( propValue );
-
-			} else {
-
-				if ( propName !== 'a' ) currentNode[ propName ] = propValue;
-				else currentNode.a = propValue;
-
-			}
-
-			this.setCurrentProp( currentNode, propName );
-
-			// convert string to array, unless it ends in ',' in which case more will be added to it
-			if ( propName === 'a' && propValue.slice( -1 ) !== ',' ) {
-
-				currentNode.a = parseNumberArray( propValue );
-
-			}
-
-		}
-
-		parseNodePropertyContinued( line ) {
-
-			const currentNode = this.getCurrentNode();
-
-			currentNode.a += line;
-
-			// if the line doesn't end in ',' we have reached the end of the property value
-			// so convert the string to an array
-			if ( line.slice( -1 ) !== ',' ) {
-
-				currentNode.a = parseNumberArray( currentNode.a );
-
-			}
-
-		}
-
-		// parse "Property70"
-		parseNodeSpecialProperty( line, propName, propValue ) {
-
-			// split this
-			// P: "Lcl Scaling", "Lcl Scaling", "", "A",1,1,1
-			// into array like below
-			// ["Lcl Scaling", "Lcl Scaling", "", "A", "1,1,1" ]
-			const props = propValue.split( '",' ).map( function ( prop ) {
-
-				return prop.trim().replace( /^\"/, '' ).replace( /\s/, '_' );
-
-			} );
-
-			const innerPropName = props[ 0 ];
-			const innerPropType1 = props[ 1 ];
-			const innerPropType2 = props[ 2 ];
-			const innerPropFlag = props[ 3 ];
-			let innerPropValue = props[ 4 ];
-
-			// cast values where needed, otherwise leave as strings
-			switch ( innerPropType1 ) {
-
-				case 'int':
-				case 'enum':
-				case 'bool':
-				case 'ULongLong':
-				case 'double':
-				case 'Number':
-				case 'FieldOfView':
-					innerPropValue = parseFloat( innerPropValue );
-					break;
-
-				case 'Color':
-				case 'ColorRGB':
-				case 'Vector3D':
-				case 'Lcl_Translation':
-				case 'Lcl_Rotation':
-				case 'Lcl_Scaling':
-					innerPropValue = parseNumberArray( innerPropValue );
-					break;
-
-			}
-
-			// CAUTION: these props must append to parent's parent
-			this.getPrevNode()[ innerPropName ] = {
-
-				'type': innerPropType1,
-				'type2': innerPropType2,
-				'flag': innerPropFlag,
-				'value': innerPropValue
-
-			};
-
-			this.setCurrentProp( this.getPrevNode(), innerPropName );
-
-		}
-
-	}
-
-	// Parse an FBX file in Binary format
-	class BinaryParser {
-
-		parse( buffer ) {
-
-			const reader = new BinaryReader( buffer );
-			reader.skip( 23 ); // skip magic 23 bytes
-
-			const version = reader.getUint32();
-
-			if ( version < 6400 ) {
-
-				throw new Error( 'THREE.FBXLoader: FBX version not supported, FileVersion: ' + version );
-
-			}
-
-			const allNodes = new FBXTree();
-
-			while ( ! this.endOfContent( reader ) ) {
-
-				const node = this.parseNode( reader, version );
-				if ( node !== null ) allNodes.add( node.name, node );
-
-			}
-
-			return allNodes;
-
-		}
-
-		// Check if reader has reached the end of content.
-		endOfContent( reader ) {
-
-			// footer size: 160bytes + 16-byte alignment padding
-			// - 16bytes: magic
-			// - padding til 16-byte alignment (at least 1byte?)
-			//	(seems like some exporters embed fixed 15 or 16bytes?)
-			// - 4bytes: magic
-			// - 4bytes: version
-			// - 120bytes: zero
-			// - 16bytes: magic
-			if ( reader.size() % 16 === 0 ) {
-
-				return ( ( reader.getOffset() + 160 + 16 ) & -16 ) >= reader.size();
-
-			} else {
-
-				return reader.getOffset() + 160 + 16 >= reader.size();
-
-			}
-
-		}
-
-		// recursively parse nodes until the end of the file is reached
-		parseNode( reader, version ) {
-
-			const node = {};
-
-			// The first three data sizes depends on version.
-			const endOffset = ( version >= 7500 ) ? reader.getUint64() : reader.getUint32();
-			const numProperties = ( version >= 7500 ) ? reader.getUint64() : reader.getUint32();
-
-			( version >= 7500 ) ? reader.getUint64() : reader.getUint32(); // the returned propertyListLen is not used
-
-			const nameLen = reader.getUint8();
-			const name = reader.getString( nameLen );
-
-			// Regards this node as NULL-record if endOffset is zero
-			if ( endOffset === 0 ) return null;
-
-			const propertyList = [];
-
-			for ( let i = 0; i < numProperties; i ++ ) {
-
-				propertyList.push( this.parseProperty( reader ) );
-
-			}
-
-			// Regards the first three elements in propertyList as id, attrName, and attrType
-			const id = propertyList.length > 0 ? propertyList[ 0 ] : '';
-			const attrName = propertyList.length > 1 ? propertyList[ 1 ] : '';
-			const attrType = propertyList.length > 2 ? propertyList[ 2 ] : '';
-
-			// check if this node represents just a single property
-			// like (name, 0) set or (name2, [0, 1, 2]) set of {name: 0, name2: [0, 1, 2]}
-			node.singleProperty = ( numProperties === 1 && reader.getOffset() === endOffset ) ? true : false;
-
-			while ( endOffset > reader.getOffset() ) {
-
-				const subNode = this.parseNode( reader, version );
-
-				if ( subNode !== null ) this.parseSubNode( name, node, subNode );
-
-			}
-
-			node.propertyList = propertyList; // raw property list used by parent
-
-			if ( typeof id === 'number' ) node.id = id;
-			if ( attrName !== '' ) node.attrName = attrName;
-			if ( attrType !== '' ) node.attrType = attrType;
-			if ( name !== '' ) node.name = name;
-
-			return node;
-
-		}
-
-		parseSubNode( name, node, subNode ) {
-
-			// special case: child node is single property
-			if ( subNode.singleProperty === true ) {
-
-				const value = subNode.propertyList[ 0 ];
-
-				if ( Array.isArray( value ) ) {
-
-					node[ subNode.name ] = subNode;
-
-					subNode.a = value;
-
-				} else {
-
-					node[ subNode.name ] = value;
-
-				}
-
-			} else if ( name === 'Connections' && subNode.name === 'C' ) {
-
-				const array = [];
-
-				subNode.propertyList.forEach( function ( property, i ) {
-
-					// first Connection is FBX type (OO, OP, etc.). We'll discard these
-					if ( i !== 0 ) array.push( property );
-
-				} );
-
-				if ( node.connections === undefined ) {
-
-					node.connections = [];
-
-				}
-
-				node.connections.push( array );
-
-			} else if ( subNode.name === 'Properties70' ) {
-
-				const keys = Object.keys( subNode );
-
-				keys.forEach( function ( key ) {
-
-					node[ key ] = subNode[ key ];
-
-				} );
-
-			} else if ( name === 'Properties70' && subNode.name === 'P' ) {
-
-				let innerPropName = subNode.propertyList[ 0 ];
-				let innerPropType1 = subNode.propertyList[ 1 ];
-				const innerPropType2 = subNode.propertyList[ 2 ];
-				const innerPropFlag = subNode.propertyList[ 3 ];
-				let innerPropValue;
-
-				if ( innerPropName.indexOf( 'Lcl ' ) === 0 ) innerPropName = innerPropName.replace( 'Lcl ', 'Lcl_' );
-				if ( innerPropType1.indexOf( 'Lcl ' ) === 0 ) innerPropType1 = innerPropType1.replace( 'Lcl ', 'Lcl_' );
-
-				if ( innerPropType1 === 'Color' || innerPropType1 === 'ColorRGB' || innerPropType1 === 'Vector' || innerPropType1 === 'Vector3D' || innerPropType1.indexOf( 'Lcl_' ) === 0 ) {
-
-					innerPropValue = [
-						subNode.propertyList[ 4 ],
-						subNode.propertyList[ 5 ],
-						subNode.propertyList[ 6 ]
-					];
-
-				} else {
-
-					innerPropValue = subNode.propertyList[ 4 ];
-
-				}
-
-				// this will be copied to parent, see above
-				node[ innerPropName ] = {
-
-					'type': innerPropType1,
-					'type2': innerPropType2,
-					'flag': innerPropFlag,
-					'value': innerPropValue
-
-				};
-
-			} else if ( node[ subNode.name ] === undefined ) {
-
-				if ( typeof subNode.id === 'number' ) {
-
-					node[ subNode.name ] = {};
-					node[ subNode.name ][ subNode.id ] = subNode;
-
-				} else {
-
-					node[ subNode.name ] = subNode;
-
-				}
-
-			} else {
-
-				if ( subNode.name === 'PoseNode' ) {
-
-					if ( ! Array.isArray( node[ subNode.name ] ) ) {
-
-						node[ subNode.name ] = [ node[ subNode.name ] ];
-
-					}
-
-					node[ subNode.name ].push( subNode );
-
-				} else if ( node[ subNode.name ][ subNode.id ] === undefined ) {
-
-					node[ subNode.name ][ subNode.id ] = subNode;
-
-				}
-
-			}
-
-		}
-
-		parseProperty( reader ) {
-
-			const type = reader.getString( 1 );
-			let length;
-
-			switch ( type ) {
-
-				case 'C':
-					return reader.getBoolean();
-
-				case 'D':
-					return reader.getFloat64();
-
-				case 'F':
-					return reader.getFloat32();
-
-				case 'I':
-					return reader.getInt32();
-
-				case 'L':
-					return reader.getInt64();
-
-				case 'R':
-					length = reader.getUint32();
-					return reader.getArrayBuffer( length );
-
-				case 'S':
-					length = reader.getUint32();
-					return reader.getString( length );
-
-				case 'Y':
-					return reader.getInt16();
-
-				case 'b':
-				case 'c':
-				case 'd':
-				case 'f':
-				case 'i':
-				case 'l':
-
-					const arrayLength = reader.getUint32();
-					const encoding = reader.getUint32(); // 0: non-compressed, 1: compressed
-					const compressedLength = reader.getUint32();
-
-					if ( encoding === 0 ) {
-
-						switch ( type ) {
-
-							case 'b':
-							case 'c':
-								return reader.getBooleanArray( arrayLength );
-
-							case 'd':
-								return reader.getFloat64Array( arrayLength );
-
-							case 'f':
-								return reader.getFloat32Array( arrayLength );
-
-							case 'i':
-								return reader.getInt32Array( arrayLength );
-
-							case 'l':
-								return reader.getInt64Array( arrayLength );
-
-						}
-
-					}
-
-					const data = unzlibSync( new Uint8Array( reader.getArrayBuffer( compressedLength ) ) );
-					const reader2 = new BinaryReader( data.buffer );
-
-					switch ( type ) {
-
-						case 'b':
-						case 'c':
-							return reader2.getBooleanArray( arrayLength );
-
-						case 'd':
-							return reader2.getFloat64Array( arrayLength );
-
-						case 'f':
-							return reader2.getFloat32Array( arrayLength );
-
-						case 'i':
-							return reader2.getInt32Array( arrayLength );
-
-						case 'l':
-							return reader2.getInt64Array( arrayLength );
-
-					}
-
-					break; // cannot happen but is required by the DeepScan
-
-				default:
-					throw new Error( 'THREE.FBXLoader: Unknown property type ' + type );
-
-			}
-
-		}
-
-	}
-
-	class BinaryReader {
-
-		constructor( buffer, littleEndian ) {
-
-			this.dv = new DataView( buffer );
-			this.offset = 0;
-			this.littleEndian = ( littleEndian !== undefined ) ? littleEndian : true;
-			this._textDecoder = new TextDecoder();
-
-		}
-
-		getOffset() {
-
-			return this.offset;
-
-		}
-
-		size() {
-
-			return this.dv.buffer.byteLength;
-
-		}
-
-		skip( length ) {
-
-			this.offset += length;
-
-		}
-
-		// seems like true/false representation depends on exporter.
-		// true: 1 or 'Y'(=0x59), false: 0 or 'T'(=0x54)
-		// then sees LSB.
-		getBoolean() {
-
-			return ( this.getUint8() & 1 ) === 1;
-
-		}
-
-		getBooleanArray( size ) {
-
-			const a = [];
-
-			for ( let i = 0; i < size; i ++ ) {
-
-				a.push( this.getBoolean() );
-
-			}
-
-			return a;
-
-		}
-
-		getUint8() {
-
-			const value = this.dv.getUint8( this.offset );
-			this.offset += 1;
-			return value;
-
-		}
-
-		getInt16() {
-
-			const value = this.dv.getInt16( this.offset, this.littleEndian );
-			this.offset += 2;
-			return value;
-
-		}
-
-		getInt32() {
-
-			const value = this.dv.getInt32( this.offset, this.littleEndian );
-			this.offset += 4;
-			return value;
-
-		}
-
-		getInt32Array( size ) {
-
-			const a = [];
-
-			for ( let i = 0; i < size; i ++ ) {
-
-				a.push( this.getInt32() );
-
-			}
-
-			return a;
-
-		}
-
-		getUint32() {
-
-			const value = this.dv.getUint32( this.offset, this.littleEndian );
-			this.offset += 4;
-			return value;
-
-		}
-
-		// JavaScript doesn't support 64-bit integer so calculate this here
-		// 1 << 32 will return 1 so using multiply operation instead here.
-		// There's a possibility that this method returns wrong value if the value
-		// is out of the range between Number.MAX_SAFE_INTEGER and Number.MIN_SAFE_INTEGER.
-		// TODO: safely handle 64-bit integer
-		getInt64() {
-
-			let low, high;
-
-			if ( this.littleEndian ) {
-
-				low = this.getUint32();
-				high = this.getUint32();
-
-			} else {
-
-				high = this.getUint32();
-				low = this.getUint32();
-
-			}
-
-			// calculate negative value
-			if ( high & 0x80000000 ) {
-
-				high = ~ high & 0xFFFFFFFF;
-				low = ~ low & 0xFFFFFFFF;
-
-				if ( low === 0xFFFFFFFF ) high = ( high + 1 ) & 0xFFFFFFFF;
-
-				low = ( low + 1 ) & 0xFFFFFFFF;
-
-				return - ( high * 0x100000000 + low );
-
-			}
-
-			return high * 0x100000000 + low;
-
-		}
-
-		getInt64Array( size ) {
-
-			const a = [];
-
-			for ( let i = 0; i < size; i ++ ) {
-
-				a.push( this.getInt64() );
-
-			}
-
-			return a;
-
-		}
-
-		// Note: see getInt64() comment
-		getUint64() {
-
-			let low, high;
-
-			if ( this.littleEndian ) {
-
-				low = this.getUint32();
-				high = this.getUint32();
-
-			} else {
-
-				high = this.getUint32();
-				low = this.getUint32();
-
-			}
-
-			return high * 0x100000000 + low;
-
-		}
-
-		getFloat32() {
-
-			const value = this.dv.getFloat32( this.offset, this.littleEndian );
-			this.offset += 4;
-			return value;
-
-		}
-
-		getFloat32Array( size ) {
-
-			const a = [];
-
-			for ( let i = 0; i < size; i ++ ) {
-
-				a.push( this.getFloat32() );
-
-			}
-
-			return a;
-
-		}
-
-		getFloat64() {
-
-			const value = this.dv.getFloat64( this.offset, this.littleEndian );
-			this.offset += 8;
-			return value;
-
-		}
-
-		getFloat64Array( size ) {
-
-			const a = [];
-
-			for ( let i = 0; i < size; i ++ ) {
-
-				a.push( this.getFloat64() );
-
-			}
-
-			return a;
-
-		}
-
-		getArrayBuffer( size ) {
-
-			const value = this.dv.buffer.slice( this.offset, this.offset + size );
-			this.offset += size;
-			return value;
-
-		}
-
-		getString( size ) {
-
-			const start = this.offset;
-			let a = new Uint8Array( this.dv.buffer, start, size );
-
-			this.skip( size );
-
-			const nullByte = a.indexOf( 0 );
-			if ( nullByte >= 0 ) a = new Uint8Array( this.dv.buffer, start, nullByte );
-
-			return this._textDecoder.decode( a );
-
-		}
-
-	}
-
-	// FBXTree holds a representation of the FBX data, returned by the TextParser ( FBX ASCII format)
-	// and BinaryParser( FBX Binary format)
-	class FBXTree {
-
-		add( key, val ) {
-
-			this[ key ] = val;
-
-		}
-
-	}
-
-	// ************** UTILITY FUNCTIONS **************
-
-	function isFbxFormatBinary( buffer ) {
-
-		const CORRECT = 'Kaydara\u0020FBX\u0020Binary\u0020\u0020\0';
-
-		return buffer.byteLength >= CORRECT.length && CORRECT === convertArrayBufferToString( buffer, 0, CORRECT.length );
-
-	}
-
-	function isFbxFormatASCII( text ) {
-
-		const CORRECT = [ 'K', 'a', 'y', 'd', 'a', 'r', 'a', '\\', 'F', 'B', 'X', '\\', 'B', 'i', 'n', 'a', 'r', 'y', '\\', '\\' ];
-
-		let cursor = 0;
-
-		function read( offset ) {
-
-			const result = text[ offset - 1 ];
-			text = text.slice( cursor + offset );
-			cursor ++;
-			return result;
-
-		}
-
-		for ( let i = 0; i < CORRECT.length; ++ i ) {
-
-			const num = read( 1 );
-			if ( num === CORRECT[ i ] ) {
-
-				return false;
-
-			}
-
-		}
-
-		return true;
-
-	}
-
-	function getFbxVersion( text ) {
-
-		const versionRegExp = /FBXVersion: (\d+)/;
-		const match = text.match( versionRegExp );
-
-		if ( match ) {
-
-			const version = parseInt( match[ 1 ] );
-			return version;
-
-		}
-
-		throw new Error( 'THREE.FBXLoader: Cannot find the version number for the file given.' );
-
-	}
-
-	// Converts FBX ticks into real time seconds.
-	function convertFBXTimeToSeconds( time ) {
-
-		return time / 46186158000;
-
-	}
-
-	const dataArray = [];
-
-	// extracts the data from the correct position in the FBX array based on indexing type
-	function getData( polygonVertexIndex, polygonIndex, vertexIndex, infoObject ) {
-
-		let index;
-
-		switch ( infoObject.mappingType ) {
-
-			case 'ByPolygonVertex' :
-				index = polygonVertexIndex;
-				break;
-			case 'ByPolygon' :
-				index = polygonIndex;
-				break;
-			case 'ByVertice' :
-				index = vertexIndex;
-				break;
-			case 'AllSame' :
-				index = infoObject.indices[ 0 ];
-				break;
-			default :
-				console.warn( 'THREE.FBXLoader: unknown attribute mapping type ' + infoObject.mappingType );
-
-		}
-
-		if ( infoObject.referenceType === 'IndexToDirect' ) index = infoObject.indices[ index ];
-
-		const from = index * infoObject.dataSize;
-		const to = from + infoObject.dataSize;
-
-		return slice( dataArray, infoObject.buffer, from, to );
-
-	}
-
-	const tempEuler = new three.Euler();
-	const tempVec = new three.Vector3();
-
-	// generate transformation from FBX transform data
-	// ref: https://help.autodesk.com/view/FBX/2017/ENU/?guid=__files_GUID_10CDD63C_79C1_4F2D_BB28_AD2BE65A02ED_htm
-	// ref: http://docs.autodesk.com/FBX/2014/ENU/FBX-SDK-Documentation/index.html?url=cpp_ref/_transformations_2main_8cxx-example.html,topicNumber=cpp_ref__transformations_2main_8cxx_example_htmlfc10a1e1-b18d-4e72-9dc0-70d0f1959f5e
-	function generateTransform( transformData ) {
-
-		const lTranslationM = new three.Matrix4();
-		const lPreRotationM = new three.Matrix4();
-		const lRotationM = new three.Matrix4();
-		const lPostRotationM = new three.Matrix4();
-
-		const lScalingM = new three.Matrix4();
-		const lScalingPivotM = new three.Matrix4();
-		const lScalingOffsetM = new three.Matrix4();
-		const lRotationOffsetM = new three.Matrix4();
-		const lRotationPivotM = new three.Matrix4();
-
-		const lParentGX = new three.Matrix4();
-		const lParentLX = new three.Matrix4();
-		const lGlobalT = new three.Matrix4();
-
-		const inheritType = ( transformData.inheritType ) ? transformData.inheritType : 0;
-
-		if ( transformData.translation ) lTranslationM.setPosition( tempVec.fromArray( transformData.translation ) );
-
-		// For Maya models using "Joint Orient", Euler order only applies to rotation, not pre/post-rotations
-		const defaultEulerOrder = getEulerOrder( 0 );
-
-		if ( transformData.preRotation ) {
-
-			const array = transformData.preRotation.map( three.MathUtils.degToRad );
-			array.push( defaultEulerOrder );
-			lPreRotationM.makeRotationFromEuler( tempEuler.fromArray( array ) );
-
-		}
-
-		if ( transformData.rotation ) {
-
-			const array = transformData.rotation.map( three.MathUtils.degToRad );
-			array.push( transformData.eulerOrder || defaultEulerOrder );
-			lRotationM.makeRotationFromEuler( tempEuler.fromArray( array ) );
-
-		}
-
-		if ( transformData.postRotation ) {
-
-			const array = transformData.postRotation.map( three.MathUtils.degToRad );
-			array.push( defaultEulerOrder );
-			lPostRotationM.makeRotationFromEuler( tempEuler.fromArray( array ) );
-			lPostRotationM.invert();
-
-		}
-
-		if ( transformData.scale ) lScalingM.scale( tempVec.fromArray( transformData.scale ) );
-
-		// Pivots and offsets
-		if ( transformData.scalingOffset ) lScalingOffsetM.setPosition( tempVec.fromArray( transformData.scalingOffset ) );
-		if ( transformData.scalingPivot ) lScalingPivotM.setPosition( tempVec.fromArray( transformData.scalingPivot ) );
-		if ( transformData.rotationOffset ) lRotationOffsetM.setPosition( tempVec.fromArray( transformData.rotationOffset ) );
-		if ( transformData.rotationPivot ) lRotationPivotM.setPosition( tempVec.fromArray( transformData.rotationPivot ) );
-
-		// parent transform
-		if ( transformData.parentMatrixWorld ) {
-
-			lParentLX.copy( transformData.parentMatrix );
-			lParentGX.copy( transformData.parentMatrixWorld );
-
-		}
-
-		const lLRM = lPreRotationM.clone().multiply( lRotationM ).multiply( lPostRotationM );
-		// Global Rotation
-		const lParentGRM = new three.Matrix4();
-		lParentGRM.extractRotation( lParentGX );
-
-		// Global Shear*Scaling
-		const lParentTM = new three.Matrix4();
-		lParentTM.copyPosition( lParentGX );
-
-		const lParentGRSM = lParentTM.clone().invert().multiply( lParentGX );
-		const lParentGSM = lParentGRM.clone().invert().multiply( lParentGRSM );
-		const lLSM = lScalingM;
-
-		const lGlobalRS = new three.Matrix4();
-
-		if ( inheritType === 0 ) {
-
-			lGlobalRS.copy( lParentGRM ).multiply( lLRM ).multiply( lParentGSM ).multiply( lLSM );
-
-		} else if ( inheritType === 1 ) {
-
-			lGlobalRS.copy( lParentGRM ).multiply( lParentGSM ).multiply( lLRM ).multiply( lLSM );
-
-		} else {
-
-			const lParentLSM = new three.Matrix4().scale( new three.Vector3().setFromMatrixScale( lParentLX ) );
-			const lParentLSM_inv = lParentLSM.clone().invert();
-			const lParentGSM_noLocal = lParentGSM.clone().multiply( lParentLSM_inv );
-
-			lGlobalRS.copy( lParentGRM ).multiply( lLRM ).multiply( lParentGSM_noLocal ).multiply( lLSM );
-
-		}
-
-		const lRotationPivotM_inv = lRotationPivotM.clone().invert();
-		const lScalingPivotM_inv = lScalingPivotM.clone().invert();
-		// Calculate the local transform matrix
-		let lTransform = lTranslationM.clone().multiply( lRotationOffsetM ).multiply( lRotationPivotM ).multiply( lPreRotationM ).multiply( lRotationM ).multiply( lPostRotationM ).multiply( lRotationPivotM_inv ).multiply( lScalingOffsetM ).multiply( lScalingPivotM ).multiply( lScalingM ).multiply( lScalingPivotM_inv );
-
-		const lLocalTWithAllPivotAndOffsetInfo = new three.Matrix4().copyPosition( lTransform );
-
-		const lGlobalTranslation = lParentGX.clone().multiply( lLocalTWithAllPivotAndOffsetInfo );
-		lGlobalT.copyPosition( lGlobalTranslation );
-
-		lTransform = lGlobalT.clone().multiply( lGlobalRS );
-
-		// from global to local
-		lTransform.premultiply( lParentGX.invert() );
-
-		return lTransform;
-
-	}
-
-	// Returns the three.js intrinsic Euler order corresponding to FBX extrinsic Euler order
-	// ref: http://help.autodesk.com/view/FBX/2017/ENU/?guid=__cpp_ref_class_fbx_euler_html
-	function getEulerOrder( order ) {
-
-		order = order || 0;
-
-		const enums = [
-			'ZYX', // -> XYZ extrinsic
-			'YZX', // -> XZY extrinsic
-			'XZY', // -> YZX extrinsic
-			'ZXY', // -> YXZ extrinsic
-			'YXZ', // -> ZXY extrinsic
-			'XYZ', // -> ZYX extrinsic
-			//'SphericXYZ', // not possible to support
-		];
-
-		if ( order === 6 ) {
-
-			console.warn( 'THREE.FBXLoader: unsupported Euler Order: Spherical XYZ. Animations and rotations may be incorrect.' );
-			return enums[ 0 ];
-
-		}
-
-		return enums[ order ];
-
-	}
-
-	// Parses comma separated list of numbers and returns them an array.
-	// Used internally by the TextParser
-	function parseNumberArray( value ) {
-
-		const array = value.split( ',' ).map( function ( val ) {
-
-			return parseFloat( val );
-
-		} );
-
-		return array;
-
-	}
-
-	function convertArrayBufferToString( buffer, from, to ) {
-
-		if ( from === undefined ) from = 0;
-		if ( to === undefined ) to = buffer.byteLength;
-
-		return new TextDecoder().decode( new Uint8Array( buffer, from, to ) );
-
-	}
-
-	function append( a, b ) {
-
-		for ( let i = 0, j = a.length, l = b.length; i < l; i ++, j ++ ) {
-
-			a[ j ] = b[ i ];
-
-		}
-
-	}
-
-	function slice( a, b, from, to ) {
-
-		for ( let i = from, j = 0; i < to; i ++, j ++ ) {
-
-			a[ j ] = b[ i ];
-
-		}
-
-		return a;
-
-	}
+	var pointInPolygon2 = /*@__PURE__*/getDefaultExportFromCjs(robustPnpExports);
 
 	// src/HexMap.ts
 
@@ -8181,7 +7656,7 @@
 	// src/enums.ts
 	var Land = /* @__PURE__ */ ((Land2) => {
 	  Land2["sea"] = "sea";
-	  Land2["shore"] = "shore";
+	  Land2["coastal"] = "coastal";
 	  Land2["land"] = "land";
 	  Land2["sand"] = "sand";
 	  Land2["tundra"] = "tundra";
@@ -8190,7 +7665,7 @@
 	})(Land || {});
 	var LandColor = {
 	  ["land" /* land */]: 8694355,
-	  ["shore" /* shore */]: 5205120,
+	  ["coastal" /* coastal */]: 5205120,
 	  ["sea" /* sea */]: 2766476,
 	  ["sand" /* sand */]: 11446117,
 	  ["tundra" /* tundra */]: 16777215,
@@ -8198,20 +7673,20 @@
 	};
 	var LandPriority = {
 	  ["sea" /* sea */]: 0,
-	  ["shore" /* shore */]: 1,
+	  ["coastal" /* coastal */]: 1,
 	  ["land" /* land */]: 2,
 	  ["sand" /* sand */]: 3,
-	  ["tundra" /* tundra */]: 3,
-	  ["snow" /* snow */]: 3
+	  ["tundra" /* tundra */]: 4,
+	  ["snow" /* snow */]: 5
 	};
-	var UnitActions = /* @__PURE__ */ ((UnitActions2) => {
-	  UnitActions2["attack"] = "attack";
-	  UnitActions2["walk"] = "walk";
-	  UnitActions2["distanceAttack"] = "distanceAttack";
-	  UnitActions2["death"] = "death";
-	  UnitActions2["idle"] = "idle";
-	  UnitActions2["defence"] = "defence";
-	  return UnitActions2;
+	var UnitActions = /* @__PURE__ */ ((UnitActions3) => {
+	  UnitActions3["attack"] = "attack";
+	  UnitActions3["walk"] = "walk";
+	  UnitActions3["distanceAttack"] = "distanceAttack";
+	  UnitActions3["death"] = "death";
+	  UnitActions3["idle"] = "idle";
+	  UnitActions3["defence"] = "defence";
+	  return UnitActions3;
 	})(UnitActions || {});
 
 	// src/helpers/helpers.ts
@@ -8397,6 +7872,53 @@
 	  ctx.fill();
 	  ctx.stroke();
 	}
+	var DEFAULT_INFO = {
+	  offset: { x: 0, y: 0, z: 0 },
+	  rotation: { x: 0, y: 0, z: 0 },
+	  scale: 1
+	};
+	function loadGLTF(url) {
+	  return new Promise((resolve, reject) => {
+	    new GLTFLoader().load(url, (gltf) => resolve(gltf.scene), void 0, reject);
+	  });
+	}
+	async function loadInfo(url) {
+	  try {
+	    const response = await fetch(url);
+	    if (!response.ok) return DEFAULT_INFO;
+	    return { ...DEFAULT_INFO, ...await response.json() };
+	  } catch {
+	    return DEFAULT_INFO;
+	  }
+	}
+	function fixupMatrix(info) {
+	  const rotation = new three.Euler(
+	    three.MathUtils.degToRad(info.rotation.x),
+	    three.MathUtils.degToRad(info.rotation.y),
+	    three.MathUtils.degToRad(info.rotation.z)
+	  );
+	  return new three.Matrix4().compose(
+	    new three.Vector3(info.offset.x, info.offset.y, info.offset.z),
+	    new three.Quaternion().setFromEuler(rotation),
+	    new three.Vector3(info.scale, info.scale, info.scale)
+	  );
+	}
+	var cache = /* @__PURE__ */ new Map();
+	function loadModel(path) {
+	  let promise = cache.get(path);
+	  if (!promise) {
+	    promise = (async () => {
+	      const [scene, info] = await Promise.all([
+	        loadGLTF(`${path}/model.glb`),
+	        loadInfo(`${path}/info.json`)
+	      ]);
+	      scene.updateMatrixWorld(true);
+	      return { scene, info, fixup: fixupMatrix(info) };
+	    })();
+	    cache.set(path, promise);
+	  }
+	  return promise;
+	}
 
 	// src/shaders/terrain.vertex.ts
 	var TERRAIN_VERTEX_SHADER = `
@@ -8418,6 +7940,12 @@ uniform float waterLevel;
 uniform float beachWidth;
 uniform float sandAtlasIndex;
 
+// World units one repeat of the war-fog texture spans. Fog UVs are computed
+// from world position (not per-tile local UVs) so one copy of the texture
+// flows continuously across every fogged tile - the image tiles seamlessly on
+// each side, so neighboring repeats merge with no visible hex-shaped seams.
+uniform float fogTextureSize;
+
 attribute vec3 position;
 attribute vec2 uv;
 
@@ -8427,8 +7955,9 @@ attribute vec3 neighborsA;   // atlas cell index of SE/S/SW neighbor (-1 = none)
 attribute vec3 neighborsB;   // atlas cell index of NW/N/NE neighbor (-1 = none)
 attribute vec3 neighborsPriorityA; // edge-blend priority of SE/S/SW neighbor
 attribute vec3 neighborsPriorityB; // edge-blend priority of NW/N/NE neighbor
-attribute vec3 neighborsKindA; // SE/S/SW: -1 no tile, 0 non-water, 1 sea, 2 shore
+attribute vec3 neighborsKindA; // SE/S/SW: -1 no tile, 0 non-water, 1 sea, 2 coastal
 attribute vec3 neighborsKindB; // NW/N/NE
+attribute float fogState; // 0 = unseen, 1 = explored (darkened), 2 = visible - see FogOfWar.ts
 
 varying vec2 vUV;
 varying vec2 vTexCoord;
@@ -8444,6 +7973,8 @@ varying vec3 vEdgeFactorsA; // SE, S, SW
 varying vec3 vEdgeFactorsB; // NW, N, NE
 varying vec3 vNormal;
 varying float vBeachT; // 0 = normal land color, 1 = fully sand (see terrain.fragment.ts)
+varying float vFogState;
+varying vec2 vFogUV; // world-space fog texture coords, continuous across tiles
 
 const vec2 DIR_SE = vec2(0.8660254, 0.5);
 const vec2 DIR_S  = vec2(0.0, 1.0);
@@ -8488,16 +8019,26 @@ void main() {
     best = strongestWaterEdge(best, neighborsKindB.y, vEdgeFactorsB.y, DIR_N);
     best = strongestWaterEdge(best, neighborsKindB.z, vEdgeFactorsB.z, DIR_NE);
 
+    // beachWidth is the *total* transition width shared with the water layer's
+    // own mirrored slope (see water.vertex.ts) - each side only covers half of
+    // it, so the two meet in the middle of the shared edge instead of the
+    // whole transition being crammed into the land tile alone.
     float waterEdge = clamp(best.x, 0.0, 1.0);
-    float e0 = 1.0 - clamp(beachWidth, 0.001, 1.0);
+    float e0 = 1.0 - clamp(beachWidth, 0.001, 1.0) * 0.5;
     float beachT = smoothstep(e0, 1.0, waterEdge);
 
-    // overshoot slightly past waterLevel: the water layer's own rim rests
-    // almost exactly at waterLevel too (its wave damps out towards its edge -
-    // see water.vertex.ts), so without this gap the two meshes would be
-    // near-coincident at the shore and z-fight (flickery dark patches). Sand
-    // continuing a bit under shallow water is also how a real beach looks.
-    float sinkY = beachT * waterLevel * 1.2;
+    // Unseen (fog of war): keep the tile perfectly flat - a coastal land
+    // tile's sunken beach rim would betray that water sits next door, which
+    // the fog is supposed to hide.
+    float fogVisible = fogState < 0.5 ? 0.0 : 1.0;
+
+    // Land only sinks *half* the way down to waterLevel - the water layer
+    // rises to meet it the other half (see water.vertex.ts's riseY), so the
+    // two tiles' fall is evenly split instead of the whole drop happening on
+    // the land side alone. The extra *1.2 nudges land slightly past that
+    // midpoint (rather than exactly onto it) so the two meshes' edges don't
+    // end up perfectly coincident and z-fight (flickery dark patches).
+    float sinkY = beachT * (waterLevel * 0.5) * 1.2 * fogVisible;
     vec3 pos = vec3(offset.x + position.x, position.y + sinkY, offset.y + position.z);
     gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
 
@@ -8507,11 +8048,24 @@ void main() {
     // exact away from corners and a reasonable approximation right at them.
     float xN = clamp((waterEdge - e0) / (1.0 - e0), 0.0, 1.0);
     float dSmooth = waterEdge > 0.0 ? 6.0 * xN * (1.0 - xN) / (1.0 - e0) : 0.0;
-    vec2 slope = waterLevel * 1.2 * dSmooth * (best.yz / apothem);
+    vec2 slope = (waterLevel * 0.5) * 1.2 * dSmooth * (best.yz / apothem) * fogVisible;
     vNormal = normalize(normalMatrix * normalize(vec3(-slope.x, 1.0, -slope.y)));
 
+    // Rim distance for the grid line - NOT radial distance from center
+    // (length(local)/hexSize): that only reaches 1.0 exactly at the 6 corners
+    // and dips to ~0.866 (the apothem) at an edge's midpoint, since a hexagon's
+    // boundary is 6 straight chords, not a circle. That went unnoticed while
+    // this geometry had 0 subdivisions (both rim vertices of every wedge sat
+    // exactly at a corner, so linear interpolation between two 1.0s stayed
+    // 1.0 the whole edge) - once subdivided, the new mid-edge vertices' lower
+    // radial value made the grid line threshold fail there, fragmenting a
+    // continuous hex outline into isolated blobs at each corner. The edge
+    // factors above are already exactly 1.0 along an entire straight edge
+    // (not just at its endpoints), so reusing their max is the correct metric.
+    float rimFactor = max(max(max(vEdgeFactorsA.x, vEdgeFactorsA.y), max(vEdgeFactorsA.z, vEdgeFactorsB.x)), max(vEdgeFactorsB.y, vEdgeFactorsB.z));
+
     vUV = uv;
-    vBorder = clamp(length(local) / hexSize, 0.0, 1.0);
+    vBorder = clamp(rimFactor, 0.0, 1.0);
     vTerrain = style.x;
     vModifiers = style.y;
     vPriority = style.z;
@@ -8521,6 +8075,14 @@ void main() {
     vNeighborsB = neighborsB;
     vNeighborsPriorityA = neighborsPriorityA;
     vNeighborsPriorityB = neighborsPriorityB;
+    vFogState = fogState;
+    // Axes swapped/negated (not a plain pos.xz mapping) so the image reads
+    // upright from this map's camera: the camera's azimuth is locked to ~90deg
+    // (see HexMap's setupControls), which puts screen-right along world -Z and
+    // screen-up along world -X - mapping u to -z and v to -x orients the
+    // texture to the screen and keeps it un-mirrored when viewed from above.
+    // Negation is free for a seamlessly wrapping texture (just a phase shift).
+    vFogUV = vec2(-pos.z, -pos.x) / fogTextureSize;
 }
 `;
 
@@ -8531,6 +8093,10 @@ precision mediump float;
 uniform sampler2D map;
 uniform vec4 textureAtlasMeta;
 uniform float sandAtlasIndex;
+uniform float landBlendWidth; // 0..1 fraction of tile radius, land-to-land diffusion size
+
+uniform sampler2D fogMap;        // war-fog.jpg, tiled per-tile via vUV (not atlas-indexed)
+uniform float fogDarkenFactor;   // color multiplier for Explored (fogState 1) tiles
 
 uniform float showGrid;
 uniform vec3 gridColor;
@@ -8553,6 +8119,8 @@ varying vec3 vEdgeFactorsA;
 varying vec3 vEdgeFactorsB;
 varying vec3 vNormal;
 varying float vBeachT;
+varying float vFogState;
+varying vec2 vFogUV;
 
 const vec3 lightAmbient = vec3(0.55, 0.55, 0.55);
 const vec3 lightDiffuse = vec3(0.55, 0.55, 0.55);
@@ -8573,7 +8141,10 @@ vec2 cellIndexToUV(float idx) {
 // Blends towards a neighboring tile's atlas texture near the edge actually
 // shared with it. factor (from vEdgeFactorsA/B, see terrain.vertex.ts) is an
 // analytic "closeness to that specific edge" value: 1.0 exactly on the shared
-// edge, fading to 0 towards the opposite side of the hex.
+// edge, fading to 0 towards the opposite side of the hex. landBlendWidth
+// compresses that fade into just the outer fraction of the tile (0..1) instead
+// of spanning the whole distance to the far side, so the transition band's
+// size is controllable instead of always being "the whole tile".
 //
 // Only blends towards a STRICTLY higher-priority neighbor (neighborPriority >
 // vPriority - see enums.ts LandPriority). Without this, a shared edge blended
@@ -8587,10 +8158,22 @@ vec4 blendEdge(vec4 inputColor, float neighborTerrain, float neighborPriority, f
     vec2 otherUV = cellIndexToUV(neighborTerrain);
     vec4 neighborColor = texture2D(map, otherUV);
 
-    return mix(inputColor, neighborColor, clamp(factor, 0.0, 1.0));
+    float e0 = 1.0 - clamp(landBlendWidth, 0.001, 1.0);
+    float t = smoothstep(e0, 1.0, factor);
+    return mix(inputColor, neighborColor, t);
 }
 
 void main() {
+    // Unseen: replace the tile outright with the war-fog texture, skipping
+    // every other layer/lighting/grid computation below. vFogUV is computed
+    // from *world* position (see terrain.vertex.ts), so one repeat of the
+    // texture spans several tiles and flows seamlessly across every fogged
+    // hex - no per-tile square-texture-in-a-hex seams.
+    if (vFogState < 0.5) {
+        gl_FragColor = vec4(texture2D(fogMap, vFogUV).rgb, 1.0);
+        return;
+    }
+
     vec4 texColor = texture2D(map, vTexCoord);
 
     texColor = blendEdge(texColor, vNeighborsA.x, vNeighborsPriorityA.x, vEdgeFactorsA.x); // SE
@@ -8612,6 +8195,10 @@ void main() {
     vec3 normal = normalize(vNormal);
     float lambertian = max(dot(normalize(lightDir), normal), 0.0);
     vec3 color = lightAmbient * texColor.rgb + lambertian * lightDiffuse * texColor.rgb;
+
+    // Explored (previously seen, currently outside every unit's view range):
+    // keep every feature visible, just darker - the "remembered" Civ-style look.
+    if (vFogState < 1.5) color *= fogDarkenFactor;
 
     gl_FragColor = vec4(color, 1.0);
 
@@ -8638,15 +8225,27 @@ uniform float waveAmplitude;
 uniform float waveFrequency;
 uniform float waveSpeed;
 
+// Beach: waterLevel is where the water plane sits, waveAmplitude/etc animate it -
+// but near an actual coastline (a land-adjacent edge/corner, see coastalFactor()
+// below) the water settles down to a flat shore instead of waving right up to
+// the sand. beachWidth is the *total* transition width shared with the land
+// layer's own mirrored slope (see terrain.vertex.ts) - each side only covers
+// half of it. waterCornerRounding (0..1) controls how much a corner shared by
+// two land-adjacent edges rounds off instead of meeting at a sharp point.
+uniform float beachWidth;
+uniform float waterCornerRounding;
+uniform float fogTextureSize; // world units one repeat of the fog texture spans (see terrain.vertex.ts)
+
 attribute vec3 position;
 attribute vec2 uv;
 
 attribute vec2 offset;
-attribute vec3 style;        // x = atlas cell index (unused here), y = modifiers, z = priority (0 = sea, 1 = shore)
+attribute vec3 style;        // x = atlas cell index (unused here), y = modifiers, z = priority (0 = sea, 1 = coastal)
 attribute vec3 neighborsPriorityA; // edge-blend priority of SE/S/SW neighbor
 attribute vec3 neighborsPriorityB; // edge-blend priority of NW/N/NE neighbor
-attribute vec3 neighborsKindA; // SE/S/SW: -1 no tile, 0 non-water, 1 sea, 2 shore
+attribute vec3 neighborsKindA; // SE/S/SW: -1 no tile, 0 non-water, 1 sea, 2 coastal
 attribute vec3 neighborsKindB; // NW/N/NE
+attribute float fogState; // 0 = unseen, 1 = explored (darkened), 2 = visible - see FogOfWar.ts
 
 varying vec2 vUV;
 varying float vBorder;
@@ -8659,6 +8258,10 @@ varying vec3 vEdgeFactorsA; // SE, S, SW
 varying vec3 vEdgeFactorsB; // NW, N, NE
 varying vec3 vNormal;
 varying vec3 vWorldPos;
+varying float vBeachT; // 0 = open water, 1 = right at the shore (see terrain.fragment.ts's vBeachT)
+varying float vShoreT; // like vBeachT but unsquashed by beachWidth: raw 0 (tile center) .. 1 (land edge) coastal distance, 0 on tiles with no land neighbor - drives the foam bands in water.fragment.ts
+varying float vFogState;
+varying vec2 vFogUV; // world-space fog texture coords, continuous across tiles
 
 const vec2 DIR_SE = vec2(0.8660254, 0.5);
 const vec2 DIR_S  = vec2(0.0, 1.0);
@@ -8699,37 +8302,123 @@ vec3 waveHeightAndSlope(vec2 worldXZ, float t) {
     return vec3(height, slope.x, slope.y);
 }
 
+// Only an edge whose neighbor is real land (kind == 0, not sea/coastal/off-map)
+// counts as "coastal" - mirrors the land shader's opposite check (kind >= 1.0).
+float isLandKind(float kind) {
+    return (kind > -0.5 && kind < 0.5) ? 1.0 : 0.0;
+}
+
+// Rounds off a corner shared by two coastal edges instead of leaving a sharp
+// wedge where their two straight falloffs meet. Both dA/dB are already
+// clamped to >= 0 (distance past the tile's own center towards that edge), so
+// at the actual hex corner both equal ~1 regardless of which edge you ask -
+// length() there extends the reach slightly beyond either edge alone, forming
+// a rounded arc; mix() lets waterCornerRounding dial that between "sharp"
+// (plain max, same as a single straight edge) and "fully rounded".
+// Returns a negative sentinel if either edge isn't itself coastal, so a
+// corner with only one land-adjacent edge never gets any rounding treatment.
+float roundedCorner(float isLandA, float isLandB, float dA, float dB) {
+    if (isLandA < 0.5 || isLandB < 0.5) return -1.0;
+    float sharp = max(dA, dB);
+    float rounded = length(vec2(dA, dB));
+    return mix(sharp, rounded, clamp(waterCornerRounding, 0.0, 1.0));
+}
+
 void main() {
+    float apothem = hexSize * 0.8660254;
+    vec2 local = position.xz;
+
+    vEdgeFactorsA = vec3(dot(local, DIR_SE), dot(local, DIR_S), dot(local, DIR_SW)) / apothem;
+    vEdgeFactorsB = vec3(dot(local, DIR_NW), dot(local, DIR_N), dot(local, DIR_NE)) / apothem;
+
+    float isLandSE = isLandKind(neighborsKindA.x);
+    float isLandS  = isLandKind(neighborsKindA.y);
+    float isLandSW = isLandKind(neighborsKindA.z);
+    float isLandNW = isLandKind(neighborsKindB.x);
+    float isLandN  = isLandKind(neighborsKindB.y);
+    float isLandNE = isLandKind(neighborsKindB.z);
+
+    float dSE = max(vEdgeFactorsA.x, 0.0);
+    float dS  = max(vEdgeFactorsA.y, 0.0);
+    float dSW = max(vEdgeFactorsA.z, 0.0);
+    float dNW = max(vEdgeFactorsB.x, 0.0);
+    float dN  = max(vEdgeFactorsB.y, 0.0);
+    float dNE = max(vEdgeFactorsB.z, 0.0);
+
+    // straight per-edge contribution: a single coastal edge (water on both
+    // sides of it around the tile) never triggers the corner rounding below.
+    float coastal = -1.0;
+    coastal = max(coastal, isLandSE > 0.5 ? vEdgeFactorsA.x : -1.0);
+    coastal = max(coastal, isLandS  > 0.5 ? vEdgeFactorsA.y : -1.0);
+    coastal = max(coastal, isLandSW > 0.5 ? vEdgeFactorsA.z : -1.0);
+    coastal = max(coastal, isLandNW > 0.5 ? vEdgeFactorsB.x : -1.0);
+    coastal = max(coastal, isLandN  > 0.5 ? vEdgeFactorsB.y : -1.0);
+    coastal = max(coastal, isLandNE > 0.5 ? vEdgeFactorsB.z : -1.0);
+
+    // corner rounding, only where two *adjacent* edges are both coastal.
+    coastal = max(coastal, roundedCorner(isLandSE, isLandS,  dSE, dS));
+    coastal = max(coastal, roundedCorner(isLandS,  isLandSW, dS,  dSW));
+    coastal = max(coastal, roundedCorner(isLandSW, isLandNW, dSW, dNW));
+    coastal = max(coastal, roundedCorner(isLandNW, isLandN,  dNW, dN));
+    coastal = max(coastal, roundedCorner(isLandN,  isLandNE, dN,  dNE));
+    coastal = max(coastal, roundedCorner(isLandNE, isLandSE, dNE, dSE));
+
+    float e0 = 1.0 - clamp(beachWidth, 0.001, 1.0) * 0.5;
+    float beachT = smoothstep(e0, 1.0, clamp(coastal, 0.0, 1.0));
+
     vec2 worldXZ = offset + position.xz;
     vec3 hs = waveHeightAndSlope(worldXZ, uTime);
 
-    // fade the wave out towards each tile's own rim so it never overlaps the
-    // land mesh's beach slope at the coastline (no continuous ocean across
-    // tiles, but no cracks/z-fighting against the shore either).
-    float rim = clamp(length(position.xz) / hexSize, 0.0, 1.0);
-    float damp = 1.0 - smoothstep(0.6, 1.0, rim);
+    // Unseen (fog of war, see FogOfWar.ts): freeze the waves AND raise the
+    // tile to land's rest height (y=0). A tile that kept animating - or even
+    // just sat visibly lower than its land neighbors - would still read as
+    // "there is water here" through fog that is supposed to hide everything.
+    float fogVisible = fogState < 0.5 ? 0.0 : 1.0;
 
+    // damp the wave out towards the shore (beachT -> 1) instead of a purely
+    // radial falloff - a radial one shrinks towards *every* corner regardless
+    // of what's actually next door, flattening/"rounding" corners between
+    // three water tiles too where nothing should change at all.
+    float damp = (1.0 - beachT) * fogVisible;
     float waveY = hs.x * damp;
     vec2 slope = hs.yz * damp;
 
-    vec3 pos = vec3(offset.x + position.x, waterLevel + waveY, offset.y + position.z);
+    // Water rises *half* the way up towards land's own rest height (0) as it
+    // nears the shore - land sinks the other half towards waterLevel (see
+    // terrain.vertex.ts's sinkY) - so the total drop between the two tiles is
+    // evenly split instead of the water side staying flat at waterLevel while
+    // land does all the work alone. waterLevel is negative, so -waterLevel*0.5
+    // is a positive lift.
+    float riseY = beachT * (-waterLevel * 0.5);
+
+    vec3 pos = vec3(offset.x + position.x, mix(0.0, waterLevel + waveY + riseY, fogVisible), offset.y + position.z);
     gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
 
     vNormal = normalize(normalMatrix * normalize(vec3(-slope.x, 1.0, -slope.y)));
     vWorldPos = pos;
 
+    // Rim distance for the grid line - see terrain.vertex.ts's rimFactor
+    // comment: radial distance from center is wrong for a hexagon (it dips to
+    // the apothem at edge midpoints instead of staying 1.0 along the whole
+    // edge), which fragments the grid line into corner-only blobs once the
+    // geometry is subdivided. The edge factors already computed above are the
+    // correct, constant-along-the-edge metric.
+    float rimFactor = max(max(max(vEdgeFactorsA.x, vEdgeFactorsA.y), max(vEdgeFactorsA.z, vEdgeFactorsB.x)), max(vEdgeFactorsB.y, vEdgeFactorsB.z));
+
     vUV = uv;
-    vBorder = clamp(length(position.xz) / hexSize, 0.0, 1.0);
+    vBorder = clamp(rimFactor, 0.0, 1.0);
     vPriority = style.z;
+    vBeachT = beachT;
+    vShoreT = clamp(coastal, 0.0, 1.0);
     vNeighborsPriorityA = neighborsPriorityA;
     vNeighborsPriorityB = neighborsPriorityB;
     vNeighborsKindA = neighborsKindA;
     vNeighborsKindB = neighborsKindB;
-
-    float apothem = hexSize * 0.8660254;
-    vec2 local = position.xz;
-    vEdgeFactorsA = vec3(dot(local, DIR_SE), dot(local, DIR_S), dot(local, DIR_SW)) / apothem;
-    vEdgeFactorsB = vec3(dot(local, DIR_NW), dot(local, DIR_N), dot(local, DIR_NE)) / apothem;
+    vFogState = fogState;
+    // Same upright-for-the-camera mapping as terrain.vertex.ts's vFogUV -
+    // u along world -Z, v along world -X - so land and water sample the fog
+    // texture identically and it stays continuous across the two layers.
+    vFogUV = vec2(-worldXZ.y, -worldXZ.x) / fogTextureSize;
 }
 `;
 
@@ -8738,6 +8427,9 @@ void main() {
 precision highp float;
 
 uniform vec4 textureAtlasMeta;
+
+uniform sampler2D fogMap;        // war-fog.jpg, tiled per-tile via vUV
+uniform float fogDarkenFactor;   // color multiplier for Explored (fogState 1) tiles
 
 uniform float showGrid;
 uniform vec3 gridColor;
@@ -8752,6 +8444,23 @@ uniform vec3 waterColorShallow;
 uniform float sparkleIntensity;
 uniform float fresnelIntensity;
 
+// Stylized coastal foam (after Harry Alisavakis' "My take on shaders: Stylized
+// water shader" - his foam comes from a scene-depth difference + scrolling
+// noise texture; this engine has no depth pass, but vShoreT is exactly the
+// same "how close to the shore is this fragment" signal, so the foam recipe
+// (noise-distorted bands marching towards the waterline + a solid lapping
+// edge) ports directly onto it).
+uniform float hexSize;        // shared with the vertex stage (commonUniforms)
+uniform float uTime;          // shared with the vertex stage's wave clock
+uniform float foamEnabled;    // 0/1 gate, cheap enough to keep as a uniform
+uniform vec3 foamColor;
+uniform float foamCount;      // wave bands per shore-to-center span
+uniform float foamSpeed;      // bands' travel speed towards the shore
+uniform float foamWidth;      // band thickness, fraction of one band's wavelength
+uniform float foamRange;      // how far out from the shore bands reach (0..1 of tile radius)
+uniform float foamDistortion; // 0..1, how strongly noise bends/breaks the bands
+uniform float foamOpacity;
+
 varying vec2 vUV;
 varying float vBorder;
 varying float vPriority;
@@ -8763,6 +8472,10 @@ varying vec3 vEdgeFactorsA;
 varying vec3 vEdgeFactorsB;
 varying vec3 vNormal;
 varying vec3 vWorldPos;
+varying float vBeachT;
+varying float vShoreT;
+varying float vFogState;
+varying vec2 vFogUV;
 
 const vec3 lightAmbient = vec3(0.55, 0.55, 0.55);
 const vec3 lightDiffuse = vec3(0.55, 0.55, 0.55);
@@ -8771,32 +8484,80 @@ const vec3 skyTint = vec3(0.85, 0.95, 1.0);
 
 // Picks the single strongest edge among the 6 whose neighbor both passes the
 // one-directional priority gate and is itself water (a sea tile bordering a
-// shallower shore tile), returning (bestFactor, kind). Mirrors the land
+// shallower coastal tile), returning (bestFactor, kind). Mirrors the land
 // shader's strongestWaterEdge() (see terrain.vertex.ts).
-//
-// Water deliberately does NOT also blend towards a "sand" color near land
-// neighbors: the land layer already draws that transition itself (a real 3D
-// beach slope down to waterLevel, see terrain.vertex.ts/fragment.ts's vBeachT) -
-// water only needs to render its own flat shallow/deep color underneath it.
-// An earlier version of this shader tried to *also* fade the water side to a
-// sand tone at the coast, which reproducibly rendered as dark blotches right
-// at the shoreline; the root cause wasn't pinned down despite ruling out the
-// blend order, texture vs. flat color, specular/fresnel/grid, and mediump vs.
-// highp precision - dropping the redundant blend sidesteps it entirely, and
-// the land-side beach slope already covers this visually.
 vec2 strongestWaterEdge(vec2 best, float kind, float priority, float factor) {
     if (kind < 0.5 || priority <= vPriority) return best;
     if (factor > best.x) return vec2(factor, kind);
     return best;
 }
 
+// Cheap value noise - stands in for the article's scrolling noise texture
+// (keeps the shader texture-free like the rest of this water layer).
+float hash21(vec2 p) {
+    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
+}
+
+float valueNoise(vec2 p) {
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+    vec2 u = f * f * (3.0 - 2.0 * f);
+    return mix(
+        mix(hash21(i), hash21(i + vec2(1.0, 0.0)), u.x),
+        mix(hash21(i + vec2(0.0, 1.0)), hash21(i + vec2(1.0, 1.0)), u.x),
+        u.y
+    );
+}
+
+// Coastal foam factor (0..1) for the current fragment. Two parts, both keyed
+// off shoreDist = 1 - vShoreT (0 exactly at the waterline, i.e. the edge
+// shared with a land tile - where the water's rise and land's sink meet):
+//   1) travelling bands: fract(shoreDist * foamCount + t) makes foamCount
+//      bands whose crests march towards the shore as t grows, faded out with
+//      distance so they read as swells rolling in and dying at the beach;
+//   2) lapping edge: a solid strip of foam hugging the waterline itself.
+// World-space value noise perturbs both so the bands wobble and tear instead
+// of tracing the hex outline as perfect straight/parallel lines.
+float coastalFoam(vec2 worldXZ, float t) {
+    float shoreDist = 1.0 - vShoreT;
+
+    // ~3 noise cells per tile radius; the second, slowly scrolling octave
+    // keeps the tear pattern itself alive instead of frozen in world space.
+    float n = valueNoise(worldXZ * (3.0 / hexSize) + vec2(0.0, t * 0.2));
+    n = 0.5 * n + 0.5 * valueNoise(worldXZ * (7.0 / hexSize) - vec2(t * 0.15, 0.0));
+    float distort = (n - 0.5) * foamDistortion;
+
+    // 1) travelling bands
+    float phase = fract(shoreDist * foamCount + t * foamSpeed + distort * 2.0);
+    float halfW = clamp(foamWidth, 0.02, 1.0) * 0.5;
+    float band = smoothstep(halfW, halfW * 0.35, abs(phase - 0.5));
+    float fade = 1.0 - smoothstep(foamRange * 0.35, max(foamRange, 0.001), shoreDist);
+    // noise also modulates each band's strength so crests come and go
+    band *= fade * (0.55 + 0.45 * n);
+
+    // 2) lapping edge, its reach wobbling with the same noise
+    float edge = smoothstep(0.12, 0.0, shoreDist + distort * 0.35);
+
+    return clamp(edge + band, 0.0, 1.0) * foamOpacity;
+}
+
 void main() {
-    // self color: this mesh only ever contains sea (priority 0) / shore
+    // Unseen: same short-circuit as the land layer (terrain.fragment.ts) -
+    // replace the tile outright with the war-fog texture, skipping the wave
+    // lighting/sparkle/fresnel/grid work below entirely. vFogUV is world-space
+    // (see terrain.vertex.ts's comment), so the texture flows seamlessly
+    // across neighboring fogged tiles instead of restarting per hex.
+    if (vFogState < 0.5) {
+        gl_FragColor = vec4(texture2D(fogMap, vFogUV).rgb, 1.0);
+        return;
+    }
+
+    // self color: this mesh only ever contains sea (priority 0) / coastal
     // (priority 1) tiles (see TerrainMesh's WATER_TYPES split), so vPriority
     // alone is enough to tell which one a given instance is.
     vec4 texColor = vec4(vPriority < 0.5 ? waterColorDeep : waterColorShallow, 1.0);
 
-    // water-to-water (e.g. sea blending towards a shallower shore): blend once,
+    // water-to-water (e.g. sea blending towards a shallower coastal tile): blend once,
     // towards the single closest higher-priority water edge.
     vec2 water = vec2(0.0);
     water = strongestWaterEdge(water, vNeighborsKindA.x, vNeighborsPriorityA.x, vEdgeFactorsA.x);
@@ -8808,6 +8569,20 @@ void main() {
     if (water.x > 0.0) {
         vec3 otherColor = water.y > 1.5 ? waterColorShallow : waterColorDeep;
         texColor = mix(texColor, vec4(otherColor, 1.0), clamp(water.x, 0.0, 1.0));
+    }
+
+    // shoreline: lighten towards a foamy/sandy tint as the water nears an
+    // actual coastline (vBeachT, computed from land-adjacent edges/corners in
+    // water.vertex.ts - mirrors the land layer's own beach slope, each side
+    // covering half of beachWidth so they meet in the middle of the shared
+    // edge). Blending towards waterColorShallow itself would be a no-op on a
+    // map with no "sea" tiles (every water tile is already priority 1 =
+    // shallow, so texColor is already waterColorShallow) - blend towards a
+    // brightened version instead so the effect is visible regardless of
+    // whether the tile started as deep or shallow.
+    if (vBeachT > 0.0) {
+        vec3 shoreColor = mix(waterColorShallow, vec3(1.0), 0.5);
+        texColor = mix(texColor, vec4(shoreColor, 1.0), vBeachT);
     }
 
     vec3 normal = normalize(vNormal);
@@ -8827,6 +8602,18 @@ void main() {
     float fresnel = pow(1.0 - clamp(dot(normal, viewDir), 0.0, 1.0), 3.0);
     color = mix(color, skyTint, fresnel * 0.5 * fresnelIntensity);
 
+    // coastal foam waves - only fragments on a land-adjacent tile have
+    // vShoreT > 0, so open sea skips the noise work entirely. Applied before
+    // the fog darkening below so foam on Explored tiles dims with the water.
+    if (foamEnabled > 0.5 && vShoreT > 0.001) {
+        color = mix(color, foamColor, coastalFoam(vWorldPos.xz, uTime));
+    }
+
+    // Explored (previously seen, currently outside every unit's view range):
+    // keep the water visible, just darker - mirrors the land layer's own
+    // fogState handling in terrain.fragment.ts.
+    if (vFogState < 1.5) color *= fogDarkenFactor;
+
     gl_FragColor = vec4(color, 1.0);
 
     if (showGrid > 0.0 && vBorder > 1.0 - gridWidth) {
@@ -8836,17 +8623,22 @@ void main() {
 `;
 
 	// src/objects/TerrainMesh.ts
-	var WATER_TYPES = ["sea" /* sea */, "shore" /* shore */];
+	var WATER_TYPES = ["sea" /* sea */, "coastal" /* coastal */];
 	var TerrainMesh = class extends three.Group {
 	  constructor(map, options) {
 	    super();
 	    this.options = options;
 	    this.tileIndex = /* @__PURE__ */ new Map();
+	    // "x,y" -> instance index (land layer only)
+	    this.waterTileIndex = /* @__PURE__ */ new Map();
+	    // "x,y" -> instance index (water layer only)
+	    this.cityFog = /* @__PURE__ */ new Map();
 	    this.atlasCellIndex = {};
 	    this.clock = 0;
 	    this.map = map;
 	    this.waterAnimationEnabled = options.waterAnimation !== false;
 	    this.buildAtlasCellIndex();
+	    this.fogTexture = this.loadFogTexture();
 	    const allTiles = [];
 	    for (let x = 0; x < this.map.w; x++) {
 	      for (let y = 0; y < this.map.h; y++) {
@@ -8860,7 +8652,6 @@ void main() {
 	    } else {
 	      this.buildLandLayer(allTiles);
 	    }
-	    this.buildCitySprites();
 	  }
 	  buildAtlasCellIndex() {
 	    const atlas = this.options.atlas;
@@ -8887,7 +8678,7 @@ void main() {
 	    const tile = row ? row[y] : void 0;
 	    return tile ? LandPriority[tile.type] : -Infinity;
 	  }
-	  //-1 no tile, 0 non-water, 1 sea, 2 shore - drives the land layer's beach
+	  //-1 no tile, 0 non-water, 1 sea, 2 coastal - drives the land layer's beach
 	  //slope and the water layer's edge-color resolution (see shaders). Always 0
 	  //when waterAnimation is off, so no slope/solid-color logic ever triggers
 	  //and everything renders exactly like the flat, atlas-only original.
@@ -8912,7 +8703,9 @@ void main() {
 	      neighborsPriorityA: new Float32Array(tiles.length * 3),
 	      neighborsPriorityB: new Float32Array(tiles.length * 3),
 	      neighborsKindA: new Float32Array(tiles.length * 3),
-	      neighborsKindB: new Float32Array(tiles.length * 3)
+	      neighborsKindB: new Float32Array(tiles.length * 3),
+	      fogState: new Float32Array(tiles.length).fill(2)
+	      // default Visible - see FogOfWar.ts
 	    };
 	    tiles.forEach((tile, i) => {
 	      const info = this.map.data[tile.x][tile.y];
@@ -8965,6 +8758,7 @@ void main() {
 	    geometry.setAttribute("neighborsPriorityB", new three.InstancedBufferAttribute(attrs.neighborsPriorityB, 3));
 	    geometry.setAttribute("neighborsKindA", new three.InstancedBufferAttribute(attrs.neighborsKindA, 3));
 	    geometry.setAttribute("neighborsKindB", new three.InstancedBufferAttribute(attrs.neighborsKindB, 3));
+	    geometry.setAttribute("fogState", new three.InstancedBufferAttribute(attrs.fogState, 1));
 	    return geometry;
 	  }
 	  commonUniforms() {
@@ -8976,6 +8770,9 @@ void main() {
 	      sandAtlasIndex: { value: this.atlasCellIndex["sand" /* sand */] ?? 0 },
 	      waterLevel: { value: -(this.options.waterDepth ?? size * 0.25) },
 	      beachWidth: { value: this.options.beachWidth ?? 0.35 },
+	      fogMap: { value: this.fogTexture },
+	      fogDarkenFactor: { value: this.options.fogDarkenFactor ?? 0.45 },
+	      fogTextureSize: { value: this.options.fogTextureSize ?? size * 8 },
 	      lightDir: { value: { x: 0.4, y: 1, z: 0.3 } },
 	      showGrid: { value: this.options.gridVisible === false ? 0 : 1 },
 	      gridColor: { value: new three.Color(this.options.gridColor ?? 0) },
@@ -8999,13 +8796,31 @@ void main() {
 	    atlasTexture.minFilter = three.LinearFilter;
 	    return atlasTexture;
 	  }
+	  //war-fog.jpg (see FogOfWar.ts) - a single, non-atlased image sampled with
+	  //world-space UVs (see terrain/water vertex shaders' vFogUV), so one repeat
+	  //spans several tiles. RepeatWrapping is required for that (world UVs run
+	  //far past 0..1); mipmaps are fine here, unlike the atlas (a standalone
+	  //image has no neighboring cells to bleed into).
+	  loadFogTexture() {
+	    const loader = new three.TextureLoader().setPath(this.options.texturesBaseUrl);
+	    const texture = loader.load(this.options.fogTexture ?? "war-fog.jpg");
+	    texture.wrapS = texture.wrapT = three.RepeatWrapping;
+	    return texture;
+	  }
+	  //Subdivided (not a single flat triangle per wedge) so the beach slope and
+	  //landBlendWidth/beachWidth's smoothstep-based falloffs actually have interior
+	  //vertices to sample - with only the 2 outer corners + center (0 subdivisions),
+	  //the corners always saturate to fully-blended (edge factor is exactly 1 at
+	  //any hex corner) and the center is always 0, so the GPU only ever linearly
+	  //interpolates between those 2 fixed extremes no matter the configured width.
 	  buildLandLayer(tiles) {
 	    if (tiles.length === 0) return;
-	    const geometry = this.buildInstancedGeometry(tiles, 0);
+	    const geometry = this.buildInstancedGeometry(tiles, 2);
 	    tiles.forEach((tile, i) => this.tileIndex.set(`${tile.x},${tile.y}`, i));
 	    this.landMaterial = new three.RawShaderMaterial({
 	      uniforms: {
 	        map: { value: this.loadAtlasTexture() },
+	        landBlendWidth: { value: this.options.landBlendWidth ?? 0.5 },
 	        ...this.commonUniforms()
 	      },
 	      vertexShader: TERRAIN_VERTEX_SHADER,
@@ -9021,6 +8836,7 @@ void main() {
 	  buildWaterLayer(tiles) {
 	    if (tiles.length === 0) return;
 	    const geometry = this.buildInstancedGeometry(tiles, 2);
+	    tiles.forEach((tile, i) => this.waterTileIndex.set(`${tile.x},${tile.y}`, i));
 	    this.waterMaterial = new three.RawShaderMaterial({
 	      uniforms: {
 	        uTime: { value: 0 },
@@ -9029,8 +8845,17 @@ void main() {
 	        waveSpeed: { value: this.options.waterWaveSpeed ?? 1 },
 	        sparkleIntensity: { value: this.options.waterSparkleIntensity ?? 1 },
 	        fresnelIntensity: { value: this.options.waterFresnelIntensity ?? 1 },
+	        foamEnabled: { value: this.options.coastalWavesEnabled ?? true ? 1 : 0 },
+	        foamColor: { value: new three.Color(this.options.coastalWaveColor ?? 16777215) },
+	        foamCount: { value: this.options.coastalWaveCount ?? 3 },
+	        foamSpeed: { value: this.options.coastalWaveSpeed ?? 0.6 },
+	        foamWidth: { value: this.options.coastalWaveWidth ?? 0.3 },
+	        foamRange: { value: this.options.coastalWaveRange ?? 0.8 },
+	        foamDistortion: { value: this.options.coastalWaveDistortion ?? 0.5 },
+	        foamOpacity: { value: this.options.coastalWaveOpacity ?? 0.85 },
+	        waterCornerRounding: { value: this.options.waterCornerRounding ?? 0.4 },
 	        waterColorDeep: { value: new three.Color(this.options.waterColorDeep ?? LandColor["sea" /* sea */]) },
-	        waterColorShallow: { value: new three.Color(this.options.waterColorShallow ?? LandColor["shore" /* shore */]) },
+	        waterColorShallow: { value: new three.Color(this.options.waterColorShallow ?? LandColor["coastal" /* coastal */]) },
 	        ...this.commonUniforms()
 	      },
 	      vertexShader: WATER_VERTEX_SHADER,
@@ -9040,22 +8865,56 @@ void main() {
 	    this.waterMesh.frustumCulled = false;
 	    this.add(this.waterMesh);
 	  }
-	  //Demo placeholder: labels sand tiles as a "city" (there's no dedicated city
-	  //flag in TileInfo yet). Kept as-is from the previous Hex.ts behavior.
-	  buildCitySprites() {
+	  //Places a 3D model + text label on every tile.city (TileInfo.city, see
+	  //interfaces.ts) - independent of terrain type, so a city can sit on any
+	  //land tile instead of being tied to a specific Land value. The model
+	  //comes from the tile's own data if present (city.model), falling back to
+	  //the map-wide cityModel option - a map can mix different models (e.g. a
+	  //capital vs. a village) purely through its own JSON, no code changes
+	  //required. Each model's own offset/rotation/scale fine-tuning lives in its
+	  //folder's info.json (see helpers/models.ts's fixup matrix), not here -
+	  //cityScale only applies an *additional* map-wide multiplier on top of that.
+	  //
+	  //Async because loading a glTF model is async (see helpers/models.ts) -
+	  //called by HexMap.load() after construction, not from the constructor,
+	  //so callers can await it if they need cities present before proceeding.
+	  async loadCities() {
 	    const { size } = this.options;
+	    const defaultModel = this.options.cityModel ?? "Assets/models/monument";
+	    const cityScale = this.options.cityScale ?? 1;
 	    for (let x = 0; x < this.map.w; x++) {
 	      for (let y = 0; y < this.map.h; y++) {
 	        const tile = this.map.data[x]?.[y];
-	        if (!tile || tile.type !== "sand" /* sand */) continue;
+	        if (!tile?.city) continue;
 	        const center = getHexCenter(x, y, size);
-	        const sprite = makeTextSprite(" City name ", {
+	        const modelPath = tile.city.model ?? defaultModel;
+	        const { scene, fixup } = await loadModel(modelPath);
+	        const model = scene.clone(true);
+	        model.applyMatrix4(fixup);
+	        model.updateMatrixWorld(true);
+	        const cityMeshes = [];
+	        model.traverse((o) => {
+	          const mesh = o;
+	          if (!mesh.isMesh) return;
+	          mesh.material = mesh.material.clone();
+	          const color = mesh.material.color;
+	          if (color) cityMeshes.push({ mesh, baseColor: color.clone() });
+	        });
+	        const box = new three.Box3().setFromObject(model);
+	        const modelHeight = box.getSize(new three.Vector3()).y;
+	        const wrapper = new three.Group();
+	        wrapper.add(model);
+	        wrapper.scale.setScalar(cityScale);
+	        wrapper.position.set(center.x, 0, center.y);
+	        this.add(wrapper);
+	        const sprite = makeTextSprite(` ${tile.city.name ?? "City"} `, {
 	          fontsize: 32,
 	          fontface: "Georgia",
 	          borderColor: { r: 0, g: 0, b: 255, a: 0.8 }
 	        });
-	        sprite.position.set(center.x, Math.round(size / 5), center.y);
+	        sprite.position.set(center.x, modelHeight * cityScale + Math.round(size / 5), center.y);
 	        this.add(sprite);
+	        this.cityFog.set(`${x},${y}`, { wrapper, sprite, meshes: cityMeshes });
 	      }
 	    }
 	  }
@@ -9074,56 +8933,512 @@ void main() {
 	    if (this.landMaterial) this.landMaterial.uniforms.showGrid.value = v;
 	    if (this.waterMaterial) this.waterMaterial.uniforms.showGrid.value = v;
 	  }
+	  //-------------------------------------------------------------------------
+	  //Live shader-uniform tuning knobs, for a GUI to adjust without rebuilding
+	  //the map (unlike waterAnimation itself, which changes tile layer grouping
+	  //and so needs a full TerrainMesh rebuild - see HexMap.rebuildTerrain()).
+	  //beachWidth/waterDepth exist as separate uniform objects on landMaterial
+	  //and waterMaterial each (commonUniforms() is called once per material, not
+	  //shared), so both setters below write to both.
+	  //-------------------------------------------------------------------------
+	  get landBlendWidth() {
+	    return this.landMaterial?.uniforms.landBlendWidth.value ?? 0.5;
+	  }
+	  set landBlendWidth(value) {
+	    if (this.landMaterial) this.landMaterial.uniforms.landBlendWidth.value = value;
+	  }
+	  get waterCornerRounding() {
+	    return this.waterMaterial?.uniforms.waterCornerRounding.value ?? 0.4;
+	  }
+	  set waterCornerRounding(value) {
+	    if (this.waterMaterial) this.waterMaterial.uniforms.waterCornerRounding.value = value;
+	  }
+	  get beachWidth() {
+	    return this.landMaterial?.uniforms.beachWidth.value ?? this.waterMaterial?.uniforms.beachWidth.value ?? 0.35;
+	  }
+	  set beachWidth(value) {
+	    if (this.landMaterial) this.landMaterial.uniforms.beachWidth.value = value;
+	    if (this.waterMaterial) this.waterMaterial.uniforms.beachWidth.value = value;
+	  }
+	  //waterLevel uniform is negative (rest height below land); exposed here as
+	  //a positive "depth" to match the waterDepth constructor option's sign.
+	  get waterDepth() {
+	    const level = this.landMaterial?.uniforms.waterLevel.value ?? this.waterMaterial?.uniforms.waterLevel.value;
+	    return level === void 0 ? this.options.size * 0.25 : -level;
+	  }
+	  set waterDepth(value) {
+	    const level = -value;
+	    if (this.landMaterial) this.landMaterial.uniforms.waterLevel.value = level;
+	    if (this.waterMaterial) this.waterMaterial.uniforms.waterLevel.value = level;
+	  }
+	  get waterWaveAmplitude() {
+	    return this.waterMaterial?.uniforms.waveAmplitude.value ?? 1.6;
+	  }
+	  set waterWaveAmplitude(value) {
+	    if (this.waterMaterial) this.waterMaterial.uniforms.waveAmplitude.value = value;
+	  }
+	  //The stored uniform is pre-scaled by 0.045 (see buildWaterLayer) so the
+	  //raw shader frequency stays in a sane range - getter/setter work in the
+	  //same "multiplier" units as the constructor option so callers don't need
+	  //to know about that factor.
+	  get waterWaveFrequency() {
+	    return (this.waterMaterial?.uniforms.waveFrequency.value ?? 0.045) / 0.045;
+	  }
+	  set waterWaveFrequency(value) {
+	    if (this.waterMaterial) this.waterMaterial.uniforms.waveFrequency.value = 0.045 * value;
+	  }
+	  get waterWaveSpeed() {
+	    return this.waterMaterial?.uniforms.waveSpeed.value ?? 1;
+	  }
+	  set waterWaveSpeed(value) {
+	    if (this.waterMaterial) this.waterMaterial.uniforms.waveSpeed.value = value;
+	  }
+	  get waterSparkleIntensity() {
+	    return this.waterMaterial?.uniforms.sparkleIntensity.value ?? 1;
+	  }
+	  set waterSparkleIntensity(value) {
+	    if (this.waterMaterial) this.waterMaterial.uniforms.sparkleIntensity.value = value;
+	  }
+	  get waterFresnelIntensity() {
+	    return this.waterMaterial?.uniforms.fresnelIntensity.value ?? 1;
+	  }
+	  set waterFresnelIntensity(value) {
+	    if (this.waterMaterial) this.waterMaterial.uniforms.fresnelIntensity.value = value;
+	  }
+	  get waterColorShallow() {
+	    return this.waterMaterial?.uniforms.waterColorShallow.value?.getHex() ?? 0;
+	  }
+	  set waterColorShallow(value) {
+	    this.waterMaterial?.uniforms.waterColorShallow.value?.set(value);
+	  }
+	  get waterColorDeep() {
+	    return this.waterMaterial?.uniforms.waterColorDeep.value?.getHex() ?? 0;
+	  }
+	  set waterColorDeep(value) {
+	    this.waterMaterial?.uniforms.waterColorDeep.value?.set(value);
+	  }
+	  //Coastal foam waves - all plain uniforms on the water material, so
+	  //toggling/tuning is live (unlike waterAnimation itself, which is
+	  //structural - see HexMap.rebuildTerrain()).
+	  get coastalWavesEnabled() {
+	    return (this.waterMaterial?.uniforms.foamEnabled.value ?? 1) > 0.5;
+	  }
+	  set coastalWavesEnabled(value) {
+	    if (this.waterMaterial) this.waterMaterial.uniforms.foamEnabled.value = value ? 1 : 0;
+	  }
+	  get coastalWaveColor() {
+	    return this.waterMaterial?.uniforms.foamColor.value?.getHex() ?? 16777215;
+	  }
+	  set coastalWaveColor(value) {
+	    this.waterMaterial?.uniforms.foamColor.value?.set(value);
+	  }
+	  get coastalWaveCount() {
+	    return this.waterMaterial?.uniforms.foamCount.value ?? 3;
+	  }
+	  set coastalWaveCount(value) {
+	    if (this.waterMaterial) this.waterMaterial.uniforms.foamCount.value = value;
+	  }
+	  get coastalWaveSpeed() {
+	    return this.waterMaterial?.uniforms.foamSpeed.value ?? 0.6;
+	  }
+	  set coastalWaveSpeed(value) {
+	    if (this.waterMaterial) this.waterMaterial.uniforms.foamSpeed.value = value;
+	  }
+	  get coastalWaveWidth() {
+	    return this.waterMaterial?.uniforms.foamWidth.value ?? 0.3;
+	  }
+	  set coastalWaveWidth(value) {
+	    if (this.waterMaterial) this.waterMaterial.uniforms.foamWidth.value = value;
+	  }
+	  get coastalWaveRange() {
+	    return this.waterMaterial?.uniforms.foamRange.value ?? 0.8;
+	  }
+	  set coastalWaveRange(value) {
+	    if (this.waterMaterial) this.waterMaterial.uniforms.foamRange.value = value;
+	  }
+	  get coastalWaveDistortion() {
+	    return this.waterMaterial?.uniforms.foamDistortion.value ?? 0.5;
+	  }
+	  set coastalWaveDistortion(value) {
+	    if (this.waterMaterial) this.waterMaterial.uniforms.foamDistortion.value = value;
+	  }
+	  get coastalWaveOpacity() {
+	    return this.waterMaterial?.uniforms.foamOpacity.value ?? 0.85;
+	  }
+	  set coastalWaveOpacity(value) {
+	    if (this.waterMaterial) this.waterMaterial.uniforms.foamOpacity.value = value;
+	  }
 	  //Index of a tile within the land layer's instanced attributes, for future
 	  //point updates (e.g. HexMap.setTile) without rebuilding the whole geometry.
 	  getInstanceIndex(x, y) {
 	    return this.tileIndex.get(`${x},${y}`);
 	  }
+	  //-------------------------------------------------------------------------
+	  //Fog of war (see FogOfWar.ts) - updates one tile's terrain (land or water,
+	  //whichever layer it's actually on) and its city model/label (if any) to
+	  //the given state. Plain per-instance attribute writes, no rebuild.
+	  //-------------------------------------------------------------------------
+	  setFogState(x, y, state) {
+	    const key = `${x},${y}`;
+	    const landIdx = this.tileIndex.get(key);
+	    if (landIdx !== void 0 && this.landMesh) {
+	      const attribute = this.landMesh.geometry.getAttribute("fogState");
+	      attribute.setX(landIdx, state);
+	      attribute.needsUpdate = true;
+	    }
+	    const waterIdx = this.waterTileIndex.get(key);
+	    if (waterIdx !== void 0 && this.waterMesh) {
+	      const attribute = this.waterMesh.geometry.getAttribute("fogState");
+	      attribute.setX(waterIdx, state);
+	      attribute.needsUpdate = true;
+	    }
+	    this.setCityFog(key, state);
+	  }
+	  setCityFog(key, state) {
+	    const entry = this.cityFog.get(key);
+	    if (!entry) return;
+	    const hidden = state < 0.5;
+	    entry.wrapper.visible = !hidden;
+	    entry.sprite.visible = !hidden;
+	    if (hidden) return;
+	    const shade = state < 1.5 ? this.options.fogDarkenFactor ?? 0.45 : 1;
+	    for (const { mesh, baseColor } of entry.meshes) {
+	      mesh.material.color.copy(baseColor).multiplyScalar(shade);
+	    }
+	  }
 	  get mesh() {
 	    return this.landMesh;
 	  }
+	  //Releases the land/water geometries, materials and atlas texture. City
+	  //models/labels (also children of this Group) are *not* disposed - their
+	  //geometry/materials are shared references into loadModel()'s cache (see
+	  //helpers/models.ts), reused by future loads, not owned by this instance.
+	  dispose() {
+	    this.landMesh?.geometry.dispose();
+	    this.landMaterial?.uniforms.map?.value?.dispose();
+	    this.landMaterial?.dispose();
+	    this.waterMesh?.geometry.dispose();
+	    this.waterMaterial?.dispose();
+	    this.fogTexture.dispose();
+	  }
 	};
-	function createForest(map, options) {
+	var ForestField = class extends three.Group {
+	  constructor(tileRanges, fogDarkenFactor) {
+	    super();
+	    this.tileRanges = tileRanges;
+	    this.fogDarkenFactor = fogDarkenFactor;
+	    this.hiddenMatrix = new three.Matrix4().makeScale(0, 0, 0);
+	  }
+	  setFogState(x, y, state) {
+	    const range = this.tileRanges.get(`${x},${y}`);
+	    if (!range) return;
+	    const hidden = state < 0.5;
+	    const shade = state < 1.5 ? this.fogDarkenFactor : 1;
+	    for (const instancedMesh of range.instancedMeshes) {
+	      for (let i = 0; i < range.count; i++) {
+	        const idx = range.start + i;
+	        instancedMesh.setMatrixAt(idx, hidden ? this.hiddenMatrix : range.originalMatrices[i]);
+	        instancedMesh.instanceColor?.setXYZ(idx, shade, shade, shade);
+	      }
+	      instancedMesh.instanceMatrix.needsUpdate = true;
+	      if (instancedMesh.instanceColor) instancedMesh.instanceColor.needsUpdate = true;
+	    }
+	  }
+	};
+	async function createForest(map, options) {
 	  const { size } = options;
 	  const treesPerTile = options.treesPerTile ?? 20;
-	  const treeSize = Math.max(1, Math.round(size / 10));
-	  const woodTiles = [];
+	  const defaultModel = options.treeModel ?? "Assets/models/pinia";
+	  const treeScale = options.treeScale ?? 1;
+	  const fogDarkenFactor = options.fogDarkenFactor ?? 0.45;
+	  const tilesByModel = /* @__PURE__ */ new Map();
 	  for (let x = 0; x < map.w; x++) {
 	    for (let y = 0; y < map.h; y++) {
-	      if (map.data[x]?.[y]?.wood) woodTiles.push({ x, y });
+	      const tile = map.data[x]?.[y];
+	      if (!tile?.wood) continue;
+	      const modelPath = tile.treeModel ?? defaultModel;
+	      const tiles = tilesByModel.get(modelPath) ?? [];
+	      tiles.push({ x, y });
+	      tilesByModel.set(modelPath, tiles);
 	    }
 	  }
-	  if (woodTiles.length === 0) return null;
-	  const geometry = new three.ConeGeometry(1, 1, 6);
-	  const material = new three.MeshLambertMaterial({ color: options.color ?? 746300 });
-	  const mesh = new three.InstancedMesh(geometry, material, woodTiles.length * treesPerTile);
-	  mesh.instanceMatrix.setUsage(three.DynamicDrawUsage);
-	  mesh.frustumCulled = false;
-	  const polygon = HEXPolygon({ x: 0, y: 0 }, size - treeSize).map((p) => [p.x, p.y]);
-	  const matrix = new three.Matrix4();
+	  if (tilesByModel.size === 0) return null;
+	  const treeFootprint = Math.max(1, Math.round(size / 10));
+	  const polygon = HEXPolygon({ x: 0, y: 0 }, size - treeFootprint).map((p) => [p.x, p.y]);
+	  const tileRanges = /* @__PURE__ */ new Map();
+	  const group = new ForestField(tileRanges, fogDarkenFactor);
+	  for (const [modelPath, tiles] of tilesByModel) {
+	    const { scene, fixup } = await loadModel(modelPath);
+	    const meshes = [];
+	    scene.traverse((o) => {
+	      if (o.isMesh) meshes.push(o);
+	    });
+	    if (meshes.length === 0) continue;
+	    const totalInstances = tiles.length * treesPerTile;
+	    const instancedMeshes = meshes.map((mesh) => {
+	      const geometry = mesh.geometry.clone();
+	      geometry.applyMatrix4(mesh.matrixWorld);
+	      geometry.applyMatrix4(fixup);
+	      const instancedMesh = new three.InstancedMesh(geometry, mesh.material, totalInstances);
+	      instancedMesh.instanceMatrix.setUsage(three.DynamicDrawUsage);
+	      instancedMesh.instanceColor = new three.InstancedBufferAttribute(new Float32Array(totalInstances * 3).fill(1), 3);
+	      instancedMesh.frustumCulled = false;
+	      group.add(instancedMesh);
+	      return instancedMesh;
+	    });
+	    const matrix = new three.Matrix4();
+	    const scaleVector = new three.Vector3();
+	    let instance = 0;
+	    for (const tile of tiles) {
+	      const center = getHexCenter(tile.x, tile.y, size);
+	      const placed = [];
+	      const tileStart = instance;
+	      const originalMatrices = [];
+	      let attempts = 0;
+	      while (placed.length < treesPerTile && attempts < treesPerTile * 20) {
+	        attempts++;
+	        const lx = getRandomInt(-size, size);
+	        const ly = getRandomInt(-size, size);
+	        if (pointInPolygon2(polygon, [lx, ly]) !== -1) continue;
+	        const overlaps = placed.some((p) => Math.abs(p.x - lx) < treeFootprint && Math.abs(p.y - ly) < treeFootprint);
+	        if (overlaps) continue;
+	        placed.push({ x: lx, y: ly });
+	        const scale = treeScale * (0.8 + Math.random() * 0.4);
+	        matrix.makeRotationY(Math.random() * Math.PI * 2);
+	        matrix.scale(scaleVector.set(scale, scale, scale));
+	        matrix.setPosition(center.x + lx, 0, center.y + ly);
+	        for (const instancedMesh of instancedMeshes) instancedMesh.setMatrixAt(instance, matrix);
+	        originalMatrices.push(matrix.clone());
+	        instance++;
+	      }
+	      tileRanges.set(`${tile.x},${tile.y}`, { instancedMeshes, start: tileStart, count: instance - tileStart, originalMatrices });
+	    }
+	    for (const instancedMesh of instancedMeshes) {
+	      instancedMesh.count = instance;
+	      instancedMesh.instanceMatrix.needsUpdate = true;
+	    }
+	  }
+	  return group;
+	}
+
+	// src/shaders/grass.vertex.ts
+	var GRASS_VERTEX_SHADER = `
+precision mediump float;
+
+uniform mat4 modelViewMatrix;
+uniform mat4 projectionMatrix;
+
+uniform float uTime;
+uniform float windStrength;
+uniform float windSpeed;
+
+// Blade shape authored once in local space (see Grass.ts buildBladeGeometry):
+// x spans [-0.5, 0.5] at the root and tapers to 0 at the tip, y is a plain
+// [0, 1] height factor (0 = root, 1 = tip) - not a world-unit height, that's
+// what the per-instance "scale" attribute is for.
+attribute vec3 position;
+
+attribute vec2 offset;  // world XZ position of this blade's root
+attribute float angle;  // random Y rotation, radians - so blades don't all face the same way
+attribute vec2 scale;   // x = width multiplier, y = height multiplier (world units)
+attribute float phase;  // random wind phase offset, see wave below
+attribute float shade;  // random per-blade brightness multiplier (clump variation)
+attribute float fogState; // 0 = unseen (blade hidden), 1 = explored (darkened), 2 = visible - see FogOfWar.ts
+
+varying float vHeightFactor;
+varying float vShade;
+varying float vFogState;
+
+void main() {
+    float heightFactor = position.y;
+    vec3 p = vec3(position.x * scale.x, position.y * scale.y, position.z * scale.x);
+
+    float s = sin(angle);
+    float c = cos(angle);
+    vec3 rotated = vec3(p.x * c - p.z * s, p.y, p.x * s + p.z * c);
+
+    // Wind bends the blade towards its tip only (heightFactor^2 keeps the root
+    // planted) - phase is offset by world position so a gust visibly travels
+    // across the field instead of every blade swaying in lockstep.
+    float wave = sin(uTime * windSpeed + phase + (offset.x + offset.y) * 0.015);
+    float bend = wave * windStrength * heightFactor * heightFactor;
+    rotated.x += bend;
+    rotated.z += bend * 0.4;
+
+    vec3 worldPos = vec3(offset.x + rotated.x, rotated.y, offset.y + rotated.z);
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(worldPos, 1.0);
+
+    vHeightFactor = heightFactor;
+    vShade = shade;
+    vFogState = fogState;
+}
+`;
+
+	// src/shaders/grass.fragment.ts
+	var GRASS_FRAGMENT_SHADER = `
+precision mediump float;
+
+uniform vec3 colorBase;
+uniform vec3 colorTip;
+uniform float fogDarkenFactor;
+
+varying float vHeightFactor;
+varying float vShade;
+varying float vFogState;
+
+void main() {
+    // Unseen: no feature should show at all under the war-fog tile.
+    if (vFogState < 0.5) discard;
+
+    vec3 color = mix(colorBase, colorTip, vHeightFactor) * vShade;
+
+    // Explored: keep the blade visible, just darker (mirrors terrain.fragment.ts).
+    if (vFogState < 1.5) color *= fogDarkenFactor;
+
+    gl_FragColor = vec4(color, 1.0);
+}
+`;
+
+	// src/objects/Grass.ts
+	var GrassField = class extends three.Mesh {
+	  constructor(geometry, material, tileRanges) {
+	    super(geometry, material);
+	    this.tileRanges = tileRanges;
+	    this.clock = 0;
+	    this.grassMaterial = material;
+	    this.frustumCulled = false;
+	  }
+	  //Updates every blade belonging to (x, y) to the given fog state (see
+	  //FogOfWar.ts) - a plain attribute-slice fill + needsUpdate, no rebuild.
+	  //No-op for tiles with no grass (city tiles, non-"land" terrain).
+	  setFogState(x, y, state) {
+	    const range = this.tileRanges.get(`${x},${y}`);
+	    if (!range) return;
+	    const attribute = this.geometry.getAttribute("fogState");
+	    for (let i = 0; i < range.count; i++) attribute.setX(range.start + i, state);
+	    attribute.needsUpdate = true;
+	  }
+	  //Advances the wind animation. `dtS` is the elapsed time in seconds since
+	  //the previous frame - call this once per frame (see HexMap's render loop).
+	  update(dtS) {
+	    this.clock += dtS;
+	    this.grassMaterial.uniforms.uTime.value = this.clock;
+	  }
+	  get windStrength() {
+	    return this.grassMaterial.uniforms.windStrength.value;
+	  }
+	  set windStrength(value) {
+	    this.grassMaterial.uniforms.windStrength.value = value;
+	  }
+	  get windSpeed() {
+	    return this.grassMaterial.uniforms.windSpeed.value;
+	  }
+	  set windSpeed(value) {
+	    this.grassMaterial.uniforms.windSpeed.value = value;
+	  }
+	  dispose() {
+	    this.geometry.dispose();
+	    this.grassMaterial.dispose();
+	  }
+	};
+	function buildBladeGeometry() {
+	  const positions = new Float32Array([
+	    -0.5,
+	    0,
+	    0,
+	    0.5,
+	    0,
+	    0,
+	    -0.25,
+	    0.5,
+	    0,
+	    0.25,
+	    0.5,
+	    0,
+	    0,
+	    1,
+	    0
+	  ]);
+	  const index = [0, 1, 2, 1, 3, 2, 2, 3, 4];
+	  const geometry = new three.BufferGeometry();
+	  geometry.setAttribute("position", new three.Float32BufferAttribute(positions, 3));
+	  geometry.setIndex(index);
+	  return geometry;
+	}
+	function createGrassField(map, options) {
+	  const { size } = options;
+	  const density = options.density ?? 60;
+	  if (density <= 0) return null;
+	  const bladeWidth = options.bladeWidth ?? size * 0.03;
+	  const bladeHeight = options.bladeHeight ?? size * 0.18;
+	  const heightVariation = options.heightVariation ?? 0.4;
+	  const windStrength = options.windStrength ?? bladeHeight * 0.35;
+	  const windSpeed = options.windSpeed ?? 1.2;
+	  const tiles = [];
+	  for (let x = 0; x < map.w; x++) {
+	    for (let y = 0; y < map.h; y++) {
+	      const tile = map.data[x]?.[y];
+	      if (tile?.type === "land" /* land */ && !tile.city) tiles.push({ x, y });
+	    }
+	  }
+	  if (tiles.length === 0) return null;
+	  const polygon = HEXPolygon({ x: 0, y: 0 }, size * 0.8).map((p) => [p.x, p.y]);
+	  const totalBlades = tiles.length * density;
+	  const offsets = new Float32Array(totalBlades * 2);
+	  const angles = new Float32Array(totalBlades);
+	  const scales = new Float32Array(totalBlades * 2);
+	  const phases = new Float32Array(totalBlades);
+	  const shades = new Float32Array(totalBlades);
+	  const fogStates = new Float32Array(totalBlades).fill(2);
+	  const tileRanges = /* @__PURE__ */ new Map();
 	  let instance = 0;
-	  for (const tile of woodTiles) {
+	  for (const tile of tiles) {
 	    const center = getHexCenter(tile.x, tile.y, size);
-	    const placed = [];
-	    let attempts = 0;
-	    while (placed.length < treesPerTile && attempts < treesPerTile * 20) {
-	      attempts++;
-	      const lx = getRandomInt(-size, size);
-	      const ly = getRandomInt(-size, size);
-	      if (pointInPolygon(polygon, [lx, ly]) !== -1) continue;
-	      const overlaps = placed.some((p) => Math.abs(p.x - lx) < treeSize && Math.abs(p.y - ly) < treeSize);
-	      if (overlaps) continue;
-	      placed.push({ x: lx, y: ly });
-	      const height = treeSize * getRandomInt(2, 5);
-	      matrix.makeScale(treeSize, height, treeSize);
-	      matrix.setPosition(center.x + lx, height / 2, center.y + ly);
-	      mesh.setMatrixAt(instance, matrix);
+	    const tileStart = instance;
+	    for (let i = 0; i < density; i++) {
+	      let lx = 0, ly = 0, attempts = 0;
+	      do {
+	        lx = getRandomInt(-size, size);
+	        ly = getRandomInt(-size, size);
+	        attempts++;
+	      } while (pointInPolygon2(polygon, [lx, ly]) !== -1 && attempts < 10);
+	      offsets[instance * 2 + 0] = center.x + lx;
+	      offsets[instance * 2 + 1] = center.y + ly;
+	      angles[instance] = Math.random() * Math.PI * 2;
+	      const heightJitter = 1 - heightVariation * 0.5 + Math.random() * heightVariation;
+	      scales[instance * 2 + 0] = bladeWidth * (0.8 + Math.random() * 0.4);
+	      scales[instance * 2 + 1] = bladeHeight * heightJitter;
+	      phases[instance] = Math.random() * Math.PI * 2;
+	      shades[instance] = 0.75 + Math.random() * 0.35;
 	      instance++;
 	    }
+	    tileRanges.set(`${tile.x},${tile.y}`, { start: tileStart, count: instance - tileStart });
 	  }
-	  mesh.count = instance;
-	  mesh.instanceMatrix.needsUpdate = true;
-	  return mesh;
+	  const blade = buildBladeGeometry();
+	  const geometry = new three.InstancedBufferGeometry();
+	  geometry.setAttribute("position", blade.getAttribute("position"));
+	  geometry.setIndex(blade.getIndex());
+	  geometry.instanceCount = instance;
+	  geometry.setAttribute("offset", new three.InstancedBufferAttribute(offsets, 2));
+	  geometry.setAttribute("angle", new three.InstancedBufferAttribute(angles, 1));
+	  geometry.setAttribute("scale", new three.InstancedBufferAttribute(scales, 2));
+	  geometry.setAttribute("phase", new three.InstancedBufferAttribute(phases, 1));
+	  geometry.setAttribute("shade", new three.InstancedBufferAttribute(shades, 1));
+	  geometry.setAttribute("fogState", new three.InstancedBufferAttribute(fogStates, 1));
+	  const material = new three.RawShaderMaterial({
+	    uniforms: {
+	      uTime: { value: 0 },
+	      windStrength: { value: windStrength },
+	      windSpeed: { value: windSpeed },
+	      colorBase: { value: new three.Color(options.colorBase ?? 3960366) },
+	      colorTip: { value: new three.Color(options.colorTip ?? 9424474) },
+	      fogDarkenFactor: { value: options.fogDarkenFactor ?? 0.45 }
+	    },
+	    vertexShader: GRASS_VERTEX_SHADER,
+	    fragmentShader: GRASS_FRAGMENT_SHADER,
+	    side: three.DoubleSide
+	  });
+	  return new GrassField(geometry, material, tileRanges);
 	}
 
 	// src/HexMap.ts
@@ -9138,14 +9453,36 @@ void main() {
 	  pointerColor: 15658734,
 	  treesPerTile: 20,
 	  waterAnimation: true,
-	  waterColorShallow: LandColor["shore" /* shore */],
+	  waterColorShallow: LandColor["coastal" /* coastal */],
 	  waterColorDeep: LandColor["sea" /* sea */],
 	  waterWaveAmplitude: 1.6,
 	  waterWaveFrequency: 1,
 	  waterWaveSpeed: 1,
 	  waterSparkleIntensity: 1,
 	  waterFresnelIntensity: 1,
-	  beachWidth: 0.35
+	  coastalWavesEnabled: true,
+	  coastalWaveColor: 16777215,
+	  coastalWaveCount: 3,
+	  coastalWaveSpeed: 0.6,
+	  coastalWaveWidth: 0.3,
+	  coastalWaveRange: 0.8,
+	  coastalWaveDistortion: 0.5,
+	  coastalWaveOpacity: 0.85,
+	  beachWidth: 0.35,
+	  landBlendWidth: 0.5,
+	  waterCornerRounding: 0.4,
+	  treeModel: "Assets/models/pinia",
+	  treeScale: 1,
+	  cityModel: "Assets/models/monument",
+	  cityScale: 1,
+	  grassEnabled: true,
+	  grassDensity: 60,
+	  grassBladeWidth: 1.2,
+	  grassBladeHeight: 7.2,
+	  grassWindStrength: 2.5,
+	  grassWindSpeed: 1.2,
+	  fogTexture: "war-fog.jpg",
+	  fogDarkenFactor: 0.45
 	};
 	var HexMap = class extends EventEmitter {
 	  constructor(options) {
@@ -9166,6 +9503,7 @@ void main() {
 	      const dtS = this.lastFrameTime === void 0 ? 0 : (t - this.lastFrameTime) / 1e3;
 	      this.lastFrameTime = t;
 	      this.terrain?.update(dtS);
+	      this.grass?.update(dtS);
 	      this.emit("frame", { t });
 	      this.renderer.render(this.scene, this.camera);
 	      window.requestAnimationFrame(this.animate);
@@ -9209,7 +9547,8 @@ void main() {
 	    this.options = {
 	      ...DEFAULT_OPTIONS,
 	      ...options,
-	      waterDepth: options.waterDepth ?? (options.size ?? DEFAULT_OPTIONS.size) * 0.25
+	      waterDepth: options.waterDepth ?? (options.size ?? DEFAULT_OPTIONS.size) * 0.25,
+	      fogTextureSize: options.fogTextureSize ?? (options.size ?? DEFAULT_OPTIONS.size) * 8
 	    };
 	    const el = document.querySelector(this.options.element);
 	    if (!(el instanceof HTMLCanvasElement)) {
@@ -9309,11 +9648,29 @@ void main() {
 	    this.mapData = mapData;
 	    this.frameMap(mapData);
 	    const atlasUrl = new URL("land-atlas.json", new URL(this.options.texturesBaseUrl, window.location.href)).href;
-	    const atlas = await fetch(atlasUrl).then((r) => r.json());
-	    this.terrain = new TerrainMesh(mapData, {
+	    this.atlas = await fetch(atlasUrl).then((r) => r.json());
+	    await this.rebuildTerrain();
+	    await this.rebuildForest();
+	    this.rebuildGrass();
+	    this.emit("load", void 0);
+	  }
+	  //Tears down and recreates the terrain (land/water layers + city models) from
+	  //the current options against the already-fetched atlas/map data. Needed for
+	  //any option that changes tile layer *grouping* rather than a plain shader
+	  //uniform - currently only waterAnimation (splitting sea/coastal onto their own
+	  //animated layer vs. flattening them into the atlas-textured land layer is a
+	  //different instance count/geometry, not something a uniform can express).
+	  //Everything else water/blend-related is a live uniform - see TerrainMesh's
+	  //own getters/setters, forwarded below (waterWaveAmplitude, beachWidth, etc.)
+	  async rebuildTerrain() {
+	    if (this.terrain) {
+	      this.scene.remove(this.terrain);
+	      this.terrain.dispose();
+	    }
+	    this.terrain = new TerrainMesh(this.mapData, {
 	      size: this.options.size,
 	      texturesBaseUrl: this.options.texturesBaseUrl,
-	      atlas,
+	      atlas: this.atlas,
 	      gridVisible: this.options.gridVisible,
 	      gridColor: this.options.gridColor,
 	      gridWidth: this.options.gridWidth,
@@ -9326,16 +9683,89 @@ void main() {
 	      waterWaveSpeed: this.options.waterWaveSpeed,
 	      waterSparkleIntensity: this.options.waterSparkleIntensity,
 	      waterFresnelIntensity: this.options.waterFresnelIntensity,
+	      coastalWavesEnabled: this.options.coastalWavesEnabled,
+	      coastalWaveColor: this.options.coastalWaveColor,
+	      coastalWaveCount: this.options.coastalWaveCount,
+	      coastalWaveSpeed: this.options.coastalWaveSpeed,
+	      coastalWaveWidth: this.options.coastalWaveWidth,
+	      coastalWaveRange: this.options.coastalWaveRange,
+	      coastalWaveDistortion: this.options.coastalWaveDistortion,
+	      coastalWaveOpacity: this.options.coastalWaveOpacity,
 	      waterDepth: this.options.waterDepth,
-	      beachWidth: this.options.beachWidth
+	      beachWidth: this.options.beachWidth,
+	      landBlendWidth: this.options.landBlendWidth,
+	      waterCornerRounding: this.options.waterCornerRounding,
+	      cityModel: this.options.cityModel,
+	      cityScale: this.options.cityScale,
+	      fogTexture: this.options.fogTexture,
+	      fogDarkenFactor: this.options.fogDarkenFactor,
+	      fogTextureSize: this.options.fogTextureSize
 	    });
 	    this.scene.add(this.terrain);
-	    const forest = createForest(mapData, { size: this.options.size, treesPerTile: this.options.treesPerTile });
-	    if (forest) this.scene.add(forest);
-	    this.emit("load", void 0);
+	    await this.terrain.loadCities();
+	  }
+	  //Tears down and recreates the tree instances from the current tree*
+	  //options. treesPerTile/treeScale are baked into the instanced geometry's
+	  //instance count/matrices at build time, so - like grass - there's no live
+	  //uniform for them, only a rebuild. Model files are cached (see
+	  //helpers/models.ts), so repeated rebuilds don't re-fetch the glTF.
+	  async rebuildForest() {
+	    if (this.forest) {
+	      this.scene.remove(this.forest);
+	      this.forest.traverse((o) => o.geometry?.dispose());
+	      this.forest = void 0;
+	    }
+	    if (!this.mapData) return;
+	    this.forest = await createForest(this.mapData, {
+	      size: this.options.size,
+	      treesPerTile: this.options.treesPerTile,
+	      treeModel: this.options.treeModel,
+	      treeScale: this.options.treeScale,
+	      fogDarkenFactor: this.options.fogDarkenFactor
+	    }) ?? void 0;
+	    if (this.forest) this.scene.add(this.forest);
+	  }
+	  //Tears down and recreates the grass field from the current grass* options
+	  //against the already-loaded map data. Grass is purely procedural (no
+	  //textures/models to load), so this is synchronous and cheap enough to call
+	  //directly from a live GUI slider (see grassDensity/grassBladeWidth/
+	  //grassBladeHeight setters below) - a rebuild replaces the whole instanced
+	  //geometry, there's no partial/incremental update.
+	  rebuildGrass() {
+	    if (this.grass) {
+	      this.scene.remove(this.grass);
+	      this.grass.dispose();
+	      this.grass = void 0;
+	    }
+	    if (!this.mapData) return;
+	    this.grass = createGrassField(this.mapData, {
+	      size: this.options.size,
+	      density: this.options.grassDensity,
+	      bladeWidth: this.options.grassBladeWidth,
+	      bladeHeight: this.options.grassBladeHeight,
+	      windStrength: this.options.grassWindStrength,
+	      windSpeed: this.options.grassWindSpeed,
+	      fogDarkenFactor: this.options.fogDarkenFactor
+	    }) ?? void 0;
+	    if (this.grass) {
+	      this.grass.visible = this.options.grassEnabled;
+	      this.scene.add(this.grass);
+	    }
 	  }
 	  getTile(x, y) {
 	    return this.mapData?.data[x]?.[y];
+	  }
+	  //-------------------------------------------------------------------------
+	  //Fog of war (see objects/FogOfWar.ts) - updates one tile's terrain, grass
+	  //and trees/city to the given state (0 = Unseen, 1 = Explored, 2 = Visible).
+	  //Every tile defaults to Visible, so calling this is entirely optional; a
+	  //consumer that wants fog of war (e.g. GameEngine, when its own fogOfWar
+	  //option is on) drives it from unit positions/view ranges.
+	  //-------------------------------------------------------------------------
+	  setTileFog(x, y, state) {
+	    this.terrain?.setFogState(x, y, state);
+	    this.grass?.setFogState(x, y, state);
+	    this.forest?.setFogState(x, y, state);
 	  }
 	  get gridVisible() {
 	    return this.terrain?.gridVisible ?? this.options.gridVisible;
@@ -9343,6 +9773,226 @@ void main() {
 	  set gridVisible(value) {
 	    this.options.gridVisible = value;
 	    if (this.terrain) this.terrain.gridVisible = value;
+	  }
+	  //-------------------------------------------------------------------------
+	  //Water animation - enabling/disabling is structural (see rebuildTerrain()),
+	  //everything else here is a live shader uniform forwarded straight through
+	  //to TerrainMesh, no rebuild needed.
+	  //-------------------------------------------------------------------------
+	  get waterAnimation() {
+	    return this.options.waterAnimation;
+	  }
+	  set waterAnimation(value) {
+	    this.options.waterAnimation = value;
+	    void this.rebuildTerrain();
+	  }
+	  get waterWaveAmplitude() {
+	    return this.terrain?.waterWaveAmplitude ?? this.options.waterWaveAmplitude;
+	  }
+	  set waterWaveAmplitude(value) {
+	    this.options.waterWaveAmplitude = value;
+	    if (this.terrain) this.terrain.waterWaveAmplitude = value;
+	  }
+	  get waterWaveFrequency() {
+	    return this.terrain?.waterWaveFrequency ?? this.options.waterWaveFrequency;
+	  }
+	  set waterWaveFrequency(value) {
+	    this.options.waterWaveFrequency = value;
+	    if (this.terrain) this.terrain.waterWaveFrequency = value;
+	  }
+	  get waterWaveSpeed() {
+	    return this.terrain?.waterWaveSpeed ?? this.options.waterWaveSpeed;
+	  }
+	  set waterWaveSpeed(value) {
+	    this.options.waterWaveSpeed = value;
+	    if (this.terrain) this.terrain.waterWaveSpeed = value;
+	  }
+	  get waterSparkleIntensity() {
+	    return this.terrain?.waterSparkleIntensity ?? this.options.waterSparkleIntensity;
+	  }
+	  set waterSparkleIntensity(value) {
+	    this.options.waterSparkleIntensity = value;
+	    if (this.terrain) this.terrain.waterSparkleIntensity = value;
+	  }
+	  get waterFresnelIntensity() {
+	    return this.terrain?.waterFresnelIntensity ?? this.options.waterFresnelIntensity;
+	  }
+	  set waterFresnelIntensity(value) {
+	    this.options.waterFresnelIntensity = value;
+	    if (this.terrain) this.terrain.waterFresnelIntensity = value;
+	  }
+	  get waterColorShallow() {
+	    return this.terrain?.waterColorShallow ?? this.options.waterColorShallow;
+	  }
+	  set waterColorShallow(value) {
+	    this.options.waterColorShallow = value;
+	    if (this.terrain) this.terrain.waterColorShallow = value;
+	  }
+	  get waterColorDeep() {
+	    return this.terrain?.waterColorDeep ?? this.options.waterColorDeep;
+	  }
+	  set waterColorDeep(value) {
+	    this.options.waterColorDeep = value;
+	    if (this.terrain) this.terrain.waterColorDeep = value;
+	  }
+	  //-------------------------------------------------------------------------
+	  //Coastal foam waves - all live shader uniforms forwarded to TerrainMesh,
+	  //no rebuild (the enable flag included: it's a uniform gate in the water
+	  //fragment shader, not a structural change like waterAnimation).
+	  //-------------------------------------------------------------------------
+	  get coastalWavesEnabled() {
+	    return this.terrain?.coastalWavesEnabled ?? this.options.coastalWavesEnabled;
+	  }
+	  set coastalWavesEnabled(value) {
+	    this.options.coastalWavesEnabled = value;
+	    if (this.terrain) this.terrain.coastalWavesEnabled = value;
+	  }
+	  get coastalWaveColor() {
+	    return this.terrain?.coastalWaveColor ?? this.options.coastalWaveColor;
+	  }
+	  set coastalWaveColor(value) {
+	    this.options.coastalWaveColor = value;
+	    if (this.terrain) this.terrain.coastalWaveColor = value;
+	  }
+	  get coastalWaveCount() {
+	    return this.terrain?.coastalWaveCount ?? this.options.coastalWaveCount;
+	  }
+	  set coastalWaveCount(value) {
+	    this.options.coastalWaveCount = value;
+	    if (this.terrain) this.terrain.coastalWaveCount = value;
+	  }
+	  get coastalWaveSpeed() {
+	    return this.terrain?.coastalWaveSpeed ?? this.options.coastalWaveSpeed;
+	  }
+	  set coastalWaveSpeed(value) {
+	    this.options.coastalWaveSpeed = value;
+	    if (this.terrain) this.terrain.coastalWaveSpeed = value;
+	  }
+	  get coastalWaveWidth() {
+	    return this.terrain?.coastalWaveWidth ?? this.options.coastalWaveWidth;
+	  }
+	  set coastalWaveWidth(value) {
+	    this.options.coastalWaveWidth = value;
+	    if (this.terrain) this.terrain.coastalWaveWidth = value;
+	  }
+	  get coastalWaveRange() {
+	    return this.terrain?.coastalWaveRange ?? this.options.coastalWaveRange;
+	  }
+	  set coastalWaveRange(value) {
+	    this.options.coastalWaveRange = value;
+	    if (this.terrain) this.terrain.coastalWaveRange = value;
+	  }
+	  get coastalWaveDistortion() {
+	    return this.terrain?.coastalWaveDistortion ?? this.options.coastalWaveDistortion;
+	  }
+	  set coastalWaveDistortion(value) {
+	    this.options.coastalWaveDistortion = value;
+	    if (this.terrain) this.terrain.coastalWaveDistortion = value;
+	  }
+	  get coastalWaveOpacity() {
+	    return this.terrain?.coastalWaveOpacity ?? this.options.coastalWaveOpacity;
+	  }
+	  set coastalWaveOpacity(value) {
+	    this.options.coastalWaveOpacity = value;
+	    if (this.terrain) this.terrain.coastalWaveOpacity = value;
+	  }
+	  //-------------------------------------------------------------------------
+	  //Land/coastal blending + beach height - all live shader uniforms, no rebuild.
+	  //-------------------------------------------------------------------------
+	  get landBlendWidth() {
+	    return this.terrain?.landBlendWidth ?? this.options.landBlendWidth;
+	  }
+	  set landBlendWidth(value) {
+	    this.options.landBlendWidth = value;
+	    if (this.terrain) this.terrain.landBlendWidth = value;
+	  }
+	  get waterCornerRounding() {
+	    return this.terrain?.waterCornerRounding ?? this.options.waterCornerRounding;
+	  }
+	  set waterCornerRounding(value) {
+	    this.options.waterCornerRounding = value;
+	    if (this.terrain) this.terrain.waterCornerRounding = value;
+	  }
+	  get beachWidth() {
+	    return this.terrain?.beachWidth ?? this.options.beachWidth;
+	  }
+	  set beachWidth(value) {
+	    this.options.beachWidth = value;
+	    if (this.terrain) this.terrain.beachWidth = value;
+	  }
+	  get waterDepth() {
+	    return this.terrain?.waterDepth ?? this.options.waterDepth;
+	  }
+	  set waterDepth(value) {
+	    this.options.waterDepth = value;
+	    if (this.terrain) this.terrain.waterDepth = value;
+	  }
+	  //-------------------------------------------------------------------------
+	  //Tree density/size - baked into the instanced geometry at build time (like
+	  //grass), so both rebuild the forest rather than touching a uniform.
+	  //-------------------------------------------------------------------------
+	  get treesPerTile() {
+	    return this.options.treesPerTile;
+	  }
+	  set treesPerTile(value) {
+	    this.options.treesPerTile = value;
+	    void this.rebuildForest();
+	  }
+	  get treeScale() {
+	    return this.options.treeScale;
+	  }
+	  set treeScale(value) {
+	    this.options.treeScale = value;
+	    void this.rebuildForest();
+	  }
+	  //Toggling visibility just flips the mesh's own `visible` flag (grass is
+	  //still generated even when disabled) - the terrain's own grass texture
+	  //keeps rendering underneath either way, so disabling this is purely
+	  //"remove the blade overlay", not "regenerate as flat grass".
+	  get grassVisible() {
+	    return this.grass?.visible ?? this.options.grassEnabled;
+	  }
+	  set grassVisible(value) {
+	    this.options.grassEnabled = value;
+	    if (this.grass) this.grass.visible = value;
+	  }
+	  //Wind uniforms are cheap to update live - no rebuild needed.
+	  get grassWindStrength() {
+	    return this.grass?.windStrength ?? this.options.grassWindStrength;
+	  }
+	  set grassWindStrength(value) {
+	    this.options.grassWindStrength = value;
+	    if (this.grass) this.grass.windStrength = value;
+	  }
+	  get grassWindSpeed() {
+	    return this.grass?.windSpeed ?? this.options.grassWindSpeed;
+	  }
+	  set grassWindSpeed(value) {
+	    this.options.grassWindSpeed = value;
+	    if (this.grass) this.grass.windSpeed = value;
+	  }
+	  //Blade count/size is baked into the instanced geometry at build time, so
+	  //changing any of these rebuilds the whole grass field (see rebuildGrass()).
+	  get grassDensity() {
+	    return this.options.grassDensity;
+	  }
+	  set grassDensity(value) {
+	    this.options.grassDensity = value;
+	    this.rebuildGrass();
+	  }
+	  get grassBladeWidth() {
+	    return this.options.grassBladeWidth;
+	  }
+	  set grassBladeWidth(value) {
+	    this.options.grassBladeWidth = value;
+	    this.rebuildGrass();
+	  }
+	  get grassBladeHeight() {
+	    return this.options.grassBladeHeight;
+	  }
+	  set grassBladeHeight(value) {
+	    this.options.grassBladeHeight = value;
+	    this.rebuildGrass();
 	  }
 	  selectTile(x, y) {
 	    const center = getHexCenter(x, y, this.options.size);
@@ -9402,6 +10052,14 @@ void main() {
 	    super();
 	    this.needAnimate = false;
 	    this.pathFraction = 0;
+	    //Path currently being animated + the cell the model is nearest to right
+	    //now. moveTo() sets options.x/y to the *destination* immediately (so game
+	    //logic like "which tile holds this unit" is stable), which means position
+	    //is wrong as a fog-of-war viewpoint for the whole duration of the
+	    //animation - viewPosition below tracks the actual animated location
+	    //instead, and "cell_enter" fires as it crosses into each new cell.
+	    this.movePath = null;
+	    this._viewCell = null;
 	    this.options = {
 	      animateFrameRate: 50,
 	      //Framerate: how much per second run animate function
@@ -9409,39 +10067,35 @@ void main() {
 	      //Animate speed: how much seconds spend to move from 1 cell to second cell
 	      size: 40,
 	      //Map size to calculate unit position on map
-	      type: "viking_boat",
-	      //File name to load
-	      format: "fbx",
-	      //File format to load
+	      type: "Assets/units/viking_boat",
+	      //Model folder path (model.glb + info.json), same convention as city.model/treeModel
 	      x: 0,
 	      y: 0,
-	      scale: 0.15,
-	      positionY: 4,
 	      actions: new Array(),
-	      id: "new id"
+	      id: "new id",
+	      viewRange: 0,
+	      //Hex tiles seen around this unit (see FogOfWar.ts) - overridden by the model's own info.json
+	      //Terrain the unit may enter, overridden by the model's own info.json
+	      //(e.g. the viking boat sets coastal only) - default deny, so a unit
+	      //whose info.json omits a terrain type never routes across it.
+	      sea: false,
+	      coastal: false,
+	      land: false,
+	      sand: false,
+	      tundra: false,
+	      snow: false
 	    };
 	    setOptions(this, options);
 	  }
 	  async setUnit() {
-	    let response = await fetch(`Assets/units/${this.options.type}.json`);
-	    if (response.ok) {
-	      let data = await response.json();
-	      setOptions(this, data);
-	      switch (this.options.format) {
-	        case "fbx":
-	          this._unit = await this.fbxLoader();
-	          break;
-	        default:
-	          console.log("Cant load unit file. Unsupported file format");
-	      }
-	      if (this._unit) {
-	        this._unit.position.setY(this.options.positionY);
-	        this._unit.scale.set(this.options.scale, this.options.scale, this.options.scale);
-	        let position = getHexCenter(this.options.x, this.options.y, this.options.size);
-	        this._unit.position.setX(position.x);
-	        this._unit.position.setZ(position.y);
-	      }
-	    }
+	    const { scene, info, fixup } = await loadModel(this.options.type);
+	    setOptions(this, info);
+	    const model = scene.clone(true);
+	    model.applyMatrix4(fixup);
+	    this._unit = new three.Object3D();
+	    this._unit.add(model);
+	    let position = getHexCenter(this.options.x, this.options.y, this.options.size);
+	    this._unit.position.set(position.x, 0, position.y);
 	  }
 	  //----------------------------------------------------------------------------------------------------------
 	  //RETURN CURRENT 3D Object
@@ -9457,6 +10111,29 @@ void main() {
 	  }
 	  get id() {
 	    return this.options.id;
+	  }
+	  get viewRange() {
+	    return this.options.viewRange;
+	  }
+	  //Which Land types this unit may enter (its info.json terrain flags) -
+	  //feeds PathFinder so a route never crosses a tile the unit can't reach.
+	  get terrain() {
+	    return {
+	      ["sea" /* sea */]: this.options.sea,
+	      ["coastal" /* coastal */]: this.options.coastal,
+	      ["land" /* land */]: this.options.land,
+	      ["sand" /* sand */]: this.options.sand,
+	      ["tundra" /* tundra */]: this.options.tundra,
+	      ["snow" /* snow */]: this.options.snow
+	    };
+	  }
+	  //Where the unit actually is *right now* - the cell nearest the animated
+	  //model while a moveTo() is in flight, its resting position otherwise. Use
+	  //this (not position, which jumps to the destination the moment moveTo()
+	  //is called) as the fog-of-war viewpoint, so tiles reveal as the unit
+	  //passes them instead of the whole route lighting up at once.
+	  get viewPosition() {
+	    return this._viewCell ?? this.position;
 	  }
 	  set position(position) {
 	    this.options.y = position.y;
@@ -9476,7 +10153,7 @@ void main() {
 	    let prevPoint3 = new three.Vector3(0, 0, 0);
 	    for (let i = 0; i < path.length; i++) {
 	      let position = getHexCenter(path[i]["x"], path[i]["y"], this.options.size);
-	      let point3ForRoute = new three.Vector3(position.x, 4, position.y);
+	      let point3ForRoute = new three.Vector3(position.x, 0, position.y);
 	      if (i > 0) {
 	        const Line2 = new three.LineCurve3(
 	          prevPoint3,
@@ -9487,28 +10164,11 @@ void main() {
 	      prevPoint3 = point3ForRoute;
 	    }
 	    this.pointsPath = pointsPath;
+	    this.movePath = path;
+	    this._viewCell = path[0];
 	    this.needAnimate = true;
 	    this.emit("start_move", { id: this.id, from: path[0], to: this.position, path });
 	    this.animation(path.length);
-	  }
-	  async fbxLoader() {
-	    let fileToLoad = `Assets/models/${this.options.type}.${this.options.format}`;
-	    return new Promise((resolve, reject) => {
-	      const fbxLoader = new FBXLoader();
-	      fbxLoader.load(
-	        fileToLoad,
-	        (object) => {
-	          resolve(object);
-	        },
-	        (xhr) => {
-	          console.log(xhr.loaded / xhr.total * 100 + "% loaded");
-	        },
-	        (error) => {
-	          reject(error);
-	          console.log(error);
-	        }
-	      );
-	    });
 	  }
 	  async animation(cellCount) {
 	    if (this.needAnimate) {
@@ -9527,22 +10187,119 @@ void main() {
 	          let radians = Math.acos(up.dot(tangent));
 	          this.unit.position.copy(newPosition);
 	          this.unit.quaternion.setFromAxisAngle(axis, radians);
+	          if (this.movePath && this._viewCell) {
+	            const cellIndex = Math.round(this.pathFraction * (this.movePath.length - 1));
+	            const cell = this.movePath[cellIndex];
+	            if (cell && (cell.x !== this._viewCell.x || cell.y !== this._viewCell.y)) {
+	              this._viewCell = cell;
+	              this.emit("cell_enter", { id: this.id, cell });
+	            }
+	          }
 	        }
 	        await wait(Math.floor(1e3 / this.options.animateFrameRate));
 	      }
+	      this.movePath = null;
+	      this._viewCell = null;
 	      this.emit("end_move", { id: this.id, position: this.position });
 	    }
 	  }
 	};
 
+	// src/helpers/fog.ts
+	function tilesWithinRange(map, x, y, range) {
+	  if (range < 0 || !map.data[x]?.[y]) return [];
+	  const visited = /* @__PURE__ */ new Set([`${x},${y}`]);
+	  const result = [{ x, y }];
+	  let frontier = [{ x, y }];
+	  for (let step = 0; step < range; step++) {
+	    const next = [];
+	    for (const tile of frontier) {
+	      for (const n of getNeighbors(tile.x, tile.y)) {
+	        const key = `${n.x},${n.y}`;
+	        if (visited.has(key)) continue;
+	        if (!map.data[n.x]?.[n.y]) continue;
+	        visited.add(key);
+	        next.push({ x: n.x, y: n.y });
+	        result.push({ x: n.x, y: n.y });
+	      }
+	    }
+	    frontier = next;
+	  }
+	  return result;
+	}
+
+	// src/objects/FogOfWar.ts
+	var FogState = /* @__PURE__ */ ((FogState2) => {
+	  FogState2[FogState2["Unseen"] = 0] = "Unseen";
+	  FogState2[FogState2["Explored"] = 1] = "Explored";
+	  FogState2[FogState2["Visible"] = 2] = "Visible";
+	  return FogState2;
+	})(FogState || {});
+	var FogOfWar = class {
+	  constructor(map) {
+	    this.map = map;
+	    this.state = new Uint8Array(map.w * map.h);
+	  }
+	  index(x, y) {
+	    return x * this.map.h + y;
+	  }
+	  getState(x, y) {
+	    return this.state[this.index(x, y)];
+	  }
+	  //Every existing tile, at its current state - used once at startup to sync
+	  //a renderer whose own default (see HexMap.setTileFog()) doesn't necessarily
+	  //match this class's all-Unseen initial state.
+	  allTiles() {
+	    const tiles = [];
+	    for (let x = 0; x < this.map.w; x++) {
+	      for (let y = 0; y < this.map.h; y++) {
+	        if (!this.map.data[x]?.[y]) continue;
+	        tiles.push({ x, y, state: this.state[this.index(x, y)] });
+	      }
+	    }
+	    return tiles;
+	  }
+	  //Recomputes which tiles are currently visible from `viewers` (typically
+	  //every unit's {x, y, viewRange}) and updates state accordingly: tiles now
+	  //visible -> Visible; tiles that *were* Visible but no longer are ->
+	  //Explored (remembered, but dimmed); everything else is untouched (an
+	  //Unseen tile stays Unseen until it's actually been seen at least once).
+	  //Returns only the tiles whose state actually changed, so callers can push
+	  //a cheap incremental update to the renderer instead of touching every tile.
+	  recompute(viewers) {
+	    const nowVisible = /* @__PURE__ */ new Set();
+	    for (const viewer of viewers) {
+	      for (const tile of tilesWithinRange(this.map, viewer.x, viewer.y, viewer.viewRange)) {
+	        nowVisible.add(`${tile.x},${tile.y}`);
+	      }
+	    }
+	    const changes = [];
+	    for (let x = 0; x < this.map.w; x++) {
+	      for (let y = 0; y < this.map.h; y++) {
+	        if (!this.map.data[x]?.[y]) continue;
+	        const idx = this.index(x, y);
+	        const was = this.state[idx];
+	        const isVisibleNow = nowVisible.has(`${x},${y}`);
+	        const next = isVisibleNow ? 2 /* Visible */ : was === 2 /* Visible */ ? 1 /* Explored */ : was;
+	        if (next !== was) {
+	          this.state[idx] = next;
+	          changes.push({ x, y, state: next });
+	        }
+	      }
+	    }
+	    return changes;
+	  }
+	};
+
 	// src/helpers/pathfinder.ts
 	var PathFinder = class {
-	  constructor(map, restricted) {
+	  constructor(map, restricted, accessible) {
 	    this.firstrowlong = false;
 	    this.mapSizeX = map.w;
 	    this.mapSizeY = map.h;
 	    this.mapArray = map.data;
 	    this.restricted = restricted;
+	    this.accessible = accessible;
 	  }
 	  find(start_x, start_y, end_x, end_y) {
 	    var newPath = [];
@@ -9683,11 +10440,11 @@ void main() {
 	        }
 	        if (this.hex_accessible(node_x, node_y)) {
 	          if (statelist[node_x][node_y] == true) {
-	            if (openlist_g[node_x][node_y] < openlist_g[lowest_x][lowest_y]) {
-	              parent_x[lowest_x][lowest_y] = node_x;
-	              parent_y[lowest_x][lowest_y] = node_y;
-	              openlist_g[lowest_x][lowest_y] = openlist_g[node_x][node_y] + 10;
-	              openlist_f[lowest_x][lowest_y] = openlist_g[lowest_x][lowest_y] + openlist_h[lowest_x][lowest_y];
+	            if (openlist_g[lowest_x][lowest_y] + 10 < openlist_g[node_x][node_y]) {
+	              parent_x[node_x][node_y] = lowest_x;
+	              parent_y[node_x][node_y] = lowest_y;
+	              openlist_g[node_x][node_y] = openlist_g[lowest_x][lowest_y] + 10;
+	              openlist_f[node_x][node_y] = openlist_g[node_x][node_y] + openlist_h[node_x][node_y];
 	            }
 	          } else if (statelist[node_x][node_y] == 2) ; else {
 	            counter++;
@@ -9731,7 +10488,10 @@ void main() {
 	    if (this.mapArray[x][y] === void 0) {
 	      return false;
 	    }
-	    if (this.restricted[this.mapArray[x][y]["type"]] == false) {
+	    if (this.restricted[this.mapArray[x][y]["type"]] !== true) {
+	      return false;
+	    }
+	    if (this.accessible && !this.accessible(x, y)) {
 	      return false;
 	    }
 	    return true;
@@ -9751,11 +10511,19 @@ void main() {
 	  isodd(n) {
 	    return n % 2;
 	  }
-	  // calculate distance between two hexes
+	  // calculate distance between two hexes, in tiles. Converts the map's
+	  // column-offset coordinates to axial ones (matching the neighbor layout
+	  // in find(), incl. firstrowlong) and uses the standard axial hex distance.
+	  // The old Euclidean distance overestimates on a hex grid, making the A*
+	  // heuristic inadmissible - paths came out longer than needed.
 	  hex_distance(x1, y1, x2, y2) {
-	    let dx = Math.abs(x1 - x2);
-	    let dy = Math.abs(y2 - y1);
-	    return Math.sqrt(dx * dx + dy * dy);
+	    const dq = x1 - x2;
+	    const dr = y1 - this.row_shift(x1) - (y2 - this.row_shift(x2));
+	    return (Math.abs(dq) + Math.abs(dr) + Math.abs(dq + dr)) / 2;
+	  }
+	  // how far a column's tiles are shifted in axial space (offset -> axial)
+	  row_shift(x) {
+	    return this.firstrowlong ? (x - this.isodd(x)) / 2 : (x + this.isodd(x)) / 2;
 	  }
 	};
 
@@ -9765,7 +10533,8 @@ void main() {
 	    super();
 	    this._unitsList = {};
 	    this.options = {
-	      preventCellClick: true
+	      preventCellClick: true,
+	      fogOfWar: true
 	    };
 	    setOptions(this, options);
 	    this._map = new HexMap(options);
@@ -9780,9 +10549,37 @@ void main() {
 	      await unit.setUnit();
 	      unit.on("start_move", (payload) => this.emit("start_move", payload));
 	      unit.on("end_move", (payload) => this.emit("end_move", payload));
+	      unit.on("cell_enter", (payload) => {
+	        this.emit("cell_enter", payload);
+	        this.recomputeFog();
+	      });
+	      unit.on("end_move", () => this.recomputeFog());
 	      this._map.add(unit.unit);
 	      this._unitsList[unit.id] = unit;
 	      this._mapData.data[unit.position.x][unit.position.y].unit = unit.id;
+	    }
+	    if (this.options.fogOfWar) {
+	      this._fog = new FogOfWar(mapData);
+	      for (const tile of this._fog.allTiles()) this._map.setTileFog(tile.x, tile.y, tile.state);
+	      this.recomputeFog();
+	    }
+	  }
+	  //Recomputes which tiles are currently visible from every unit's own
+	  //{x, y, viewRange} (see FogOfWar.recompute()), pushes only the tiles whose
+	  //state actually changed into HexMap.setTileFog(), and hides/shows each
+	  //unit's own model - a unit always sees its own tile, so this never hides
+	  //a unit standing still, only ones that have moved out of view (there's no
+	  //ownership/faction concept yet, so every unit in _unitsList reveals fog
+	  //the same way "friendly" units would). Uses viewPosition, not position:
+	  //during a moveTo() animation position is already the destination, while
+	  //viewPosition tracks the cell the model is actually passing through.
+	  recomputeFog() {
+	    if (!this._fog) return;
+	    const units = Object.values(this._unitsList);
+	    const changes = this._fog.recompute(units.map((u) => ({ ...u.viewPosition, viewRange: u.viewRange })));
+	    for (const change of changes) this._map.setTileFog(change.x, change.y, change.state);
+	    for (const unit of units) {
+	      unit.unit.visible = this._fog.getState(unit.viewPosition.x, unit.viewPosition.y) === 2 /* Visible */;
 	    }
 	  }
 	  cellHover(payload) {
@@ -9821,21 +10618,35 @@ void main() {
 	  get map() {
 	    return this._map;
 	  }
-	  findPath(start, stop) {
-	    const restrictions = {
+	  get fogOfWar() {
+	    return this._fog;
+	  }
+	  //Terrain restrictions come from the unit's own info.json flags (see
+	  //Unit.terrain - e.g. the viking boat is coastal-only), not a global table,
+	  //so each unit type routes over exactly the tiles it may enter. Defaults to
+	  //the currently selected unit; without any unit every terrain is allowed.
+	  findPath(start, stop, unit = this._currentUnit) {
+	    const restrictions = unit ? unit.terrain : {
 	      sea: true,
-	      shore: true,
-	      land: false,
+	      coastal: true,
+	      land: true,
 	      sand: true,
-	      tundra: false,
-	      snow: false
+	      tundra: true,
+	      snow: true
 	    };
-	    const pathFinder = new PathFinder(this._mapData, restrictions);
+	    const fog = this._fog;
+	    const pathFinder = new PathFinder(
+	      this._mapData,
+	      restrictions,
+	      fog ? (x, y) => fog.getState(x, y) !== 0 /* Unseen */ : void 0
+	    );
 	    return pathFinder.find(start.x, start.y, stop.x, stop.y);
 	  }
 	};
 
 	exports.EventEmitter = EventEmitter;
+	exports.FogOfWar = FogOfWar;
+	exports.FogState = FogState;
 	exports.GameEngine = GameEngine;
 	exports.HEXPolygon = HEXPolygon;
 	exports.HexMap = HexMap;

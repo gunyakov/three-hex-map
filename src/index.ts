@@ -13,15 +13,20 @@ export { PathFinder } from "./helpers/pathfinder";
 export { EventEmitter } from "./EventEmitter";
 export type { Listener } from "./EventEmitter";
 
+export { FogOfWar, FogState } from "./objects/FogOfWar";
+export type { FogViewer, FogChange } from "./objects/FogOfWar";
+
 export { Land, UnitActions, LandColor, LandPriority } from "./enums";
 export type { HexMapEventName } from "./enums";
 
 export type {
     Point,
     TileInfo,
+    CityInfo,
     RiverSegment,
     MapInfo,
     MapInfoData,
+    UnitPlacement,
     UnitInfo,
     UnitList
 } from "./interfaces";

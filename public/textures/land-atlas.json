@@ -6,7 +6,7 @@
   "cellSpacing": 2,
   "textures": {
     "sea": { "cellX": 0, "cellY": 0 },
-    "shore": { "cellX": 1, "cellY": 0 },
+    "coastal": { "cellX": 1, "cellY": 0 },
     "land": { "cellX": 1, "cellY": 1 },
     "sand": { "cellX": 2, "cellY": 1 },
     "tundra": { "cellX": 0, "cellY": 2 },

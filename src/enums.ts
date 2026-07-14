@@ -11,11 +11,12 @@ export type HexMapEventName =
     | "hover"
     | "unitClick"
     | "start_move"
+    | "cell_enter"
     | "end_move";
 
 export enum Land {
     sea = "sea",
-    shore = "shore",
+    coastal = "coastal",
     land = "land",
     sand = "sand",
     tundra = "tundra",
@@ -24,7 +25,7 @@ export enum Land {
 
 export let LandColor: { [key in Land]: ColorRepresentation} =  {
     [Land.land]: 0x84aa53,
-    [Land.shore]: 0x4f6c80,
+    [Land.coastal]: 0x4f6c80,
     [Land.sea]: 0x2a368c,
     [Land.sand]: 0xaea765,
     [Land.tundra]: 0xffffff,
@@ -38,15 +39,19 @@ export let LandColor: { [key in Land]: ColorRepresentation} =  {
 //water fading into land at the same border), which reads as a fuzzy halo around
 //every coastline/patch instead of a one-directional transition.
 //Water sits lowest so shorelines are drawn as a soft edge into the water, and
-//"grass" is the base other special surface types (sand/tundra/snow) blend onto.
+//"grass" is the base the other special surface types blend onto. sand/tundra/
+//snow each need their *own* distinct value (not all three tied at once) -
+//otherwise neighborPriority<=vPriority is true both ways between any two of
+//them, and blendEdge() skips the blend entirely on both sides (a hard, un-
+//blended border between e.g. sand and snow instead of a soft transition).
 //----------------------------------------------------------------------------------
 export let LandPriority: { [key in Land]: number } = {
     [Land.sea]: 0,
-    [Land.shore]: 1,
+    [Land.coastal]: 1,
     [Land.land]: 2,
     [Land.sand]: 3,
-    [Land.tundra]: 3,
-    [Land.snow]: 3
+    [Land.tundra]: 4,
+    [Land.snow]: 5
 }
 
 export enum UnitActions {

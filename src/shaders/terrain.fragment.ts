@@ -4,6 +4,10 @@ precision mediump float;
 uniform sampler2D map;
 uniform vec4 textureAtlasMeta;
 uniform float sandAtlasIndex;
+uniform float landBlendWidth; // 0..1 fraction of tile radius, land-to-land diffusion size
+
+uniform sampler2D fogMap;        // war-fog.jpg, tiled per-tile via vUV (not atlas-indexed)
+uniform float fogDarkenFactor;   // color multiplier for Explored (fogState 1) tiles
 
 uniform float showGrid;
 uniform vec3 gridColor;
@@ -26,6 +30,8 @@ varying vec3 vEdgeFactorsA;
 varying vec3 vEdgeFactorsB;
 varying vec3 vNormal;
 varying float vBeachT;
+varying float vFogState;
+varying vec2 vFogUV;
 
 const vec3 lightAmbient = vec3(0.55, 0.55, 0.55);
 const vec3 lightDiffuse = vec3(0.55, 0.55, 0.55);
@@ -46,7 +52,10 @@ vec2 cellIndexToUV(float idx) {
 // Blends towards a neighboring tile's atlas texture near the edge actually
 // shared with it. factor (from vEdgeFactorsA/B, see terrain.vertex.ts) is an
 // analytic "closeness to that specific edge" value: 1.0 exactly on the shared
-// edge, fading to 0 towards the opposite side of the hex.
+// edge, fading to 0 towards the opposite side of the hex. landBlendWidth
+// compresses that fade into just the outer fraction of the tile (0..1) instead
+// of spanning the whole distance to the far side, so the transition band's
+// size is controllable instead of always being "the whole tile".
 //
 // Only blends towards a STRICTLY higher-priority neighbor (neighborPriority >
 // vPriority - see enums.ts LandPriority). Without this, a shared edge blended
@@ -60,10 +69,22 @@ vec4 blendEdge(vec4 inputColor, float neighborTerrain, float neighborPriority, f
     vec2 otherUV = cellIndexToUV(neighborTerrain);
     vec4 neighborColor = texture2D(map, otherUV);
 
-    return mix(inputColor, neighborColor, clamp(factor, 0.0, 1.0));
+    float e0 = 1.0 - clamp(landBlendWidth, 0.001, 1.0);
+    float t = smoothstep(e0, 1.0, factor);
+    return mix(inputColor, neighborColor, t);
 }
 
 void main() {
+    // Unseen: replace the tile outright with the war-fog texture, skipping
+    // every other layer/lighting/grid computation below. vFogUV is computed
+    // from *world* position (see terrain.vertex.ts), so one repeat of the
+    // texture spans several tiles and flows seamlessly across every fogged
+    // hex - no per-tile square-texture-in-a-hex seams.
+    if (vFogState < 0.5) {
+        gl_FragColor = vec4(texture2D(fogMap, vFogUV).rgb, 1.0);
+        return;
+    }
+
     vec4 texColor = texture2D(map, vTexCoord);
 
     texColor = blendEdge(texColor, vNeighborsA.x, vNeighborsPriorityA.x, vEdgeFactorsA.x); // SE
@@ -85,6 +106,10 @@ void main() {
     vec3 normal = normalize(vNormal);
     float lambertian = max(dot(normalize(lightDir), normal), 0.0);
     vec3 color = lightAmbient * texColor.rgb + lambertian * lightDiffuse * texColor.rgb;
+
+    // Explored (previously seen, currently outside every unit's view range):
+    // keep every feature visible, just darker - the "remembered" Civ-style look.
+    if (vFogState < 1.5) color *= fogDarkenFactor;
 
     gl_FragColor = vec4(color, 1.0);
 

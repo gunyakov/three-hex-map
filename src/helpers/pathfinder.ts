@@ -9,12 +9,17 @@ export class PathFinder {
     private mapArray:MapInfoData;
     private firstrowlong:boolean = false;
     private restricted: { [key in Land]:boolean};
+    //Optional extra per-tile veto on top of the terrain restrictions - the
+    //caller decides what it means (GameEngine passes "tile is not under war
+    //fog"), keeping this class free of any fog-of-war/rendering knowledge.
+    private accessible?: (x:number, y:number) => boolean;
 
-    constructor(map:MapInfo, restricted:{ [key in Land]:boolean}) {
+    constructor(map:MapInfo, restricted:{ [key in Land]:boolean}, accessible?:(x:number, y:number) => boolean) {
         this.mapSizeX = map.w;
         this.mapSizeY = map.h;
         this.mapArray = map.data;
         this.restricted = restricted;
+        this.accessible = accessible;
     }
 
     public find(start_x:number, start_y:number, end_x:number, end_y:number):Point[] {
@@ -174,11 +179,16 @@ export class PathFinder {
                 }
                 if (this.hex_accessible(node_x, node_y)) {
                     if (statelist[node_x][node_y] == true) {
-                        if (openlist_g[node_x][node_y] < openlist_g[lowest_x][lowest_y]) {
-                            parent_x[lowest_x][lowest_y] = node_x;
-                            parent_y[lowest_x][lowest_y] = node_y;
-                            openlist_g[lowest_x][lowest_y] = openlist_g[node_x][node_y] + 10;
-                            openlist_f[lowest_x][lowest_y] = openlist_g[lowest_x][lowest_y] + openlist_h[lowest_x][lowest_y];
+                        // Node already open: if reaching it through the tile just
+                        // closed is cheaper, re-route it through that tile. (The
+                        // old code did this backwards - re-parenting the *closed*
+                        // tile from its neighbor - which could corrupt the parent
+                        // chain into a cycle and hang the path reconstruction.)
+                        if (openlist_g[lowest_x][lowest_y] + 10 < openlist_g[node_x][node_y]) {
+                            parent_x[node_x][node_y] = lowest_x;
+                            parent_y[node_x][node_y] = lowest_y;
+                            openlist_g[node_x][node_y] = openlist_g[lowest_x][lowest_y] + 10;
+                            openlist_f[node_x][node_y] = openlist_g[node_x][node_y] + openlist_h[node_x][node_y];
                         }
                     } else if (statelist[node_x][node_y] == 2) {
                         // its on closed list do nothing.
@@ -193,12 +203,6 @@ export class PathFinder {
                         parent_x[node_x][node_y] = lowest_x;
                         parent_y[node_x][node_y] = lowest_y;
                         // update H , G and F
-                        var ydist = end_y - node_y;
-                        if (ydist < 0)
-                            ydist = ydist * -1;
-                        var xdist = end_x - node_x;
-                        if (xdist < 0)
-                            xdist = xdist * -1;
                         openlist_h[node_x][node_y] = this.hex_distance(node_x, node_y, end_x, end_y) * 10;
                         openlist_g[node_x][node_y] = openlist_g[lowest_x][lowest_y] + 10;
                         openlist_f[node_x][node_y] = openlist_g[node_x][node_y] + openlist_h[node_x][node_y];
@@ -237,7 +241,12 @@ export class PathFinder {
         if (this.mapArray[x][y] === undefined) {
             return false;
         }
-        if (this.restricted[this.mapArray[x][y]['type']] == false) {
+        // strict check: a terrain type missing from the restrictions map is
+        // denied, not silently allowed
+        if (this.restricted[this.mapArray[x][y]['type']] !== true) {
+            return false;
+        }
+        if (this.accessible && !this.accessible(x, y)) {
             return false;
         }
         return true;
@@ -261,10 +270,19 @@ export class PathFinder {
 		// n%2 returns 0 if n is even, 1 id n is odd
 	}
 
-    // calculate distance between two hexes
+    // calculate distance between two hexes, in tiles. Converts the map's
+    // column-offset coordinates to axial ones (matching the neighbor layout
+    // in find(), incl. firstrowlong) and uses the standard axial hex distance.
+    // The old Euclidean distance overestimates on a hex grid, making the A*
+    // heuristic inadmissible - paths came out longer than needed.
 	private hex_distance(x1:number, y1:number, x2:number, y2:number):number {
-		let dx = Math.abs(x1 - x2);
-		let dy = Math.abs(y2 - y1);
-		return Math.sqrt((dx * dx) + (dy * dy));
+		const dq = x1 - x2;
+		const dr = (y1 - this.row_shift(x1)) - (y2 - this.row_shift(x2));
+		return (Math.abs(dq) + Math.abs(dr) + Math.abs(dq + dr)) / 2;
+	}
+
+    // how far a column's tiles are shifted in axial space (offset -> axial)
+	private row_shift(x:number):number {
+		return this.firstrowlong ? (x - this.isodd(x)) / 2 : (x + this.isodd(x)) / 2;
 	}
 }
