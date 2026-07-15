@@ -194,7 +194,6 @@
         waterFolder.add(game.map, "waterFresnelIntensity", 0, 3, 0.05).name("fresnel");
         waterFolder.addColor(game.map, "waterColorShallow").name("color shallow");
         waterFolder.addColor(game.map, "waterColorDeep").name("color deep");
-        waterFolder.open();
 
         const coastalFolder = gui.addFolder("Coastal waves");
         coastalFolder.add(game.map, "coastalWavesEnabled").name("enabled");
@@ -205,14 +204,12 @@
         coastalFolder.add(game.map, "coastalWaveDistortion", 0, 1, 0.01).name("distortion");
         coastalFolder.add(game.map, "coastalWaveOpacity", 0, 1, 0.01).name("opacity");
         coastalFolder.addColor(game.map, "coastalWaveColor").name("foam color");
-        coastalFolder.open();
 
         const blendFolder = gui.addFolder("Blending & beach");
         blendFolder.add(game.map, "landBlendWidth", 0, 1, 0.01).name("land blend width");
         blendFolder.add(game.map, "waterCornerRounding", 0, 1, 0.01).name("corner rounding");
         blendFolder.add(game.map, "beachWidth", 0, 1, 0.01).name("beach width");
         blendFolder.add(game.map, "waterDepth", 0, 20, 0.5).name("water depth");
-        blendFolder.open();
 
         const riverFolder = gui.addFolder("Rivers & lakes");
         riverFolder.add(game.map, "riverWidth", 0.05, 0.6, 0.01).name("river width");
@@ -224,12 +221,10 @@
         riverFolder.addColor(game.map, "riverColorShallow").name("color shallow");
         riverFolder.addColor(game.map, "riverColorDeep").name("color deep");
         riverFolder.addColor(game.map, "riverBankColor").name("bank color");
-        riverFolder.open();
 
         const treesFolder = gui.addFolder("Trees");
         treesFolder.add(game.map, "treesPerTile", 0, 60, 1).name("density");
         treesFolder.add(game.map, "treeScale", 0.1, 3, 0.05).name("scale");
-        treesFolder.open();
 
         const grassFolder = gui.addFolder("Grass");
         grassFolder.add(game.map, "grassVisible").name("enabled");
@@ -238,7 +233,6 @@
         grassFolder.add(game.map, "grassDensity", 0, 150, 1).name("density");
         grassFolder.add(game.map, "grassBladeWidth", 0.2, 5, 0.1).name("blade width");
         grassFolder.add(game.map, "grassBladeHeight", 1, 20, 0.5).name("blade height");
-        grassFolder.open();
     }
 
     init();
