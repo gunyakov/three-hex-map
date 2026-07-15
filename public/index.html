@@ -76,14 +76,12 @@
         pointerColor: 0xeeeeee,
         treesPerTile: 20,
 
-        // Solid animated water (waves + sparkle + beach slope) vs. a flat,
-        // static, atlas-textured tile. Set to false to go back to a plain
-        // water texture with no animation.
-        waterAnimation: true,
+        // Solid animated water (waves + sparkle + beach slope) - sea/coastal
+        // tiles always render on the animated water layer.
         waterColorShallow: 0x2f9c8f,
         waterColorDeep: 0x0f4c75,
 
-        // Wave fine-tuning, only used when waterAnimation is true.
+        // Wave fine-tuning.
         waterWaveAmplitude: 1.6,
         waterWaveFrequency: 1.0,
         waterWaveSpeed: 1.0,
@@ -91,8 +89,8 @@
         waterFresnelIntensity: 1.0,
 
         // Stylized coastal foam waves (white bands rolling towards every
-        // shoreline + a lapping foam strip at the waterline). Only rendered
-        // when waterAnimation is true; all knobs are live shader uniforms.
+        // shoreline + a lapping foam strip at the waterline). All knobs are
+        // live shader uniforms.
         coastalWavesEnabled: true,
         coastalWaveColor: 0xffffff,
         coastalWaveCount: 3,        // bands per shore-to-center span
@@ -117,6 +115,19 @@
         landBlendWidth: 0.5,
         waterCornerRounding: 0.5,
 
+        // Rivers & lakes - drawn on any land tile whose map data carries the
+        // "river"/"lake" modifier (see gameInfo/map.json), auto-connected to
+        // neighboring river/lake/sea/coastal tiles. Widths are fractions of a
+        // tile's radius; depth is world units. Colors default to
+        // waterColorShallow/Deep when left unset; all knobs are live shader
+        // uniforms.
+        riverWidth: 0.28,
+        riverBankWidth: 0.14,
+        riverCurvature: 0.5,
+        riverBankColor: 0xa8bf6a,
+        riverFlowSpeed: 1.0,
+        lakeShoreWidth: 0.18,
+
         // Tree/city models - each a *folder* path containing model.glb +
         // info.json (that model's own offset/rotation/scale fine-tuning, see
         // helpers/models.ts). A tile's own TileInfo.city.model/treeModel (see
@@ -140,6 +151,7 @@
 
     async function init() {
         const game = new GameEngine(mapOptions);
+        window.game = game; // console access for debugging (e.g. game.map.setTileFog(x, y, 0))
 
         // FPS/frame-time/memory readout (top-left, click to cycle panels) -
         // HexMap emits "frame" once per rendered frame regardless of whether
@@ -170,9 +182,11 @@
 
         const gui = new GUI();
         gui.add(game.map, "gridVisible");
+        // hide/show the war fog for map inspection - fog states keep being
+        // tracked underneath, so re-enabling repaints the current fog exactly
+        gui.add(game.map, "warFogVisible").name("war fog");
 
         const waterFolder = gui.addFolder("Water animation");
-        waterFolder.add(game.map, "waterAnimation").name("enabled");
         waterFolder.add(game.map, "waterWaveAmplitude", 0, 5, 0.1).name("wave amplitude");
         waterFolder.add(game.map, "waterWaveFrequency", 0.1, 4, 0.05).name("wave frequency");
         waterFolder.add(game.map, "waterWaveSpeed", 0, 4, 0.05).name("wave speed");
@@ -199,6 +213,18 @@
         blendFolder.add(game.map, "beachWidth", 0, 1, 0.01).name("beach width");
         blendFolder.add(game.map, "waterDepth", 0, 20, 0.5).name("water depth");
         blendFolder.open();
+
+        const riverFolder = gui.addFolder("Rivers & lakes");
+        riverFolder.add(game.map, "riverWidth", 0.05, 0.6, 0.01).name("river width");
+        riverFolder.add(game.map, "riverBankWidth", 0, 0.4, 0.01).name("bank width");
+        riverFolder.add(game.map, "riverCurvature", 0, 1, 0.01).name("curvature");
+        riverFolder.add(game.map, "riverFlowSpeed", 0, 4, 0.05).name("flow speed");
+        riverFolder.add(game.map, "riverDepth", 0, 15, 0.25).name("depth");
+        riverFolder.add(game.map, "lakeShoreWidth", 0.02, 0.5, 0.01).name("lake shore");
+        riverFolder.addColor(game.map, "riverColorShallow").name("color shallow");
+        riverFolder.addColor(game.map, "riverColorDeep").name("color deep");
+        riverFolder.addColor(game.map, "riverBankColor").name("bank color");
+        riverFolder.open();
 
         const treesFolder = gui.addFolder("Trees");
         treesFolder.add(game.map, "treesPerTile", 0, 60, 1).name("density");

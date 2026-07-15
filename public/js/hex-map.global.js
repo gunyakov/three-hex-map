@@ -7781,6 +7781,89 @@
 	function getNeighbors(x, y) {
 	  return NEIGHBOR_DIRECTIONS.map((direction) => ({ direction, ...getNeighborCoords(x, y, direction) }));
 	}
+
+	// src/helpers/rivers.ts
+	var MASK_DIRECTIONS = ["SE", "S", "SW", "NW", "N", "NE"];
+	var LAKE_FLAG = 4096;
+	var EDGE_DIRS = [
+	  [0.8660254, 0.5],
+	  // SE
+	  [0, 1],
+	  // S
+	  [-0.8660254, 0.5],
+	  // SW
+	  [-0.8660254, -0.5],
+	  // NW
+	  [0, -1],
+	  // N
+	  [0.8660254, -0.5]
+	  // NE
+	];
+	function isRiverTile(tile) {
+	  return !!tile?.modifiers?.includes("river");
+	}
+	function isLakeTile(tile) {
+	  return !!tile?.modifiers?.includes("lake");
+	}
+	function isSeaOrCoastal(tile) {
+	  return tile.type === "sea" /* sea */ || tile.type === "coastal" /* coastal */;
+	}
+	function waterEdgeValue(map, x, y) {
+	  const tile = map.data[x]?.[y];
+	  if (isLakeTile(tile)) {
+	    let openMask = 0, channelMask = 0;
+	    MASK_DIRECTIONS.forEach((direction, bit) => {
+	      const n = getNeighborCoords(x, y, direction);
+	      const neighbor = map.data[n.x]?.[n.y];
+	      if (!neighbor) return;
+	      if (isLakeTile(neighbor) || isSeaOrCoastal(neighbor)) openMask |= 1 << bit;
+	      else if (isRiverTile(neighbor)) channelMask |= 1 << bit;
+	    });
+	    return LAKE_FLAG + openMask * 64 + channelMask;
+	  }
+	  if (isRiverTile(tile)) {
+	    let mask = 0;
+	    MASK_DIRECTIONS.forEach((direction, bit) => {
+	      const n = getNeighborCoords(x, y, direction);
+	      const neighbor = map.data[n.x]?.[n.y];
+	      if (!neighbor) return;
+	      if (isRiverTile(neighbor) || isLakeTile(neighbor) || isSeaOrCoastal(neighbor)) mask |= 1 << bit;
+	    });
+	    return mask;
+	  }
+	  return -1;
+	}
+	function riverChannelDistance(lx, ly, mask, size) {
+	  if (mask < 0) return Infinity;
+	  const apothem = size * 0.8660254;
+	  let best = Math.hypot(lx, ly);
+	  for (let bit = 0; bit < 6; bit++) {
+	    if (!(mask & 1 << bit)) continue;
+	    const [dx, dy] = EDGE_DIRS[bit];
+	    const t = Math.min(Math.max(lx * dx + ly * dy, 0), apothem);
+	    best = Math.min(best, Math.hypot(lx - dx * t, ly - dy * t));
+	  }
+	  return best;
+	}
+	function isInTileWater(lx, ly, value, size, options) {
+	  if (value < 0) return false;
+	  const wobble = 0.3 * options.riverCurvature + 0.03;
+	  const channelClearance = (options.riverWidth + Math.max(options.riverBankWidth, wobble)) * size;
+	  if (value >= LAKE_FLAG) {
+	    const openMask = Math.floor((value - LAKE_FLAG) / 64);
+	    const channelMask = (value - LAKE_FLAG) % 64;
+	    const apothem = size * 0.8660254;
+	    let shore = 0;
+	    for (let bit = 0; bit < 6; bit++) {
+	      if (openMask & 1 << bit) continue;
+	      const [dx, dy] = EDGE_DIRS[bit];
+	      shore = Math.max(shore, (lx * dx + ly * dy) / apothem);
+	    }
+	    if (shore < 1 - options.lakeShoreWidth + wobble) return true;
+	    return channelMask > 0 && riverChannelDistance(lx, ly, channelMask, size) < channelClearance;
+	  }
+	  return riverChannelDistance(lx, ly, value, size) < channelClearance;
+	}
 	function subdivideTriangle(a, b, c, numSubdivisions) {
 	  if ((numSubdivisions || 0) <= 0) return [a, b, c];
 	  const ba = b.clone().sub(a);
@@ -7922,7 +8005,10 @@
 
 	// src/shaders/terrain.vertex.ts
 	var TERRAIN_VERTEX_SHADER = `
-precision mediump float;
+// highp to match terrain.fragment.ts (see its precision comment) - vWorldXZ /
+// vLocal feed the river noise there, and varyings shouldn't lose precision on
+// the vertex side of the interpolation.
+precision highp float;
 
 uniform mat4 modelViewMatrix;
 uniform mat4 projectionMatrix;
@@ -7939,6 +8025,17 @@ uniform float hexSize; // tile circumradius, matches getHexCenter's "size" (worl
 uniform float waterLevel;
 uniform float beachWidth;
 uniform float sandAtlasIndex;
+
+// Rivers/lakes (tiles with the "river"/"lake" modifier - see helpers/rivers.ts
+// and terrain.fragment.ts). The vertex stage only carves the bed: a smooth
+// sink towards -riverDepth around a river's channel centerline / across a
+// lake's body. Widths are fractions of the tile radius (hexSize); the sink
+// reaches slightly past the painted waterline so the fragment stage's
+// noise-bent banks always lie on sloped ground.
+uniform float riverWidth;
+uniform float riverBankWidth;
+uniform float riverDepth;
+uniform float lakeShoreWidth; // grass rim inset from a lake's shored edges
 
 // World units one repeat of the war-fog texture spans. Fog UVs are computed
 // from world position (not per-tile local UVs) so one copy of the texture
@@ -7957,6 +8054,10 @@ attribute vec3 neighborsPriorityA; // edge-blend priority of SE/S/SW neighbor
 attribute vec3 neighborsPriorityB; // edge-blend priority of NW/N/NE neighbor
 attribute vec3 neighborsKindA; // SE/S/SW: -1 no tile, 0 non-water, 1 sea, 2 coastal
 attribute vec3 neighborsKindB; // NW/N/NE
+// -1 = no water; 0..63 = river (connected-edge bitmask, bit order SE,S,SW,NW,
+// N,NE); 4096 + openMask*64 + channelMask = lake - see helpers/rivers.ts's
+// waterEdgeValue() for the authoritative encoding.
+attribute float riverEdges;
 attribute float fogState; // 0 = unseen, 1 = explored (darkened), 2 = visible - see FogOfWar.ts
 
 varying vec2 vUV;
@@ -7975,6 +8076,9 @@ varying vec3 vNormal;
 varying float vBeachT; // 0 = normal land color, 1 = fully sand (see terrain.fragment.ts)
 varying float vFogState;
 varying vec2 vFogUV; // world-space fog texture coords, continuous across tiles
+varying float vRiverEdges; // riverEdges passed through (flat per tile - every vertex of an instance carries the same value)
+varying vec2 vLocal;       // tile-local (x,z), for the fragment stage's channel distance
+varying vec2 vWorldXZ;     // world (x,z), for the fragment stage's world-space bank/ripple noise
 
 const vec2 DIR_SE = vec2(0.8660254, 0.5);
 const vec2 DIR_S  = vec2(0.0, 1.0);
@@ -8002,6 +8106,45 @@ vec2 cellIndexToUV(float idx) {
 vec3 strongestWaterEdge(vec3 best, float kind, float factor, vec2 dir) {
     if (kind >= 1.0 && factor > best.x) return vec3(factor, dir);
     return best;
+}
+
+// Distance from a tile-local point to the segment running from the hex center
+// to the midpoint of the edge in direction dir (at the apothem) - one straight
+// piece of the river channel's centerline.
+float riverSegDist(vec2 p, vec2 dir, float apothem) {
+    float t = clamp(dot(p, dir), 0.0, apothem);
+    return length(p - dir * t);
+}
+
+// Distance to the river channel centerline: the min over every *connected*
+// edge's center-to-edge-midpoint segment (bit i of mask, order SE,S,SW,NW,N,NE
+// - decoded with mod/floor, GLSL ES 1.0 has no bitwise ops). A mask of 0 (a
+// river tile with no connections) falls back to distance-to-center: a pond.
+// Mirrors riverChannelDistance() in helpers/rivers.ts - keep the two in sync.
+float riverChannelDist(vec2 p, float mask, float apothem) {
+    float d = length(p);
+    if (mod(floor(mask /  1.0), 2.0) > 0.5) d = min(d, riverSegDist(p, DIR_SE, apothem));
+    if (mod(floor(mask /  2.0), 2.0) > 0.5) d = min(d, riverSegDist(p, DIR_S,  apothem));
+    if (mod(floor(mask /  4.0), 2.0) > 0.5) d = min(d, riverSegDist(p, DIR_SW, apothem));
+    if (mod(floor(mask /  8.0), 2.0) > 0.5) d = min(d, riverSegDist(p, DIR_NW, apothem));
+    if (mod(floor(mask / 16.0), 2.0) > 0.5) d = min(d, riverSegDist(p, DIR_N,  apothem));
+    if (mod(floor(mask / 32.0), 2.0) > 0.5) d = min(d, riverSegDist(p, DIR_NE, apothem));
+    return d;
+}
+
+// Lake shore factor: how far this point sits towards the nearest *shored* edge
+// (one NOT in openMask) - 1.0 exactly on such an edge, falling off towards the
+// far side. 0 on a fully-open tile (lake interior: all water). Mirrors
+// isInTileWater() in helpers/rivers.ts - keep the two in sync.
+float lakeShore(float openMask, vec3 efA, vec3 efB) {
+    float s = 0.0;
+    if (mod(floor(openMask /  1.0), 2.0) < 0.5) s = max(s, efA.x);
+    if (mod(floor(openMask /  2.0), 2.0) < 0.5) s = max(s, efA.y);
+    if (mod(floor(openMask /  4.0), 2.0) < 0.5) s = max(s, efA.z);
+    if (mod(floor(openMask /  8.0), 2.0) < 0.5) s = max(s, efB.x);
+    if (mod(floor(openMask / 16.0), 2.0) < 0.5) s = max(s, efB.y);
+    if (mod(floor(openMask / 32.0), 2.0) < 0.5) s = max(s, efB.z);
+    return s;
 }
 
 void main() {
@@ -8039,6 +8182,34 @@ void main() {
     // midpoint (rather than exactly onto it) so the two meshes' edges don't
     // end up perfectly coincident and z-fight (flickery dark patches).
     float sinkY = beachT * (waterLevel * 0.5) * 1.2 * fogVisible;
+
+    // River/lake bed: sink smoothly towards -riverDepth around a river's
+    // channel centerline / across a lake's body. Undistorted distances only -
+    // the fragment stage's noise-bent waterline stays within the carved area,
+    // and per-vertex noise would be too coarse at this subdivision level
+    // anyway. min() with the beach sink (both are <= 0) so a mouth next to
+    // the sea takes the deeper of the two carves instead of stacking them.
+    float riverSink = 0.0;
+    if (riverEdges >= 0.0) {
+        float bedT = 0.0;
+        if (riverEdges >= 2048.0) {
+            float openMask = floor((riverEdges - 4096.0) / 64.0);
+            float channelMask = riverEdges - 4096.0 - openMask * 64.0;
+            float s0 = 1.0 - lakeShoreWidth;
+            float shore = lakeShore(openMask, vEdgeFactorsA, vEdgeFactorsB);
+            bedT = 1.0 - smoothstep(s0 - 0.25, s0 + riverBankWidth, shore);
+            if (channelMask > 0.5) {
+                float dChan = riverChannelDist(local, channelMask, apothem) / hexSize;
+                bedT = max(bedT, 1.0 - smoothstep(riverWidth * 0.5, riverWidth + riverBankWidth, dChan));
+            }
+        } else {
+            float dRiver = riverChannelDist(local, riverEdges, apothem) / hexSize;
+            bedT = 1.0 - smoothstep(riverWidth * 0.5, riverWidth + riverBankWidth, dRiver);
+        }
+        riverSink = -riverDepth * bedT * fogVisible;
+    }
+    sinkY = min(sinkY, riverSink);
+
     vec3 pos = vec3(offset.x + position.x, position.y + sinkY, offset.y + position.z);
     gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
 
@@ -8076,6 +8247,9 @@ void main() {
     vNeighborsPriorityA = neighborsPriorityA;
     vNeighborsPriorityB = neighborsPriorityB;
     vFogState = fogState;
+    vRiverEdges = riverEdges;
+    vLocal = local;
+    vWorldXZ = pos.xz;
     // Axes swapped/negated (not a plain pos.xz mapping) so the image reads
     // upright from this map's camera: the camera's azimuth is locked to ~90deg
     // (see HexMap's setupControls), which puts screen-right along world -Z and
@@ -8088,7 +8262,11 @@ void main() {
 
 	// src/shaders/terrain.fragment.ts
 	var TERRAIN_FRAGMENT_SHADER = `
-precision mediump float;
+// highp, not mediump: the river noise hash (hash21's fract(sin(x) * 43758...))
+// is fed world-space coordinates in the hundreds/thousands - at fp16 precision
+// it collapses into structured streak garbage. The water shader already runs
+// highp for the same reason (its foam uses the same hash).
+precision highp float;
 
 uniform sampler2D map;
 uniform vec4 textureAtlasMeta;
@@ -8104,6 +8282,24 @@ uniform float gridWidth;
 uniform float gridOpacity;
 
 uniform vec3 lightDir;
+
+// Rivers/lakes, drawn over the atlas texture on tiles with the "river"/"lake"
+// modifier (vRiverEdges >= 0, see helpers/rivers.ts for the encoding). The
+// waterline - a river's channel-centerline distance, a lake's shore factor -
+// is bent by *static* world-space value noise: world-space makes the curved
+// banks continue seamlessly across tile borders, static keeps the banks
+// themselves still while the ripple noise (scrolled by uTime) animates only
+// the water inside them.
+uniform float hexSize;          // tile circumradius (shared via commonUniforms)
+uniform float uTime;            // seconds, drives the ripple animation
+uniform float riverWidth;       // channel waterline half-width, fraction of tile radius
+uniform float riverBankWidth;   // bank strip width beyond the waterline, same units
+uniform float riverCurvature;   // 0..1, how strongly noise bends the banks
+uniform float riverFlowSpeed;   // ripple scroll speed multiplier
+uniform float lakeShoreWidth;   // lake grass rim inset from shored edges, same units
+uniform vec3 riverColorShallow; // water color at the banks
+uniform vec3 riverColorDeep;    // water color over the channel centerline / lake body
+uniform vec3 riverBankColor;    // vegetation strip hugging the waterline
 
 varying vec2 vUV;
 varying vec2 vTexCoord;
@@ -8121,9 +8317,69 @@ varying vec3 vNormal;
 varying float vBeachT;
 varying float vFogState;
 varying vec2 vFogUV;
+varying float vRiverEdges;
+varying vec2 vLocal;
+varying vec2 vWorldXZ;
 
 const vec3 lightAmbient = vec3(0.55, 0.55, 0.55);
 const vec3 lightDiffuse = vec3(0.55, 0.55, 0.55);
+
+const vec2 DIR_SE = vec2(0.8660254, 0.5);
+const vec2 DIR_S  = vec2(0.0, 1.0);
+const vec2 DIR_SW = vec2(-0.8660254, 0.5);
+const vec2 DIR_NW = vec2(-0.8660254, -0.5);
+const vec2 DIR_N  = vec2(0.0, -1.0);
+const vec2 DIR_NE = vec2(0.8660254, -0.5);
+
+// Cheap value noise, same recipe as water.fragment.ts's - keeps the land
+// layer texture-free for rivers too (no extra noise texture to load).
+float hash21(vec2 p) {
+    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
+}
+
+float valueNoise(vec2 p) {
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+    vec2 u = f * f * (3.0 - 2.0 * f);
+    return mix(
+        mix(hash21(i), hash21(i + vec2(1.0, 0.0)), u.x),
+        mix(hash21(i + vec2(0.0, 1.0)), hash21(i + vec2(1.0, 1.0)), u.x),
+        u.y
+    );
+}
+
+// Same channel-centerline distance as terrain.vertex.ts's riverChannelDist()
+// (and helpers/rivers.ts's CPU mirror) - see the comments there. Duplicated
+// because vertex and fragment shaders are separate string constants.
+float riverSegDist(vec2 p, vec2 dir, float apothem) {
+    float t = clamp(dot(p, dir), 0.0, apothem);
+    return length(p - dir * t);
+}
+
+float riverChannelDist(vec2 p, float mask, float apothem) {
+    float d = length(p);
+    if (mod(floor(mask /  1.0), 2.0) > 0.5) d = min(d, riverSegDist(p, DIR_SE, apothem));
+    if (mod(floor(mask /  2.0), 2.0) > 0.5) d = min(d, riverSegDist(p, DIR_S,  apothem));
+    if (mod(floor(mask /  4.0), 2.0) > 0.5) d = min(d, riverSegDist(p, DIR_SW, apothem));
+    if (mod(floor(mask /  8.0), 2.0) > 0.5) d = min(d, riverSegDist(p, DIR_NW, apothem));
+    if (mod(floor(mask / 16.0), 2.0) > 0.5) d = min(d, riverSegDist(p, DIR_N,  apothem));
+    if (mod(floor(mask / 32.0), 2.0) > 0.5) d = min(d, riverSegDist(p, DIR_NE, apothem));
+    return d;
+}
+
+// Lake shore factor - see terrain.vertex.ts's identical helper (and its CPU
+// mirror in helpers/rivers.ts): closeness to the nearest *shored* edge, 1.0
+// exactly on it, 0 on a fully-open lake-interior tile.
+float lakeShore(float openMask, vec3 efA, vec3 efB) {
+    float s = 0.0;
+    if (mod(floor(openMask /  1.0), 2.0) < 0.5) s = max(s, efA.x);
+    if (mod(floor(openMask /  2.0), 2.0) < 0.5) s = max(s, efA.y);
+    if (mod(floor(openMask /  4.0), 2.0) < 0.5) s = max(s, efA.z);
+    if (mod(floor(openMask /  8.0), 2.0) < 0.5) s = max(s, efB.x);
+    if (mod(floor(openMask / 16.0), 2.0) < 0.5) s = max(s, efB.y);
+    if (mod(floor(openMask / 32.0), 2.0) < 0.5) s = max(s, efB.z);
+    return s;
+}
 
 vec2 cellIndexToUV(float idx) {
     float atlasWidth = textureAtlasMeta.x;
@@ -8190,6 +8446,80 @@ void main() {
     if (vBeachT > 0.0) {
         vec4 sandColor = texture2D(map, cellIndexToUV(sandAtlasIndex));
         texColor = mix(texColor, sandColor, vBeachT);
+    }
+
+    // Rivers/lakes (see the uniform block's comment above). Drawn before
+    // lighting/fog/grid so all three keep applying to them unchanged; the
+    // Unseen fog short-circuit at the top already hides them entirely.
+    if (vRiverEdges > -0.5) {
+        // Round the mask back to an exact integer: every vertex of an instance
+        // carries the same riverEdges value, but varying interpolation is not
+        // exact - a mask of 34.0 can arrive as 33.99997 on some fragments, and
+        // floor(mask / 2^i) then decodes *different connection bits on
+        // neighboring pixels* (pixel-level water/bank garbage along the river).
+        float mask = floor(vRiverEdges + 0.5);
+        float apothem = hexSize * 0.8660254;
+
+        // static two-octave world-space noise bends the waterline: the curved,
+        // "hand-drawn" banks instead of ruler-straight strips/hex-edge rims.
+        float bend = valueNoise(vWorldXZ * (2.2 / hexSize));
+        bend = 0.6 * bend + 0.4 * valueNoise(vWorldXZ * (5.0 / hexSize));
+        float bendOff = (bend - 0.5) * riverCurvature * 0.6;
+
+        float waterT = 0.0; // 1 = water surface
+        float bankT = 0.0;  // 1 = inside the vegetation band (water overdraws its inner part)
+        float depthT = 0.0; // 0 shallow (waterline) .. 1 deep (channel center / lake body)
+
+        if (mask >= 2048.0) {
+            // lake: water fills the hex except a grass rim inset from every
+            // *shored* edge; edges to river tiles keep the rim but get a
+            // channel-shaped opening so the river visibly flows in/out. The
+            // shared segment geometry makes that opening line up exactly with
+            // the river neighbor's own channel at the border.
+            float openMask = floor((mask - 4096.0) / 64.0);
+            float channelMask = mask - 4096.0 - openMask * 64.0;
+            float s0 = 1.0 - lakeShoreWidth;
+            float shore = lakeShore(openMask, vEdgeFactorsA, vEdgeFactorsB) + bendOff;
+            bankT = 1.0 - smoothstep(s0 + riverBankWidth * 0.35, s0 + riverBankWidth, shore);
+            waterT = 1.0 - smoothstep(s0 - 0.04, s0, shore);
+            // short shallow-to-deep ramp: most of the body reads uniformly
+            // deep, so the river-channel openings (depthT 1 at their
+            // centerline) don't draw visibly darker strips across the lake.
+            depthT = 1.0 - smoothstep(s0 - 0.22, s0, shore);
+            if (channelMask > 0.5) {
+                float dChan = riverChannelDist(vLocal, channelMask, apothem) / hexSize + bendOff;
+                bankT = max(bankT, 1.0 - smoothstep(riverWidth + riverBankWidth * 0.35, riverWidth + riverBankWidth, dChan));
+                waterT = max(waterT, 1.0 - smoothstep(riverWidth - 0.04, riverWidth, dChan));
+                depthT = max(depthT, 1.0 - smoothstep(0.0, riverWidth, dChan));
+            }
+        } else {
+            // river: water along the channel centerline segments
+            float d = riverChannelDist(vLocal, mask, apothem) / hexSize + bendOff;
+            bankT = 1.0 - smoothstep(riverWidth + riverBankWidth * 0.35, riverWidth + riverBankWidth, d);
+            waterT = 1.0 - smoothstep(riverWidth - 0.04, riverWidth, d);
+            depthT = 1.0 - smoothstep(0.0, riverWidth, d);
+        }
+
+        // bank strip first: a light vegetation band reaching past the
+        // waterline, its own strength varied by a finer noise so it reads as
+        // patchy growth instead of a uniform outline. The water below
+        // overdraws its inner part, leaving the band hugging the waterline.
+        float bankPatchiness = 0.55 + 0.45 * valueNoise(vWorldXZ * (8.0 / hexSize));
+        texColor = mix(texColor, vec4(riverBankColor, 1.0), bankT * bankPatchiness);
+
+        // water: shallow color at the waterline deepening inward, brightness
+        // rippled by two octaves of scrolling noise (uTime) - non-directional
+        // on purpose, since a junction/lake has no single flow direction.
+        if (waterT > 0.0) {
+            vec3 waterColor = mix(riverColorShallow, riverColorDeep, depthT);
+
+            float t = uTime * riverFlowSpeed;
+            float ripple = valueNoise(vWorldXZ * (6.0 / hexSize) + vec2(t * 0.35, t * 0.2));
+            ripple = 0.5 * ripple + 0.5 * valueNoise(vWorldXZ * (12.0 / hexSize) - vec2(t * 0.25, t * 0.4));
+            waterColor *= 0.85 + 0.3 * ripple;
+
+            texColor = mix(texColor, vec4(waterColor, 1.0), waterT);
+        }
     }
 
     vec3 normal = normalize(vNormal);
@@ -8636,7 +8966,6 @@ void main() {
 	    this.atlasCellIndex = {};
 	    this.clock = 0;
 	    this.map = map;
-	    this.waterAnimationEnabled = options.waterAnimation !== false;
 	    this.buildAtlasCellIndex();
 	    this.fogTexture = this.loadFogTexture();
 	    const allTiles = [];
@@ -8646,12 +8975,8 @@ void main() {
 	      }
 	    }
 	    const isWater = (tile) => WATER_TYPES.includes(this.map.data[tile.x][tile.y].type);
-	    if (this.waterAnimationEnabled) {
-	      this.buildLandLayer(allTiles.filter((t) => !isWater(t)));
-	      this.buildWaterLayer(allTiles.filter(isWater));
-	    } else {
-	      this.buildLandLayer(allTiles);
-	    }
+	    this.buildLandLayer(allTiles.filter((t) => !isWater(t)));
+	    this.buildWaterLayer(allTiles.filter(isWater));
 	  }
 	  buildAtlasCellIndex() {
 	    const atlas = this.options.atlas;
@@ -8679,11 +9004,8 @@ void main() {
 	    return tile ? LandPriority[tile.type] : -Infinity;
 	  }
 	  //-1 no tile, 0 non-water, 1 sea, 2 coastal - drives the land layer's beach
-	  //slope and the water layer's edge-color resolution (see shaders). Always 0
-	  //when waterAnimation is off, so no slope/solid-color logic ever triggers
-	  //and everything renders exactly like the flat, atlas-only original.
+	  //slope and the water layer's edge-color resolution (see shaders).
 	  kindFor(x, y) {
-	    if (!this.waterAnimationEnabled) return 0;
 	    const row = this.map.data[x];
 	    const tile = row ? row[y] : void 0;
 	    if (!tile) return -1;
@@ -8704,6 +9026,7 @@ void main() {
 	      neighborsPriorityB: new Float32Array(tiles.length * 3),
 	      neighborsKindA: new Float32Array(tiles.length * 3),
 	      neighborsKindB: new Float32Array(tiles.length * 3),
+	      riverEdges: new Float32Array(tiles.length),
 	      fogState: new Float32Array(tiles.length).fill(2)
 	      // default Visible - see FogOfWar.ts
 	    };
@@ -8739,6 +9062,7 @@ void main() {
 	      attrs.neighborsKindB[i * 3 + 0] = this.kindFor(nw.x, nw.y);
 	      attrs.neighborsKindB[i * 3 + 1] = this.kindFor(n.x, n.y);
 	      attrs.neighborsKindB[i * 3 + 2] = this.kindFor(ne.x, ne.y);
+	      attrs.riverEdges[i] = waterEdgeValue(this.map, tile.x, tile.y);
 	    });
 	    return attrs;
 	  }
@@ -8758,6 +9082,7 @@ void main() {
 	    geometry.setAttribute("neighborsPriorityB", new three.InstancedBufferAttribute(attrs.neighborsPriorityB, 3));
 	    geometry.setAttribute("neighborsKindA", new three.InstancedBufferAttribute(attrs.neighborsKindA, 3));
 	    geometry.setAttribute("neighborsKindB", new three.InstancedBufferAttribute(attrs.neighborsKindB, 3));
+	    geometry.setAttribute("riverEdges", new three.InstancedBufferAttribute(attrs.riverEdges, 1));
 	    geometry.setAttribute("fogState", new three.InstancedBufferAttribute(attrs.fogState, 1));
 	    return geometry;
 	  }
@@ -8821,6 +9146,16 @@ void main() {
 	      uniforms: {
 	        map: { value: this.loadAtlasTexture() },
 	        landBlendWidth: { value: this.options.landBlendWidth ?? 0.5 },
+	        uTime: { value: 0 },
+	        riverWidth: { value: this.options.riverWidth ?? 0.28 },
+	        riverBankWidth: { value: this.options.riverBankWidth ?? 0.14 },
+	        riverCurvature: { value: this.options.riverCurvature ?? 0.5 },
+	        riverColorShallow: { value: new three.Color(this.options.riverColorShallow ?? this.options.waterColorShallow ?? LandColor["coastal" /* coastal */]) },
+	        riverColorDeep: { value: new three.Color(this.options.riverColorDeep ?? this.options.waterColorDeep ?? LandColor["sea" /* sea */]) },
+	        riverBankColor: { value: new three.Color(this.options.riverBankColor ?? 11059050) },
+	        riverFlowSpeed: { value: this.options.riverFlowSpeed ?? 1 },
+	        riverDepth: { value: this.options.riverDepth ?? (this.options.waterDepth ?? this.options.size * 0.25) * 0.6 },
+	        lakeShoreWidth: { value: this.options.lakeShoreWidth ?? 0.18 },
 	        ...this.commonUniforms()
 	      },
 	      vertexShader: TERRAIN_VERTEX_SHADER,
@@ -8918,12 +9253,13 @@ void main() {
 	      }
 	    }
 	  }
-	  //Advances the water animation. `dtS` is the elapsed time in seconds since
-	  //the previous frame - call this once per frame (see HexMap's render loop).
+	  //Advances the water/river animation. `dtS` is the elapsed time in seconds
+	  //since the previous frame - call this once per frame (see HexMap's render
+	  //loop). The land material's clock drives river ripples (terrain.fragment.ts).
 	  update(dtS) {
-	    if (!this.waterMaterial) return;
 	    this.clock += dtS;
-	    this.waterMaterial.uniforms.uTime.value = this.clock;
+	    if (this.waterMaterial) this.waterMaterial.uniforms.uTime.value = this.clock;
+	    if (this.landMaterial) this.landMaterial.uniforms.uTime.value = this.clock;
 	  }
 	  get gridVisible() {
 	    return (this.landMaterial ?? this.waterMaterial)?.uniforms.showGrid.value > 0;
@@ -8935,8 +9271,7 @@ void main() {
 	  }
 	  //-------------------------------------------------------------------------
 	  //Live shader-uniform tuning knobs, for a GUI to adjust without rebuilding
-	  //the map (unlike waterAnimation itself, which changes tile layer grouping
-	  //and so needs a full TerrainMesh rebuild - see HexMap.rebuildTerrain()).
+	  //the map.
 	  //beachWidth/waterDepth exist as separate uniform objects on landMaterial
 	  //and waterMaterial each (commonUniforms() is called once per material, not
 	  //shared), so both setters below write to both.
@@ -8946,6 +9281,62 @@ void main() {
 	  }
 	  set landBlendWidth(value) {
 	    if (this.landMaterial) this.landMaterial.uniforms.landBlendWidth.value = value;
+	  }
+	  //River channel knobs - all live uniforms on the land material (rivers are
+	  //drawn by the land layer's shaders).
+	  get riverWidth() {
+	    return this.landMaterial?.uniforms.riverWidth.value ?? 0.28;
+	  }
+	  set riverWidth(value) {
+	    if (this.landMaterial) this.landMaterial.uniforms.riverWidth.value = value;
+	  }
+	  get riverBankWidth() {
+	    return this.landMaterial?.uniforms.riverBankWidth.value ?? 0.14;
+	  }
+	  set riverBankWidth(value) {
+	    if (this.landMaterial) this.landMaterial.uniforms.riverBankWidth.value = value;
+	  }
+	  get riverCurvature() {
+	    return this.landMaterial?.uniforms.riverCurvature.value ?? 0.5;
+	  }
+	  set riverCurvature(value) {
+	    if (this.landMaterial) this.landMaterial.uniforms.riverCurvature.value = value;
+	  }
+	  get riverColorShallow() {
+	    return this.landMaterial?.uniforms.riverColorShallow.value?.getHex() ?? 0;
+	  }
+	  set riverColorShallow(value) {
+	    this.landMaterial?.uniforms.riverColorShallow.value?.set(value);
+	  }
+	  get riverColorDeep() {
+	    return this.landMaterial?.uniforms.riverColorDeep.value?.getHex() ?? 0;
+	  }
+	  set riverColorDeep(value) {
+	    this.landMaterial?.uniforms.riverColorDeep.value?.set(value);
+	  }
+	  get riverBankColor() {
+	    return this.landMaterial?.uniforms.riverBankColor.value?.getHex() ?? 11059050;
+	  }
+	  set riverBankColor(value) {
+	    this.landMaterial?.uniforms.riverBankColor.value?.set(value);
+	  }
+	  get riverFlowSpeed() {
+	    return this.landMaterial?.uniforms.riverFlowSpeed.value ?? 1;
+	  }
+	  set riverFlowSpeed(value) {
+	    if (this.landMaterial) this.landMaterial.uniforms.riverFlowSpeed.value = value;
+	  }
+	  get riverDepth() {
+	    return this.landMaterial?.uniforms.riverDepth.value ?? this.options.size * 0.15;
+	  }
+	  set riverDepth(value) {
+	    if (this.landMaterial) this.landMaterial.uniforms.riverDepth.value = value;
+	  }
+	  get lakeShoreWidth() {
+	    return this.landMaterial?.uniforms.lakeShoreWidth.value ?? 0.18;
+	  }
+	  set lakeShoreWidth(value) {
+	    if (this.landMaterial) this.landMaterial.uniforms.lakeShoreWidth.value = value;
 	  }
 	  get waterCornerRounding() {
 	    return this.waterMaterial?.uniforms.waterCornerRounding.value ?? 0.4;
@@ -9018,8 +9409,7 @@ void main() {
 	    this.waterMaterial?.uniforms.waterColorDeep.value?.set(value);
 	  }
 	  //Coastal foam waves - all plain uniforms on the water material, so
-	  //toggling/tuning is live (unlike waterAnimation itself, which is
-	  //structural - see HexMap.rebuildTerrain()).
+	  //toggling/tuning is live.
 	  get coastalWavesEnabled() {
 	    return (this.waterMaterial?.uniforms.foamEnabled.value ?? 1) > 0.5;
 	  }
@@ -9155,7 +9545,7 @@ void main() {
 	  for (let x = 0; x < map.w; x++) {
 	    for (let y = 0; y < map.h; y++) {
 	      const tile = map.data[x]?.[y];
-	      if (!tile?.wood) continue;
+	      if (!tile?.modifiers?.includes("wood") || isLakeTile(tile)) continue;
 	      const modelPath = tile.treeModel ?? defaultModel;
 	      const tiles = tilesByModel.get(modelPath) ?? [];
 	      tiles.push({ x, y });
@@ -9165,6 +9555,12 @@ void main() {
 	  if (tilesByModel.size === 0) return null;
 	  const treeFootprint = Math.max(1, Math.round(size / 10));
 	  const polygon = HEXPolygon({ x: 0, y: 0 }, size - treeFootprint).map((p) => [p.x, p.y]);
+	  const waterOptions = {
+	    riverWidth: options.riverWidth ?? 0.28,
+	    riverBankWidth: options.riverBankWidth ?? 0.14,
+	    riverCurvature: options.riverCurvature ?? 0.5,
+	    lakeShoreWidth: options.lakeShoreWidth ?? 0.18
+	  };
 	  const tileRanges = /* @__PURE__ */ new Map();
 	  const group = new ForestField(tileRanges, fogDarkenFactor);
 	  for (const [modelPath, tiles] of tilesByModel) {
@@ -9195,11 +9591,13 @@ void main() {
 	      const tileStart = instance;
 	      const originalMatrices = [];
 	      let attempts = 0;
+	      const waterValue = waterEdgeValue(map, tile.x, tile.y);
 	      while (placed.length < treesPerTile && attempts < treesPerTile * 20) {
 	        attempts++;
 	        const lx = getRandomInt(-size, size);
 	        const ly = getRandomInt(-size, size);
 	        if (pointInPolygon2(polygon, [lx, ly]) !== -1) continue;
+	        if (isInTileWater(lx, ly, waterValue, size, waterOptions)) continue;
 	        const overlaps = placed.some((p) => Math.abs(p.x - lx) < treeFootprint && Math.abs(p.y - ly) < treeFootprint);
 	        if (overlaps) continue;
 	        placed.push({ x: lx, y: ly });
@@ -9378,12 +9776,18 @@ void main() {
 	  for (let x = 0; x < map.w; x++) {
 	    for (let y = 0; y < map.h; y++) {
 	      const tile = map.data[x]?.[y];
-	      if (tile?.type === "land" /* land */ && !tile.city) tiles.push({ x, y });
+	      if (tile?.type === "land" /* land */ && !tile.city && !isLakeTile(tile)) tiles.push({ x, y });
 	    }
 	  }
 	  if (tiles.length === 0) return null;
 	  const polygon = HEXPolygon({ x: 0, y: 0 }, size * 0.8).map((p) => [p.x, p.y]);
 	  const totalBlades = tiles.length * density;
+	  const waterOptions = {
+	    riverWidth: options.riverWidth ?? 0.28,
+	    riverBankWidth: options.riverBankWidth ?? 0.14,
+	    riverCurvature: options.riverCurvature ?? 0.5,
+	    lakeShoreWidth: options.lakeShoreWidth ?? 0.18
+	  };
 	  const offsets = new Float32Array(totalBlades * 2);
 	  const angles = new Float32Array(totalBlades);
 	  const scales = new Float32Array(totalBlades * 2);
@@ -9395,13 +9799,16 @@ void main() {
 	  for (const tile of tiles) {
 	    const center = getHexCenter(tile.x, tile.y, size);
 	    const tileStart = instance;
+	    const waterValue = waterEdgeValue(map, tile.x, tile.y);
 	    for (let i = 0; i < density; i++) {
-	      let lx = 0, ly = 0, attempts = 0;
-	      do {
+	      let lx = 0, ly = 0, attempts = 0, valid = false;
+	      while (!valid && attempts < 20) {
 	        lx = getRandomInt(-size, size);
 	        ly = getRandomInt(-size, size);
+	        valid = pointInPolygon2(polygon, [lx, ly]) === -1 && !isInTileWater(lx, ly, waterValue, size, waterOptions);
 	        attempts++;
-	      } while (pointInPolygon2(polygon, [lx, ly]) !== -1 && attempts < 10);
+	      }
+	      if (!valid) continue;
 	      offsets[instance * 2 + 0] = center.x + lx;
 	      offsets[instance * 2 + 1] = center.y + ly;
 	      angles[instance] = Math.random() * Math.PI * 2;
@@ -9441,6 +9848,92 @@ void main() {
 	  return new GrassField(geometry, material, tileRanges);
 	}
 
+	// src/helpers/fog.ts
+	function tilesWithinRange(map, x, y, range) {
+	  if (range < 0 || !map.data[x]?.[y]) return [];
+	  const visited = /* @__PURE__ */ new Set([`${x},${y}`]);
+	  const result = [{ x, y }];
+	  let frontier = [{ x, y }];
+	  for (let step = 0; step < range; step++) {
+	    const next = [];
+	    for (const tile of frontier) {
+	      for (const n of getNeighbors(tile.x, tile.y)) {
+	        const key = `${n.x},${n.y}`;
+	        if (visited.has(key)) continue;
+	        if (!map.data[n.x]?.[n.y]) continue;
+	        visited.add(key);
+	        next.push({ x: n.x, y: n.y });
+	        result.push({ x: n.x, y: n.y });
+	      }
+	    }
+	    frontier = next;
+	  }
+	  return result;
+	}
+
+	// src/objects/FogOfWar.ts
+	var FogState = /* @__PURE__ */ ((FogState2) => {
+	  FogState2[FogState2["Unseen"] = 0] = "Unseen";
+	  FogState2[FogState2["Explored"] = 1] = "Explored";
+	  FogState2[FogState2["Visible"] = 2] = "Visible";
+	  return FogState2;
+	})(FogState || {});
+	var FogOfWar = class {
+	  constructor(map) {
+	    this.map = map;
+	    this.state = new Uint8Array(map.w * map.h);
+	  }
+	  index(x, y) {
+	    return x * this.map.h + y;
+	  }
+	  getState(x, y) {
+	    return this.state[this.index(x, y)];
+	  }
+	  //Every existing tile, at its current state - used once at startup to sync
+	  //a renderer whose own default (see HexMap.setTileFog()) doesn't necessarily
+	  //match this class's all-Unseen initial state.
+	  allTiles() {
+	    const tiles = [];
+	    for (let x = 0; x < this.map.w; x++) {
+	      for (let y = 0; y < this.map.h; y++) {
+	        if (!this.map.data[x]?.[y]) continue;
+	        tiles.push({ x, y, state: this.state[this.index(x, y)] });
+	      }
+	    }
+	    return tiles;
+	  }
+	  //Recomputes which tiles are currently visible from `viewers` (typically
+	  //every unit's {x, y, viewRange}) and updates state accordingly: tiles now
+	  //visible -> Visible; tiles that *were* Visible but no longer are ->
+	  //Explored (remembered, but dimmed); everything else is untouched (an
+	  //Unseen tile stays Unseen until it's actually been seen at least once).
+	  //Returns only the tiles whose state actually changed, so callers can push
+	  //a cheap incremental update to the renderer instead of touching every tile.
+	  recompute(viewers) {
+	    const nowVisible = /* @__PURE__ */ new Set();
+	    for (const viewer of viewers) {
+	      for (const tile of tilesWithinRange(this.map, viewer.x, viewer.y, viewer.viewRange)) {
+	        nowVisible.add(`${tile.x},${tile.y}`);
+	      }
+	    }
+	    const changes = [];
+	    for (let x = 0; x < this.map.w; x++) {
+	      for (let y = 0; y < this.map.h; y++) {
+	        if (!this.map.data[x]?.[y]) continue;
+	        const idx = this.index(x, y);
+	        const was = this.state[idx];
+	        const isVisibleNow = nowVisible.has(`${x},${y}`);
+	        const next = isVisibleNow ? 2 /* Visible */ : was === 2 /* Visible */ ? 1 /* Explored */ : was;
+	        if (next !== was) {
+	          this.state[idx] = next;
+	          changes.push({ x, y, state: next });
+	        }
+	      }
+	    }
+	    return changes;
+	  }
+	};
+
 	// src/HexMap.ts
 	var DEFAULT_OPTIONS = {
 	  size: 40,
@@ -9452,7 +9945,6 @@ void main() {
 	  selectorColor: 16776960,
 	  pointerColor: 15658734,
 	  treesPerTile: 20,
-	  waterAnimation: true,
 	  waterColorShallow: LandColor["coastal" /* coastal */],
 	  waterColorDeep: LandColor["sea" /* sea */],
 	  waterWaveAmplitude: 1.6,
@@ -9471,6 +9963,12 @@ void main() {
 	  beachWidth: 0.35,
 	  landBlendWidth: 0.5,
 	  waterCornerRounding: 0.4,
+	  riverWidth: 0.28,
+	  riverBankWidth: 0.14,
+	  riverCurvature: 0.5,
+	  riverBankColor: 11059050,
+	  riverFlowSpeed: 1,
+	  lakeShoreWidth: 0.18,
 	  treeModel: "Assets/models/pinia",
 	  treeScale: 1,
 	  cityModel: "Assets/models/monument",
@@ -9491,6 +9989,13 @@ void main() {
 	    // screen coords, used to distinguish click vs. drag
 	    this.lastHover = null;
 	    this.lastSelected = null;
+	    //Authoritative per-tile fog states ("x,y" -> state), owned here rather
+	    //than only living inside each layer's instanced attributes: those are
+	    //rebuilt to all-Visible whenever a layer rebuilds (grass density slider,
+	    //treesPerTile, ...), and warFogVisible below needs the real states back
+	    //when fog is re-shown after being hidden.
+	    this.fogStates = /* @__PURE__ */ new Map();
+	    this.warFogShown = true;
 	    this.handleResize = () => {
 	      const width = window.innerWidth;
 	      const height = window.innerHeight;
@@ -9544,11 +10049,15 @@ void main() {
 	      this.selectTile(tileCoords.x, tileCoords.y);
 	      this.emit("click", { x: tileCoords.x, y: tileCoords.y, tile });
 	    };
+	    const waterDepth = options.waterDepth ?? (options.size ?? DEFAULT_OPTIONS.size) * 0.25;
 	    this.options = {
 	      ...DEFAULT_OPTIONS,
 	      ...options,
-	      waterDepth: options.waterDepth ?? (options.size ?? DEFAULT_OPTIONS.size) * 0.25,
-	      fogTextureSize: options.fogTextureSize ?? (options.size ?? DEFAULT_OPTIONS.size) * 8
+	      waterDepth,
+	      fogTextureSize: options.fogTextureSize ?? (options.size ?? DEFAULT_OPTIONS.size) * 8,
+	      riverColorShallow: options.riverColorShallow ?? options.waterColorShallow ?? DEFAULT_OPTIONS.waterColorShallow,
+	      riverColorDeep: options.riverColorDeep ?? options.waterColorDeep ?? DEFAULT_OPTIONS.waterColorDeep,
+	      riverDepth: options.riverDepth ?? waterDepth * 0.6
 	    };
 	    const el = document.querySelector(this.options.element);
 	    if (!(el instanceof HTMLCanvasElement)) {
@@ -9646,6 +10155,7 @@ void main() {
 	  //load in the background as usual for three.js.
 	  async load(mapData) {
 	    this.mapData = mapData;
+	    this.fogStates.clear();
 	    this.frameMap(mapData);
 	    const atlasUrl = new URL("land-atlas.json", new URL(this.options.texturesBaseUrl, window.location.href)).href;
 	    this.atlas = await fetch(atlasUrl).then((r) => r.json());
@@ -9655,13 +10165,10 @@ void main() {
 	    this.emit("load", void 0);
 	  }
 	  //Tears down and recreates the terrain (land/water layers + city models) from
-	  //the current options against the already-fetched atlas/map data. Needed for
-	  //any option that changes tile layer *grouping* rather than a plain shader
-	  //uniform - currently only waterAnimation (splitting sea/coastal onto their own
-	  //animated layer vs. flattening them into the atlas-textured land layer is a
-	  //different instance count/geometry, not something a uniform can express).
-	  //Everything else water/blend-related is a live uniform - see TerrainMesh's
-	  //own getters/setters, forwarded below (waterWaveAmplitude, beachWidth, etc.)
+	  //the current options against the already-fetched atlas/map data. Only needed
+	  //when the map itself changes (see load()) - everything water/blend-related
+	  //is a live uniform, see TerrainMesh's own getters/setters, forwarded below
+	  //(waterWaveAmplitude, beachWidth, etc.)
 	  async rebuildTerrain() {
 	    if (this.terrain) {
 	      this.scene.remove(this.terrain);
@@ -9675,7 +10182,6 @@ void main() {
 	      gridColor: this.options.gridColor,
 	      gridWidth: this.options.gridWidth,
 	      gridOpacity: this.options.gridOpacity,
-	      waterAnimation: this.options.waterAnimation,
 	      waterColorShallow: this.options.waterColorShallow,
 	      waterColorDeep: this.options.waterColorDeep,
 	      waterWaveAmplitude: this.options.waterWaveAmplitude,
@@ -9695,6 +10201,15 @@ void main() {
 	      beachWidth: this.options.beachWidth,
 	      landBlendWidth: this.options.landBlendWidth,
 	      waterCornerRounding: this.options.waterCornerRounding,
+	      riverWidth: this.options.riverWidth,
+	      riverBankWidth: this.options.riverBankWidth,
+	      riverCurvature: this.options.riverCurvature,
+	      riverColorShallow: this.options.riverColorShallow,
+	      riverColorDeep: this.options.riverColorDeep,
+	      riverBankColor: this.options.riverBankColor,
+	      riverFlowSpeed: this.options.riverFlowSpeed,
+	      riverDepth: this.options.riverDepth,
+	      lakeShoreWidth: this.options.lakeShoreWidth,
 	      cityModel: this.options.cityModel,
 	      cityScale: this.options.cityScale,
 	      fogTexture: this.options.fogTexture,
@@ -9703,6 +10218,7 @@ void main() {
 	    });
 	    this.scene.add(this.terrain);
 	    await this.terrain.loadCities();
+	    this.reapplyFog();
 	  }
 	  //Tears down and recreates the tree instances from the current tree*
 	  //options. treesPerTile/treeScale are baked into the instanced geometry's
@@ -9721,9 +10237,16 @@ void main() {
 	      treesPerTile: this.options.treesPerTile,
 	      treeModel: this.options.treeModel,
 	      treeScale: this.options.treeScale,
-	      fogDarkenFactor: this.options.fogDarkenFactor
+	      fogDarkenFactor: this.options.fogDarkenFactor,
+	      riverWidth: this.options.riverWidth,
+	      riverBankWidth: this.options.riverBankWidth,
+	      riverCurvature: this.options.riverCurvature,
+	      lakeShoreWidth: this.options.lakeShoreWidth
 	    }) ?? void 0;
-	    if (this.forest) this.scene.add(this.forest);
+	    if (this.forest) {
+	      this.scene.add(this.forest);
+	      this.reapplyFog();
+	    }
 	  }
 	  //Tears down and recreates the grass field from the current grass* options
 	  //against the already-loaded map data. Grass is purely procedural (no
@@ -9745,11 +10268,16 @@ void main() {
 	      bladeHeight: this.options.grassBladeHeight,
 	      windStrength: this.options.grassWindStrength,
 	      windSpeed: this.options.grassWindSpeed,
-	      fogDarkenFactor: this.options.fogDarkenFactor
+	      fogDarkenFactor: this.options.fogDarkenFactor,
+	      riverWidth: this.options.riverWidth,
+	      riverBankWidth: this.options.riverBankWidth,
+	      riverCurvature: this.options.riverCurvature,
+	      lakeShoreWidth: this.options.lakeShoreWidth
 	    }) ?? void 0;
 	    if (this.grass) {
 	      this.grass.visible = this.options.grassEnabled;
 	      this.scene.add(this.grass);
+	      this.reapplyFog();
 	    }
 	  }
 	  getTile(x, y) {
@@ -9761,11 +10289,43 @@ void main() {
 	  //Every tile defaults to Visible, so calling this is entirely optional; a
 	  //consumer that wants fog of war (e.g. GameEngine, when its own fogOfWar
 	  //option is on) drives it from unit positions/view ranges.
+	  //
+	  //The state is always recorded in fogStates, even while warFogVisible is
+	  //false (the layers then just aren't repainted) - so consumers keep feeding
+	  //fog updates as usual and re-showing the fog repaints everything current.
 	  //-------------------------------------------------------------------------
 	  setTileFog(x, y, state) {
+	    this.fogStates.set(`${x},${y}`, state);
+	    if (this.warFogShown) this.applyTileFog(x, y, state);
+	  }
+	  applyTileFog(x, y, state) {
 	    this.terrain?.setFogState(x, y, state);
 	    this.grass?.setFogState(x, y, state);
 	    this.forest?.setFogState(x, y, state);
+	  }
+	  //Repaints every recorded tile: its real state when the fog is shown, or
+	  //Visible when it's hidden. Also called after any layer rebuild (see
+	  //rebuildTerrain/rebuildForest/rebuildGrass) - a fresh layer's instanced
+	  //attributes default to all-Visible, which silently dropped previously
+	  //painted fog until the next consumer update.
+	  reapplyFog() {
+	    for (const [key, state] of this.fogStates) {
+	      const [x, y] = key.split(",").map(Number);
+	      this.applyTileFog(x, y, this.warFogShown ? state : 2 /* Visible */);
+	    }
+	  }
+	  //Purely visual show/hide of the war fog: hiding repaints every tile as
+	  //Visible but keeps the recorded states (and keeps recording new ones from
+	  //setTileFog), so re-showing restores the current fog exactly. A debug/
+	  //"reveal map" convenience - it does not touch GameEngine's FogOfWar
+	  //tracking, unit visibility or pathfinding.
+	  get warFogVisible() {
+	    return this.warFogShown;
+	  }
+	  set warFogVisible(value) {
+	    if (this.warFogShown === value) return;
+	    this.warFogShown = value;
+	    this.reapplyFog();
 	  }
 	  get gridVisible() {
 	    return this.terrain?.gridVisible ?? this.options.gridVisible;
@@ -9775,17 +10335,9 @@ void main() {
 	    if (this.terrain) this.terrain.gridVisible = value;
 	  }
 	  //-------------------------------------------------------------------------
-	  //Water animation - enabling/disabling is structural (see rebuildTerrain()),
-	  //everything else here is a live shader uniform forwarded straight through
-	  //to TerrainMesh, no rebuild needed.
+	  //Water - live shader uniforms forwarded straight through to TerrainMesh,
+	  //no rebuild needed.
 	  //-------------------------------------------------------------------------
-	  get waterAnimation() {
-	    return this.options.waterAnimation;
-	  }
-	  set waterAnimation(value) {
-	    this.options.waterAnimation = value;
-	    void this.rebuildTerrain();
-	  }
 	  get waterWaveAmplitude() {
 	    return this.terrain?.waterWaveAmplitude ?? this.options.waterWaveAmplitude;
 	  }
@@ -9838,7 +10390,7 @@ void main() {
 	  //-------------------------------------------------------------------------
 	  //Coastal foam waves - all live shader uniforms forwarded to TerrainMesh,
 	  //no rebuild (the enable flag included: it's a uniform gate in the water
-	  //fragment shader, not a structural change like waterAnimation).
+	  //fragment shader).
 	  //-------------------------------------------------------------------------
 	  get coastalWavesEnabled() {
 	    return this.terrain?.coastalWavesEnabled ?? this.options.coastalWavesEnabled;
@@ -9926,6 +10478,74 @@ void main() {
 	  set waterDepth(value) {
 	    this.options.waterDepth = value;
 	    if (this.terrain) this.terrain.waterDepth = value;
+	  }
+	  //-------------------------------------------------------------------------
+	  //Rivers - all live shader uniforms on the land material, forwarded to
+	  //TerrainMesh, no rebuild needed. Which tiles/edges carry a river is map
+	  //data (the "river" modifier), not an option - see helpers/rivers.ts.
+	  //-------------------------------------------------------------------------
+	  get riverWidth() {
+	    return this.terrain?.riverWidth ?? this.options.riverWidth;
+	  }
+	  set riverWidth(value) {
+	    this.options.riverWidth = value;
+	    if (this.terrain) this.terrain.riverWidth = value;
+	  }
+	  get riverBankWidth() {
+	    return this.terrain?.riverBankWidth ?? this.options.riverBankWidth;
+	  }
+	  set riverBankWidth(value) {
+	    this.options.riverBankWidth = value;
+	    if (this.terrain) this.terrain.riverBankWidth = value;
+	  }
+	  get riverCurvature() {
+	    return this.terrain?.riverCurvature ?? this.options.riverCurvature;
+	  }
+	  set riverCurvature(value) {
+	    this.options.riverCurvature = value;
+	    if (this.terrain) this.terrain.riverCurvature = value;
+	  }
+	  get riverColorShallow() {
+	    return this.terrain?.riverColorShallow ?? this.options.riverColorShallow;
+	  }
+	  set riverColorShallow(value) {
+	    this.options.riverColorShallow = value;
+	    if (this.terrain) this.terrain.riverColorShallow = value;
+	  }
+	  get riverColorDeep() {
+	    return this.terrain?.riverColorDeep ?? this.options.riverColorDeep;
+	  }
+	  set riverColorDeep(value) {
+	    this.options.riverColorDeep = value;
+	    if (this.terrain) this.terrain.riverColorDeep = value;
+	  }
+	  get riverBankColor() {
+	    return this.terrain?.riverBankColor ?? this.options.riverBankColor;
+	  }
+	  set riverBankColor(value) {
+	    this.options.riverBankColor = value;
+	    if (this.terrain) this.terrain.riverBankColor = value;
+	  }
+	  get riverFlowSpeed() {
+	    return this.terrain?.riverFlowSpeed ?? this.options.riverFlowSpeed;
+	  }
+	  set riverFlowSpeed(value) {
+	    this.options.riverFlowSpeed = value;
+	    if (this.terrain) this.terrain.riverFlowSpeed = value;
+	  }
+	  get riverDepth() {
+	    return this.terrain?.riverDepth ?? this.options.riverDepth;
+	  }
+	  set riverDepth(value) {
+	    this.options.riverDepth = value;
+	    if (this.terrain) this.terrain.riverDepth = value;
+	  }
+	  get lakeShoreWidth() {
+	    return this.terrain?.lakeShoreWidth ?? this.options.lakeShoreWidth;
+	  }
+	  set lakeShoreWidth(value) {
+	    this.options.lakeShoreWidth = value;
+	    if (this.terrain) this.terrain.lakeShoreWidth = value;
 	  }
 	  //-------------------------------------------------------------------------
 	  //Tree density/size - baked into the instanced geometry at build time (like
@@ -10202,92 +10822,6 @@ void main() {
 	      this._viewCell = null;
 	      this.emit("end_move", { id: this.id, position: this.position });
 	    }
-	  }
-	};
-
-	// src/helpers/fog.ts
-	function tilesWithinRange(map, x, y, range) {
-	  if (range < 0 || !map.data[x]?.[y]) return [];
-	  const visited = /* @__PURE__ */ new Set([`${x},${y}`]);
-	  const result = [{ x, y }];
-	  let frontier = [{ x, y }];
-	  for (let step = 0; step < range; step++) {
-	    const next = [];
-	    for (const tile of frontier) {
-	      for (const n of getNeighbors(tile.x, tile.y)) {
-	        const key = `${n.x},${n.y}`;
-	        if (visited.has(key)) continue;
-	        if (!map.data[n.x]?.[n.y]) continue;
-	        visited.add(key);
-	        next.push({ x: n.x, y: n.y });
-	        result.push({ x: n.x, y: n.y });
-	      }
-	    }
-	    frontier = next;
-	  }
-	  return result;
-	}
-
-	// src/objects/FogOfWar.ts
-	var FogState = /* @__PURE__ */ ((FogState2) => {
-	  FogState2[FogState2["Unseen"] = 0] = "Unseen";
-	  FogState2[FogState2["Explored"] = 1] = "Explored";
-	  FogState2[FogState2["Visible"] = 2] = "Visible";
-	  return FogState2;
-	})(FogState || {});
-	var FogOfWar = class {
-	  constructor(map) {
-	    this.map = map;
-	    this.state = new Uint8Array(map.w * map.h);
-	  }
-	  index(x, y) {
-	    return x * this.map.h + y;
-	  }
-	  getState(x, y) {
-	    return this.state[this.index(x, y)];
-	  }
-	  //Every existing tile, at its current state - used once at startup to sync
-	  //a renderer whose own default (see HexMap.setTileFog()) doesn't necessarily
-	  //match this class's all-Unseen initial state.
-	  allTiles() {
-	    const tiles = [];
-	    for (let x = 0; x < this.map.w; x++) {
-	      for (let y = 0; y < this.map.h; y++) {
-	        if (!this.map.data[x]?.[y]) continue;
-	        tiles.push({ x, y, state: this.state[this.index(x, y)] });
-	      }
-	    }
-	    return tiles;
-	  }
-	  //Recomputes which tiles are currently visible from `viewers` (typically
-	  //every unit's {x, y, viewRange}) and updates state accordingly: tiles now
-	  //visible -> Visible; tiles that *were* Visible but no longer are ->
-	  //Explored (remembered, but dimmed); everything else is untouched (an
-	  //Unseen tile stays Unseen until it's actually been seen at least once).
-	  //Returns only the tiles whose state actually changed, so callers can push
-	  //a cheap incremental update to the renderer instead of touching every tile.
-	  recompute(viewers) {
-	    const nowVisible = /* @__PURE__ */ new Set();
-	    for (const viewer of viewers) {
-	      for (const tile of tilesWithinRange(this.map, viewer.x, viewer.y, viewer.viewRange)) {
-	        nowVisible.add(`${tile.x},${tile.y}`);
-	      }
-	    }
-	    const changes = [];
-	    for (let x = 0; x < this.map.w; x++) {
-	      for (let y = 0; y < this.map.h; y++) {
-	        if (!this.map.data[x]?.[y]) continue;
-	        const idx = this.index(x, y);
-	        const was = this.state[idx];
-	        const isVisibleNow = nowVisible.has(`${x},${y}`);
-	        const next = isVisibleNow ? 2 /* Visible */ : was === 2 /* Visible */ ? 1 /* Explored */ : was;
-	        if (next !== was) {
-	          this.state[idx] = next;
-	          changes.push({ x, y, state: next });
-	        }
-	      }
-	    }
-	    return changes;
 	  }
 	};
 

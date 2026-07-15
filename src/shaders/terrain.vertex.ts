@@ -1,5 +1,8 @@
 export const TERRAIN_VERTEX_SHADER = `
-precision mediump float;
+// highp to match terrain.fragment.ts (see its precision comment) - vWorldXZ /
+// vLocal feed the river noise there, and varyings shouldn't lose precision on
+// the vertex side of the interpolation.
+precision highp float;
 
 uniform mat4 modelViewMatrix;
 uniform mat4 projectionMatrix;
@@ -16,6 +19,17 @@ uniform float hexSize; // tile circumradius, matches getHexCenter's "size" (worl
 uniform float waterLevel;
 uniform float beachWidth;
 uniform float sandAtlasIndex;
+
+// Rivers/lakes (tiles with the "river"/"lake" modifier - see helpers/rivers.ts
+// and terrain.fragment.ts). The vertex stage only carves the bed: a smooth
+// sink towards -riverDepth around a river's channel centerline / across a
+// lake's body. Widths are fractions of the tile radius (hexSize); the sink
+// reaches slightly past the painted waterline so the fragment stage's
+// noise-bent banks always lie on sloped ground.
+uniform float riverWidth;
+uniform float riverBankWidth;
+uniform float riverDepth;
+uniform float lakeShoreWidth; // grass rim inset from a lake's shored edges
 
 // World units one repeat of the war-fog texture spans. Fog UVs are computed
 // from world position (not per-tile local UVs) so one copy of the texture
@@ -34,6 +48,10 @@ attribute vec3 neighborsPriorityA; // edge-blend priority of SE/S/SW neighbor
 attribute vec3 neighborsPriorityB; // edge-blend priority of NW/N/NE neighbor
 attribute vec3 neighborsKindA; // SE/S/SW: -1 no tile, 0 non-water, 1 sea, 2 coastal
 attribute vec3 neighborsKindB; // NW/N/NE
+// -1 = no water; 0..63 = river (connected-edge bitmask, bit order SE,S,SW,NW,
+// N,NE); 4096 + openMask*64 + channelMask = lake - see helpers/rivers.ts's
+// waterEdgeValue() for the authoritative encoding.
+attribute float riverEdges;
 attribute float fogState; // 0 = unseen, 1 = explored (darkened), 2 = visible - see FogOfWar.ts
 
 varying vec2 vUV;
@@ -52,6 +70,9 @@ varying vec3 vNormal;
 varying float vBeachT; // 0 = normal land color, 1 = fully sand (see terrain.fragment.ts)
 varying float vFogState;
 varying vec2 vFogUV; // world-space fog texture coords, continuous across tiles
+varying float vRiverEdges; // riverEdges passed through (flat per tile - every vertex of an instance carries the same value)
+varying vec2 vLocal;       // tile-local (x,z), for the fragment stage's channel distance
+varying vec2 vWorldXZ;     // world (x,z), for the fragment stage's world-space bank/ripple noise
 
 const vec2 DIR_SE = vec2(0.8660254, 0.5);
 const vec2 DIR_S  = vec2(0.0, 1.0);
@@ -79,6 +100,45 @@ vec2 cellIndexToUV(float idx) {
 vec3 strongestWaterEdge(vec3 best, float kind, float factor, vec2 dir) {
     if (kind >= 1.0 && factor > best.x) return vec3(factor, dir);
     return best;
+}
+
+// Distance from a tile-local point to the segment running from the hex center
+// to the midpoint of the edge in direction dir (at the apothem) - one straight
+// piece of the river channel's centerline.
+float riverSegDist(vec2 p, vec2 dir, float apothem) {
+    float t = clamp(dot(p, dir), 0.0, apothem);
+    return length(p - dir * t);
+}
+
+// Distance to the river channel centerline: the min over every *connected*
+// edge's center-to-edge-midpoint segment (bit i of mask, order SE,S,SW,NW,N,NE
+// - decoded with mod/floor, GLSL ES 1.0 has no bitwise ops). A mask of 0 (a
+// river tile with no connections) falls back to distance-to-center: a pond.
+// Mirrors riverChannelDistance() in helpers/rivers.ts - keep the two in sync.
+float riverChannelDist(vec2 p, float mask, float apothem) {
+    float d = length(p);
+    if (mod(floor(mask /  1.0), 2.0) > 0.5) d = min(d, riverSegDist(p, DIR_SE, apothem));
+    if (mod(floor(mask /  2.0), 2.0) > 0.5) d = min(d, riverSegDist(p, DIR_S,  apothem));
+    if (mod(floor(mask /  4.0), 2.0) > 0.5) d = min(d, riverSegDist(p, DIR_SW, apothem));
+    if (mod(floor(mask /  8.0), 2.0) > 0.5) d = min(d, riverSegDist(p, DIR_NW, apothem));
+    if (mod(floor(mask / 16.0), 2.0) > 0.5) d = min(d, riverSegDist(p, DIR_N,  apothem));
+    if (mod(floor(mask / 32.0), 2.0) > 0.5) d = min(d, riverSegDist(p, DIR_NE, apothem));
+    return d;
+}
+
+// Lake shore factor: how far this point sits towards the nearest *shored* edge
+// (one NOT in openMask) - 1.0 exactly on such an edge, falling off towards the
+// far side. 0 on a fully-open tile (lake interior: all water). Mirrors
+// isInTileWater() in helpers/rivers.ts - keep the two in sync.
+float lakeShore(float openMask, vec3 efA, vec3 efB) {
+    float s = 0.0;
+    if (mod(floor(openMask /  1.0), 2.0) < 0.5) s = max(s, efA.x);
+    if (mod(floor(openMask /  2.0), 2.0) < 0.5) s = max(s, efA.y);
+    if (mod(floor(openMask /  4.0), 2.0) < 0.5) s = max(s, efA.z);
+    if (mod(floor(openMask /  8.0), 2.0) < 0.5) s = max(s, efB.x);
+    if (mod(floor(openMask / 16.0), 2.0) < 0.5) s = max(s, efB.y);
+    if (mod(floor(openMask / 32.0), 2.0) < 0.5) s = max(s, efB.z);
+    return s;
 }
 
 void main() {
@@ -116,6 +176,34 @@ void main() {
     // midpoint (rather than exactly onto it) so the two meshes' edges don't
     // end up perfectly coincident and z-fight (flickery dark patches).
     float sinkY = beachT * (waterLevel * 0.5) * 1.2 * fogVisible;
+
+    // River/lake bed: sink smoothly towards -riverDepth around a river's
+    // channel centerline / across a lake's body. Undistorted distances only -
+    // the fragment stage's noise-bent waterline stays within the carved area,
+    // and per-vertex noise would be too coarse at this subdivision level
+    // anyway. min() with the beach sink (both are <= 0) so a mouth next to
+    // the sea takes the deeper of the two carves instead of stacking them.
+    float riverSink = 0.0;
+    if (riverEdges >= 0.0) {
+        float bedT = 0.0;
+        if (riverEdges >= 2048.0) {
+            float openMask = floor((riverEdges - 4096.0) / 64.0);
+            float channelMask = riverEdges - 4096.0 - openMask * 64.0;
+            float s0 = 1.0 - lakeShoreWidth;
+            float shore = lakeShore(openMask, vEdgeFactorsA, vEdgeFactorsB);
+            bedT = 1.0 - smoothstep(s0 - 0.25, s0 + riverBankWidth, shore);
+            if (channelMask > 0.5) {
+                float dChan = riverChannelDist(local, channelMask, apothem) / hexSize;
+                bedT = max(bedT, 1.0 - smoothstep(riverWidth * 0.5, riverWidth + riverBankWidth, dChan));
+            }
+        } else {
+            float dRiver = riverChannelDist(local, riverEdges, apothem) / hexSize;
+            bedT = 1.0 - smoothstep(riverWidth * 0.5, riverWidth + riverBankWidth, dRiver);
+        }
+        riverSink = -riverDepth * bedT * fogVisible;
+    }
+    sinkY = min(sinkY, riverSink);
+
     vec3 pos = vec3(offset.x + position.x, position.y + sinkY, offset.y + position.z);
     gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
 
@@ -153,6 +241,9 @@ void main() {
     vNeighborsPriorityA = neighborsPriorityA;
     vNeighborsPriorityB = neighborsPriorityB;
     vFogState = fogState;
+    vRiverEdges = riverEdges;
+    vLocal = local;
+    vWorldXZ = pos.xz;
     // Axes swapped/negated (not a plain pos.xz mapping) so the image reads
     // upright from this map's camera: the camera's azimuth is locked to ~90deg
     // (see HexMap's setupControls), which puts screen-right along world -Z and

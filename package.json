@@ -1,6 +1,6 @@
 {
   "name": "three-hex-map",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "A civ like 3D hexagonal terrain map based on three.js, rendered via instancing/shaders.",
   "type": "module",
   "main": "dist/hex-map.js",

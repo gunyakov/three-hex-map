@@ -43,17 +43,15 @@ export interface HexMapOptions {
     pointerColor?: ColorRepresentation;
     treesPerTile?: number;
 
-    //If true (default), sea/coastal render as an animated, solid-colored water
-    //layer (waves, sparkle, a 3D beach slope where they meet land). If false,
-    //water is just another flat, static, atlas-textured tile like before -
-    //useful if you'd rather supply your own water texture than solid colors.
-    waterAnimation?: boolean;
+    //Sea/coastal tiles always render as an animated, solid-colored water layer
+    //(waves, sparkle, a 3D beach slope where they meet land - see
+    //shaders/water.*.ts).
     waterColorShallow?: ColorRepresentation;
     waterColorDeep?: ColorRepresentation;
 
-    //Wave shape/animation fine-tuning (only used when waterAnimation is true).
-    //Defaults produce a gentle, sparkling sea; turn amplitude/speed up for
-    //choppier water, sparkleIntensity/fresnelIntensity down for a flatter look.
+    //Wave shape/animation fine-tuning. Defaults produce a gentle, sparkling
+    //sea; turn amplitude/speed up for choppier water, sparkleIntensity/
+    //fresnelIntensity down for a flatter look.
     waterWaveAmplitude?: number;    // default 1.6 (world units)
     waterWaveFrequency?: number;    // default 1.0 (multiplier)
     waterWaveSpeed?: number;        // default 1.0 (multiplier)
@@ -62,9 +60,8 @@ export interface HexMapOptions {
 
     //Stylized coastal foam waves (after Harry Alisavakis' stylized water
     //shader): noise-distorted white bands rolling in towards every shoreline
-    //plus a solid lapping foam strip right at the waterline. Rendered by the
-    //water shader, so it only shows when waterAnimation is true; every knob
-    //is a live uniform (no rebuild), see shaders/water.fragment.ts.
+    //plus a solid lapping foam strip right at the waterline. Every knob is a
+    //live uniform (no rebuild), see shaders/water.fragment.ts.
     coastalWavesEnabled?: boolean;   // default true
     coastalWaveColor?: ColorRepresentation; // default 0xffffff
     coastalWaveCount?: number;       // bands per shore-to-center span, default 3
@@ -76,8 +73,8 @@ export interface HexMapOptions {
 
     //How far below land (world units) the water plane rests, and how much of a
     //tile's radius the beach slope/color blend covers in total (0..1, split
-    //evenly between the land and water tiles that share a coastal edge). Only
-    //take effect when waterAnimation is true. waterDepth defaults to size*0.25.
+    //evenly between the land and water tiles that share a coastal edge).
+    //waterDepth defaults to size*0.25.
     waterDepth?: number;
     beachWidth?: number; // default 0.35
 
@@ -88,6 +85,27 @@ export interface HexMapOptions {
     //fully rounded - only where both edges of that corner border land).
     landBlendWidth?: number;    // default 0.5
     waterCornerRounding?: number; // default 0.4
+
+    //Rivers/lakes: land ("grass") tiles carrying the free-form "river"/"lake"
+    //modifier (TileInfo.modifiers) render animated water on the land layer,
+    //banks bent by world-space noise so the waterline curves naturally. A
+    //river is a channel flowing through the hex; a lake fills the hex with
+    //water except a grass shore rim inset from every edge whose neighbor
+    //isn't water. Connectivity is auto-detected from neighbors (river/lake/
+    //sea/coastal - see helpers/rivers.ts): rivers flow into lakes and the sea,
+    //neighboring lake tiles merge into one body. All knobs below are live
+    //shader uniforms (no rebuild); widths are fractions of a tile's radius,
+    //riverDepth is world units (how deep the bed is carved, like waterDepth).
+    //Colors default to the map's waterColorShallow/Deep to match the sea.
+    riverWidth?: number;         // channel waterline half-width, default 0.28
+    riverBankWidth?: number;     // vegetation strip beyond the waterline, default 0.14
+    riverCurvature?: number;     // 0..1 noise bend of the banks, default 0.5
+    riverColorShallow?: ColorRepresentation; // default waterColorShallow
+    riverColorDeep?: ColorRepresentation;    // default waterColorDeep
+    riverBankColor?: ColorRepresentation;    // default 0xa8bf6a (light green)
+    riverFlowSpeed?: number;     // ripple animation speed, default 1.0
+    riverDepth?: number;         // default waterDepth * 0.6
+    lakeShoreWidth?: number;     // lake grass rim inset, default 0.18
 
     //Map-wide default tree/city models - each is a *folder* path containing
     //model.glb + info.json (see helpers/models.ts), not a bare filename; the
@@ -127,7 +145,10 @@ export interface HexMapOptions {
     fogTextureSize?: number;
 }
 
-const DEFAULT_OPTIONS: Required<Omit<HexMapOptions, "element" | "waterDepth" | "fogTextureSize">> = {
+//waterDepth/fogTextureSize/riverColorShallow/riverColorDeep/riverDepth have
+//*derived* defaults (computed from size/waterColor*/waterDepth in the
+//constructor), so they're omitted here rather than given fixed values.
+const DEFAULT_OPTIONS: Required<Omit<HexMapOptions, "element" | "waterDepth" | "fogTextureSize" | "riverColorShallow" | "riverColorDeep" | "riverDepth">> = {
     size: 40,
     texturesBaseUrl: "textures/",
     gridVisible: true,
@@ -137,7 +158,6 @@ const DEFAULT_OPTIONS: Required<Omit<HexMapOptions, "element" | "waterDepth" | "
     selectorColor: 0xffff00,
     pointerColor: 0xeeeeee,
     treesPerTile: 20,
-    waterAnimation: true,
     waterColorShallow: LandColor[Land.coastal],
     waterColorDeep: LandColor[Land.sea],
     waterWaveAmplitude: 1.6,
@@ -156,6 +176,12 @@ const DEFAULT_OPTIONS: Required<Omit<HexMapOptions, "element" | "waterDepth" | "
     beachWidth: 0.35,
     landBlendWidth: 0.5,
     waterCornerRounding: 0.4,
+    riverWidth: 0.28,
+    riverBankWidth: 0.14,
+    riverCurvature: 0.5,
+    riverBankColor: 0xa8bf6a,
+    riverFlowSpeed: 1.0,
+    lakeShoreWidth: 0.18,
     treeModel: "Assets/models/pinia",
     treeScale: 1,
     cityModel: "Assets/models/monument",
@@ -183,7 +209,8 @@ const DEFAULT_OPTIONS: Required<Omit<HexMapOptions, "element" | "waterDepth" | "
 //   map.on("hover", ({x, y, tile}) => ...);
 //----------------------------------------------------------------------------------
 export class HexMap extends EventEmitter {
-    private options: Required<Omit<HexMapOptions, "element" | "waterDepth" | "fogTextureSize">> & { element: string, waterDepth: number, fogTextureSize: number };
+    private options: Required<Omit<HexMapOptions, "element" | "waterDepth" | "fogTextureSize" | "riverColorShallow" | "riverColorDeep" | "riverDepth">>
+        & { element: string, waterDepth: number, fogTextureSize: number, riverColorShallow: ColorRepresentation, riverColorDeep: ColorRepresentation, riverDepth: number };
 
     private canvas: HTMLCanvasElement;
     private renderer: WebGLRenderer;
@@ -204,13 +231,25 @@ export class HexMap extends EventEmitter {
     private lastHover: Point | null = null;
     private lastSelected: Point | null = null;
 
+    //Authoritative per-tile fog states ("x,y" -> state), owned here rather
+    //than only living inside each layer's instanced attributes: those are
+    //rebuilt to all-Visible whenever a layer rebuilds (grass density slider,
+    //treesPerTile, ...), and warFogVisible below needs the real states back
+    //when fog is re-shown after being hidden.
+    private fogStates = new Map<string, FogState>();
+    private warFogShown = true;
+
     constructor(options: HexMapOptions) {
         super();
+        const waterDepth = options.waterDepth ?? (options.size ?? DEFAULT_OPTIONS.size) * 0.25;
         this.options = {
             ...DEFAULT_OPTIONS,
             ...options,
-            waterDepth: options.waterDepth ?? (options.size ?? DEFAULT_OPTIONS.size) * 0.25,
-            fogTextureSize: options.fogTextureSize ?? (options.size ?? DEFAULT_OPTIONS.size) * 8
+            waterDepth,
+            fogTextureSize: options.fogTextureSize ?? (options.size ?? DEFAULT_OPTIONS.size) * 8,
+            riverColorShallow: options.riverColorShallow ?? options.waterColorShallow ?? DEFAULT_OPTIONS.waterColorShallow,
+            riverColorDeep: options.riverColorDeep ?? options.waterColorDeep ?? DEFAULT_OPTIONS.waterColorDeep,
+            riverDepth: options.riverDepth ?? waterDepth * 0.6
         };
 
         const el = document.querySelector(this.options.element);
@@ -400,6 +439,7 @@ export class HexMap extends EventEmitter {
     //load in the background as usual for three.js.
     public async load(mapData: MapInfo): Promise<void> {
         this.mapData = mapData;
+        this.fogStates.clear(); // a new map starts with no fog history
         this.frameMap(mapData);
 
         const atlasUrl = new URL("land-atlas.json", new URL(this.options.texturesBaseUrl, window.location.href)).href;
@@ -413,13 +453,10 @@ export class HexMap extends EventEmitter {
     }
 
     //Tears down and recreates the terrain (land/water layers + city models) from
-    //the current options against the already-fetched atlas/map data. Needed for
-    //any option that changes tile layer *grouping* rather than a plain shader
-    //uniform - currently only waterAnimation (splitting sea/coastal onto their own
-    //animated layer vs. flattening them into the atlas-textured land layer is a
-    //different instance count/geometry, not something a uniform can express).
-    //Everything else water/blend-related is a live uniform - see TerrainMesh's
-    //own getters/setters, forwarded below (waterWaveAmplitude, beachWidth, etc.)
+    //the current options against the already-fetched atlas/map data. Only needed
+    //when the map itself changes (see load()) - everything water/blend-related
+    //is a live uniform, see TerrainMesh's own getters/setters, forwarded below
+    //(waterWaveAmplitude, beachWidth, etc.)
     private async rebuildTerrain(): Promise<void> {
         if (this.terrain) {
             this.scene.remove(this.terrain);
@@ -434,7 +471,6 @@ export class HexMap extends EventEmitter {
             gridColor: this.options.gridColor,
             gridWidth: this.options.gridWidth,
             gridOpacity: this.options.gridOpacity,
-            waterAnimation: this.options.waterAnimation,
             waterColorShallow: this.options.waterColorShallow,
             waterColorDeep: this.options.waterColorDeep,
             waterWaveAmplitude: this.options.waterWaveAmplitude,
@@ -454,6 +490,15 @@ export class HexMap extends EventEmitter {
             beachWidth: this.options.beachWidth,
             landBlendWidth: this.options.landBlendWidth,
             waterCornerRounding: this.options.waterCornerRounding,
+            riverWidth: this.options.riverWidth,
+            riverBankWidth: this.options.riverBankWidth,
+            riverCurvature: this.options.riverCurvature,
+            riverColorShallow: this.options.riverColorShallow,
+            riverColorDeep: this.options.riverColorDeep,
+            riverBankColor: this.options.riverBankColor,
+            riverFlowSpeed: this.options.riverFlowSpeed,
+            riverDepth: this.options.riverDepth,
+            lakeShoreWidth: this.options.lakeShoreWidth,
             cityModel: this.options.cityModel,
             cityScale: this.options.cityScale,
             fogTexture: this.options.fogTexture,
@@ -462,6 +507,7 @@ export class HexMap extends EventEmitter {
         });
         this.scene.add(this.terrain);
         await this.terrain.loadCities();
+        this.reapplyFog(); // the fresh layer defaults to all-Visible
     }
 
     //Tears down and recreates the tree instances from the current tree*
@@ -482,10 +528,17 @@ export class HexMap extends EventEmitter {
             treesPerTile: this.options.treesPerTile,
             treeModel: this.options.treeModel,
             treeScale: this.options.treeScale,
-            fogDarkenFactor: this.options.fogDarkenFactor
+            fogDarkenFactor: this.options.fogDarkenFactor,
+            riverWidth: this.options.riverWidth,
+            riverBankWidth: this.options.riverBankWidth,
+            riverCurvature: this.options.riverCurvature,
+            lakeShoreWidth: this.options.lakeShoreWidth
         })) ?? undefined;
 
-        if (this.forest) this.scene.add(this.forest);
+        if (this.forest) {
+            this.scene.add(this.forest);
+            this.reapplyFog(); // the fresh layer defaults to all-Visible
+        }
     }
 
     //Tears down and recreates the grass field from the current grass* options
@@ -509,12 +562,17 @@ export class HexMap extends EventEmitter {
             bladeHeight: this.options.grassBladeHeight,
             windStrength: this.options.grassWindStrength,
             windSpeed: this.options.grassWindSpeed,
-            fogDarkenFactor: this.options.fogDarkenFactor
+            fogDarkenFactor: this.options.fogDarkenFactor,
+            riverWidth: this.options.riverWidth,
+            riverBankWidth: this.options.riverBankWidth,
+            riverCurvature: this.options.riverCurvature,
+            lakeShoreWidth: this.options.lakeShoreWidth
         }) ?? undefined;
 
         if (this.grass) {
             this.grass.visible = this.options.grassEnabled;
             this.scene.add(this.grass);
+            this.reapplyFog(); // the fresh layer defaults to all-Visible
         }
     }
 
@@ -528,11 +586,46 @@ export class HexMap extends EventEmitter {
     //Every tile defaults to Visible, so calling this is entirely optional; a
     //consumer that wants fog of war (e.g. GameEngine, when its own fogOfWar
     //option is on) drives it from unit positions/view ranges.
+    //
+    //The state is always recorded in fogStates, even while warFogVisible is
+    //false (the layers then just aren't repainted) - so consumers keep feeding
+    //fog updates as usual and re-showing the fog repaints everything current.
     //-------------------------------------------------------------------------
     public setTileFog(x: number, y: number, state: FogState): void {
+        this.fogStates.set(`${x},${y}`, state);
+        if (this.warFogShown) this.applyTileFog(x, y, state);
+    }
+
+    private applyTileFog(x: number, y: number, state: FogState): void {
         this.terrain?.setFogState(x, y, state);
         this.grass?.setFogState(x, y, state);
         this.forest?.setFogState(x, y, state);
+    }
+
+    //Repaints every recorded tile: its real state when the fog is shown, or
+    //Visible when it's hidden. Also called after any layer rebuild (see
+    //rebuildTerrain/rebuildForest/rebuildGrass) - a fresh layer's instanced
+    //attributes default to all-Visible, which silently dropped previously
+    //painted fog until the next consumer update.
+    private reapplyFog(): void {
+        for (const [key, state] of this.fogStates) {
+            const [x, y] = key.split(",").map(Number);
+            this.applyTileFog(x, y, this.warFogShown ? state : FogState.Visible);
+        }
+    }
+
+    //Purely visual show/hide of the war fog: hiding repaints every tile as
+    //Visible but keeps the recorded states (and keeps recording new ones from
+    //setTileFog), so re-showing restores the current fog exactly. A debug/
+    //"reveal map" convenience - it does not touch GameEngine's FogOfWar
+    //tracking, unit visibility or pathfinding.
+    public get warFogVisible(): boolean {
+        return this.warFogShown;
+    }
+    public set warFogVisible(value: boolean) {
+        if (this.warFogShown === value) return;
+        this.warFogShown = value;
+        this.reapplyFog();
     }
 
     public get gridVisible(): boolean {
@@ -545,18 +638,9 @@ export class HexMap extends EventEmitter {
     }
 
     //-------------------------------------------------------------------------
-    //Water animation - enabling/disabling is structural (see rebuildTerrain()),
-    //everything else here is a live shader uniform forwarded straight through
-    //to TerrainMesh, no rebuild needed.
+    //Water - live shader uniforms forwarded straight through to TerrainMesh,
+    //no rebuild needed.
     //-------------------------------------------------------------------------
-    public get waterAnimation(): boolean {
-        return this.options.waterAnimation;
-    }
-    public set waterAnimation(value: boolean) {
-        this.options.waterAnimation = value;
-        void this.rebuildTerrain();
-    }
-
     public get waterWaveAmplitude(): number {
         return this.terrain?.waterWaveAmplitude ?? this.options.waterWaveAmplitude;
     }
@@ -616,7 +700,7 @@ export class HexMap extends EventEmitter {
     //-------------------------------------------------------------------------
     //Coastal foam waves - all live shader uniforms forwarded to TerrainMesh,
     //no rebuild (the enable flag included: it's a uniform gate in the water
-    //fragment shader, not a structural change like waterAnimation).
+    //fragment shader).
     //-------------------------------------------------------------------------
     public get coastalWavesEnabled(): boolean {
         return this.terrain?.coastalWavesEnabled ?? this.options.coastalWavesEnabled;
@@ -715,6 +799,83 @@ export class HexMap extends EventEmitter {
     public set waterDepth(value: number) {
         this.options.waterDepth = value;
         if (this.terrain) this.terrain.waterDepth = value;
+    }
+
+    //-------------------------------------------------------------------------
+    //Rivers - all live shader uniforms on the land material, forwarded to
+    //TerrainMesh, no rebuild needed. Which tiles/edges carry a river is map
+    //data (the "river" modifier), not an option - see helpers/rivers.ts.
+    //-------------------------------------------------------------------------
+    public get riverWidth(): number {
+        return this.terrain?.riverWidth ?? this.options.riverWidth;
+    }
+    public set riverWidth(value: number) {
+        this.options.riverWidth = value;
+        if (this.terrain) this.terrain.riverWidth = value;
+    }
+
+    public get riverBankWidth(): number {
+        return this.terrain?.riverBankWidth ?? this.options.riverBankWidth;
+    }
+    public set riverBankWidth(value: number) {
+        this.options.riverBankWidth = value;
+        if (this.terrain) this.terrain.riverBankWidth = value;
+    }
+
+    public get riverCurvature(): number {
+        return this.terrain?.riverCurvature ?? this.options.riverCurvature;
+    }
+    public set riverCurvature(value: number) {
+        this.options.riverCurvature = value;
+        if (this.terrain) this.terrain.riverCurvature = value;
+    }
+
+    public get riverColorShallow(): ColorRepresentation {
+        return this.terrain?.riverColorShallow ?? this.options.riverColorShallow;
+    }
+    public set riverColorShallow(value: ColorRepresentation) {
+        this.options.riverColorShallow = value;
+        if (this.terrain) this.terrain.riverColorShallow = value;
+    }
+
+    public get riverColorDeep(): ColorRepresentation {
+        return this.terrain?.riverColorDeep ?? this.options.riverColorDeep;
+    }
+    public set riverColorDeep(value: ColorRepresentation) {
+        this.options.riverColorDeep = value;
+        if (this.terrain) this.terrain.riverColorDeep = value;
+    }
+
+    public get riverBankColor(): ColorRepresentation {
+        return this.terrain?.riverBankColor ?? this.options.riverBankColor;
+    }
+    public set riverBankColor(value: ColorRepresentation) {
+        this.options.riverBankColor = value;
+        if (this.terrain) this.terrain.riverBankColor = value;
+    }
+
+    public get riverFlowSpeed(): number {
+        return this.terrain?.riverFlowSpeed ?? this.options.riverFlowSpeed;
+    }
+    public set riverFlowSpeed(value: number) {
+        this.options.riverFlowSpeed = value;
+        if (this.terrain) this.terrain.riverFlowSpeed = value;
+    }
+
+    public get riverDepth(): number {
+        return this.terrain?.riverDepth ?? this.options.riverDepth;
+    }
+    public set riverDepth(value: number) {
+        this.options.riverDepth = value;
+        if (this.terrain) this.terrain.riverDepth = value;
+    }
+
+    public get lakeShoreWidth(): number {
+        return this.terrain?.lakeShoreWidth ?? this.options.lakeShoreWidth;
+    }
+    public set lakeShoreWidth(value: number) {
+        this.options.lakeShoreWidth = value;
+        if (this.terrain) this.terrain.lakeShoreWidth = value;
     }
 
     //-------------------------------------------------------------------------

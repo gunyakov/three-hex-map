@@ -20,6 +20,7 @@ import { MapInfo, TileInfo, Point } from "../interfaces";
 import { Land, LandPriority, LandColor } from "../enums";
 import { getHexCenter } from "../helpers/helpers";
 import { getNeighborCoords } from "../helpers/neighbors";
+import { waterEdgeValue } from "../helpers/rivers";
 import { createHexagonGeometry } from "./hexagonGeometry";
 import { makeTextSprite } from "./citysprite";
 import { loadModel } from "../helpers/models";
@@ -47,15 +48,12 @@ export interface TerrainMeshOptions {
     gridOpacity?: number;
     gridVisible?: boolean;
 
-    //If true (default), sea/coastal tiles render on their own animated layer with
-    //solid colors (waterColorShallow/Deep) - see shaders/water.*.ts. If false,
-    //water is just another flat, atlas-textured tile like land/sand/etc (no
-    //animation, no solid colors, no beach slope): the original, simplest look.
-    waterAnimation?: boolean;
+    //Sea/coastal tiles render on their own animated layer with solid colors
+    //(waterColorShallow/Deep) - see shaders/water.*.ts.
     waterColorShallow?: ColorRepresentation;
     waterColorDeep?: ColorRepresentation;
 
-    //Wave shape/animation fine-tuning (only used when waterAnimation is true).
+    //Wave shape/animation fine-tuning.
     waterWaveAmplitude?: number;
     waterWaveFrequency?: number;
     waterWaveSpeed?: number;
@@ -65,8 +63,7 @@ export interface TerrainMeshOptions {
     //Stylized coastal foam waves on land-adjacent water tiles (see the foam
     //section of shaders/water.fragment.ts): noise-distorted white bands
     //rolling towards the shore plus a solid lapping strip at the waterline.
-    //All plain uniforms (live-tunable, no rebuild); only drawn when
-    //waterAnimation is on, since the foam lives in the water shader.
+    //All plain uniforms (live-tunable, no rebuild).
     coastalWavesEnabled?: boolean;   // default true
     coastalWaveColor?: ColorRepresentation; // default 0xffffff
     coastalWaveCount?: number;       // bands per shore-to-center span, default 3
@@ -79,8 +76,7 @@ export interface TerrainMeshOptions {
     //How far below land (world units) the water plane rests, and how much of a
     //tile's radius the beach slope/color blend covers in total (0..1, split
     //evenly between the land and water tiles that share a coastal edge - see
-    //terrain.vertex.ts/water.vertex.ts). Both only take effect when
-    //waterAnimation is true.
+    //terrain.vertex.ts/water.vertex.ts).
     waterDepth?: number;
     beachWidth?: number;
 
@@ -92,6 +88,24 @@ export interface TerrainMeshOptions {
     //single coastal edge never gets rounded).
     landBlendWidth?: number;
     waterCornerRounding?: number;
+
+    //Rivers/lakes: land tiles with the "river"/"lake" modifier render animated
+    //water on the land layer - a channel through the hex (river) or a full
+    //water body with a grass shore rim (lake) - see helpers/rivers.ts for the
+    //connectivity rules and shaders/terrain.fragment.ts for the drawing. All
+    //of these are live land-material uniforms - no rebuild needed. Widths are
+    //fractions of the tile's radius; riverDepth is world units (how deep the
+    //bed sinks, like waterDepth). Colors default to waterColorShallow/Deep so
+    //rivers/lakes match the map's sea.
+    riverWidth?: number;         // default 0.28
+    riverBankWidth?: number;     // default 0.14
+    riverCurvature?: number;     // 0..1 noise bend of the banks, default 0.5
+    riverColorShallow?: ColorRepresentation;
+    riverColorDeep?: ColorRepresentation;
+    riverBankColor?: ColorRepresentation; // default 0xa8bf6a (light vegetation strip)
+    riverFlowSpeed?: number;     // ripple animation speed multiplier, default 1.0
+    riverDepth?: number;         // default waterDepth * 0.6
+    lakeShoreWidth?: number;     // lake grass rim inset from shored edges, default 0.18
 
     //City tiles (TileInfo.city) get a 3D model + text label instead of plain
     //terrain (see loadCities()). cityModel is a model folder path (see
@@ -127,6 +141,7 @@ interface InstanceAttributes {
     neighborsPriorityB: Float32Array;
     neighborsKindA: Float32Array;
     neighborsKindB: Float32Array;
+    riverEdges: Float32Array;
     fogState: Float32Array;
 }
 
@@ -148,9 +163,8 @@ interface CityFogEntry {
 //lines are drawn inside the fragment shaders instead of a RingGeometry mesh per
 //tile (old Grid.ts).
 //
-//Tiles are split into two layers/meshes when waterAnimation is on: a flat "land"
-//layer (grass/sand/tundra/snow, plus - if waterAnimation is off - sea/coastal too)
-//and an animated "water" layer (sea/coastal, see shaders/water.*.ts - sum-of-sines
+//Tiles are split into two layers/meshes: a flat "land" layer (grass/sand/
+//tundra/snow) and an animated "water" layer (sea/coastal, see shaders/water.*.ts - sum-of-sines
 //vertex displacement with analytically derived normals, no normal map, solid
 //colors instead of a texture). Both share the same per-tile neighbor/priority/
 //kind computation below. A future "mountain" layer (new Land value, own shader
@@ -168,7 +182,7 @@ interface CityFogEntry {
 //edge would blend both ways at once (a fuzzy halo on both sides of every
 //border instead of a single transition).
 //
-//When waterAnimation is on, coastal land tiles also sink their rim towards the
+//Coastal land tiles also sink their rim towards the
 //water plane's height (waterLevel) and blend to sand near it (see vBeachT in
 //terrain.vertex.ts/fragment.ts) - an actual 3D beach slope instead of a flat 2D
 //color blend against the water tile's color. neighborsKindA/B (-1 no tile, 0
@@ -187,12 +201,10 @@ export class TerrainMesh extends Group {
     private map: MapInfo;
     private atlasCellIndex: { [type: string]: number } = {};
     private clock = 0;
-    private waterAnimationEnabled: boolean;
 
     constructor(map: MapInfo, private options: TerrainMeshOptions) {
         super();
         this.map = map;
-        this.waterAnimationEnabled = options.waterAnimation !== false;
         this.buildAtlasCellIndex();
         this.fogTexture = this.loadFogTexture();
 
@@ -204,12 +216,8 @@ export class TerrainMesh extends Group {
         }
 
         const isWater = (tile: Point) => WATER_TYPES.includes(this.map.data[tile.x][tile.y].type);
-        if (this.waterAnimationEnabled) {
-            this.buildLandLayer(allTiles.filter(t => !isWater(t)));
-            this.buildWaterLayer(allTiles.filter(isWater));
-        } else {
-            this.buildLandLayer(allTiles);
-        }
+        this.buildLandLayer(allTiles.filter(t => !isWater(t)));
+        this.buildWaterLayer(allTiles.filter(isWater));
     }
 
     private buildAtlasCellIndex(): void {
@@ -241,11 +249,8 @@ export class TerrainMesh extends Group {
     }
 
     //-1 no tile, 0 non-water, 1 sea, 2 coastal - drives the land layer's beach
-    //slope and the water layer's edge-color resolution (see shaders). Always 0
-    //when waterAnimation is off, so no slope/solid-color logic ever triggers
-    //and everything renders exactly like the flat, atlas-only original.
+    //slope and the water layer's edge-color resolution (see shaders).
     private kindFor(x: number, y: number): number {
-        if (!this.waterAnimationEnabled) return 0;
         const row = this.map.data[x];
         const tile: TileInfo | undefined = row ? row[y] : undefined;
         if (!tile) return -1;
@@ -267,6 +272,7 @@ export class TerrainMesh extends Group {
             neighborsPriorityB: new Float32Array(tiles.length * 3),
             neighborsKindA: new Float32Array(tiles.length * 3),
             neighborsKindB: new Float32Array(tiles.length * 3),
+            riverEdges: new Float32Array(tiles.length),
             fogState: new Float32Array(tiles.length).fill(2) // default Visible - see FogOfWar.ts
         };
 
@@ -311,6 +317,8 @@ export class TerrainMesh extends Group {
             attrs.neighborsKindB[i * 3 + 0] = this.kindFor(nw.x, nw.y);
             attrs.neighborsKindB[i * 3 + 1] = this.kindFor(n.x, n.y);
             attrs.neighborsKindB[i * 3 + 2] = this.kindFor(ne.x, ne.y);
+
+            attrs.riverEdges[i] = waterEdgeValue(this.map, tile.x, tile.y);
         });
 
         return attrs;
@@ -333,6 +341,7 @@ export class TerrainMesh extends Group {
         geometry.setAttribute("neighborsPriorityB", new InstancedBufferAttribute(attrs.neighborsPriorityB, 3));
         geometry.setAttribute("neighborsKindA", new InstancedBufferAttribute(attrs.neighborsKindA, 3));
         geometry.setAttribute("neighborsKindB", new InstancedBufferAttribute(attrs.neighborsKindB, 3));
+        geometry.setAttribute("riverEdges", new InstancedBufferAttribute(attrs.riverEdges, 1));
         geometry.setAttribute("fogState", new InstancedBufferAttribute(attrs.fogState, 1));
 
         return geometry;
@@ -403,6 +412,16 @@ export class TerrainMesh extends Group {
             uniforms: {
                 map: { value: this.loadAtlasTexture() },
                 landBlendWidth: { value: this.options.landBlendWidth ?? 0.5 },
+                uTime: { value: 0 },
+                riverWidth: { value: this.options.riverWidth ?? 0.28 },
+                riverBankWidth: { value: this.options.riverBankWidth ?? 0.14 },
+                riverCurvature: { value: this.options.riverCurvature ?? 0.5 },
+                riverColorShallow: { value: new Color(this.options.riverColorShallow ?? this.options.waterColorShallow ?? LandColor[Land.coastal]) },
+                riverColorDeep: { value: new Color(this.options.riverColorDeep ?? this.options.waterColorDeep ?? LandColor[Land.sea]) },
+                riverBankColor: { value: new Color(this.options.riverBankColor ?? 0xa8bf6a) },
+                riverFlowSpeed: { value: this.options.riverFlowSpeed ?? 1.0 },
+                riverDepth: { value: this.options.riverDepth ?? (this.options.waterDepth ?? this.options.size * 0.25) * 0.6 },
+                lakeShoreWidth: { value: this.options.lakeShoreWidth ?? 0.18 },
                 ...this.commonUniforms()
             },
             vertexShader: TERRAIN_VERTEX_SHADER,
@@ -519,12 +538,13 @@ export class TerrainMesh extends Group {
         }
     }
 
-    //Advances the water animation. `dtS` is the elapsed time in seconds since
-    //the previous frame - call this once per frame (see HexMap's render loop).
+    //Advances the water/river animation. `dtS` is the elapsed time in seconds
+    //since the previous frame - call this once per frame (see HexMap's render
+    //loop). The land material's clock drives river ripples (terrain.fragment.ts).
     public update(dtS: number): void {
-        if (!this.waterMaterial) return;
         this.clock += dtS;
-        this.waterMaterial.uniforms.uTime.value = this.clock;
+        if (this.waterMaterial) this.waterMaterial.uniforms.uTime.value = this.clock;
+        if (this.landMaterial) this.landMaterial.uniforms.uTime.value = this.clock;
     }
 
     public get gridVisible(): boolean {
@@ -539,8 +559,7 @@ export class TerrainMesh extends Group {
 
     //-------------------------------------------------------------------------
     //Live shader-uniform tuning knobs, for a GUI to adjust without rebuilding
-    //the map (unlike waterAnimation itself, which changes tile layer grouping
-    //and so needs a full TerrainMesh rebuild - see HexMap.rebuildTerrain()).
+    //the map.
     //beachWidth/waterDepth exist as separate uniform objects on landMaterial
     //and waterMaterial each (commonUniforms() is called once per material, not
     //shared), so both setters below write to both.
@@ -550,6 +569,71 @@ export class TerrainMesh extends Group {
     }
     public set landBlendWidth(value: number) {
         if (this.landMaterial) this.landMaterial.uniforms.landBlendWidth.value = value;
+    }
+
+    //River channel knobs - all live uniforms on the land material (rivers are
+    //drawn by the land layer's shaders).
+    public get riverWidth(): number {
+        return this.landMaterial?.uniforms.riverWidth.value ?? 0.28;
+    }
+    public set riverWidth(value: number) {
+        if (this.landMaterial) this.landMaterial.uniforms.riverWidth.value = value;
+    }
+
+    public get riverBankWidth(): number {
+        return this.landMaterial?.uniforms.riverBankWidth.value ?? 0.14;
+    }
+    public set riverBankWidth(value: number) {
+        if (this.landMaterial) this.landMaterial.uniforms.riverBankWidth.value = value;
+    }
+
+    public get riverCurvature(): number {
+        return this.landMaterial?.uniforms.riverCurvature.value ?? 0.5;
+    }
+    public set riverCurvature(value: number) {
+        if (this.landMaterial) this.landMaterial.uniforms.riverCurvature.value = value;
+    }
+
+    public get riverColorShallow(): number {
+        return (this.landMaterial?.uniforms.riverColorShallow.value as Color)?.getHex() ?? 0;
+    }
+    public set riverColorShallow(value: ColorRepresentation) {
+        (this.landMaterial?.uniforms.riverColorShallow.value as Color)?.set(value);
+    }
+
+    public get riverColorDeep(): number {
+        return (this.landMaterial?.uniforms.riverColorDeep.value as Color)?.getHex() ?? 0;
+    }
+    public set riverColorDeep(value: ColorRepresentation) {
+        (this.landMaterial?.uniforms.riverColorDeep.value as Color)?.set(value);
+    }
+
+    public get riverBankColor(): number {
+        return (this.landMaterial?.uniforms.riverBankColor.value as Color)?.getHex() ?? 0xa8bf6a;
+    }
+    public set riverBankColor(value: ColorRepresentation) {
+        (this.landMaterial?.uniforms.riverBankColor.value as Color)?.set(value);
+    }
+
+    public get riverFlowSpeed(): number {
+        return this.landMaterial?.uniforms.riverFlowSpeed.value ?? 1.0;
+    }
+    public set riverFlowSpeed(value: number) {
+        if (this.landMaterial) this.landMaterial.uniforms.riverFlowSpeed.value = value;
+    }
+
+    public get riverDepth(): number {
+        return this.landMaterial?.uniforms.riverDepth.value ?? this.options.size * 0.15;
+    }
+    public set riverDepth(value: number) {
+        if (this.landMaterial) this.landMaterial.uniforms.riverDepth.value = value;
+    }
+
+    public get lakeShoreWidth(): number {
+        return this.landMaterial?.uniforms.lakeShoreWidth.value ?? 0.18;
+    }
+    public set lakeShoreWidth(value: number) {
+        if (this.landMaterial) this.landMaterial.uniforms.lakeShoreWidth.value = value;
     }
 
     public get waterCornerRounding(): number {
@@ -633,8 +717,7 @@ export class TerrainMesh extends Group {
     }
 
     //Coastal foam waves - all plain uniforms on the water material, so
-    //toggling/tuning is live (unlike waterAnimation itself, which is
-    //structural - see HexMap.rebuildTerrain()).
+    //toggling/tuning is live.
     public get coastalWavesEnabled(): boolean {
         return (this.waterMaterial?.uniforms.foamEnabled.value ?? 1.0) > 0.5;
     }

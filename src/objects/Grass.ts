@@ -14,6 +14,7 @@ import pointInPolygon from "robust-point-in-polygon";
 import { getRandomInt, HEXPolygon, getHexCenter } from "../helpers/helpers";
 import { MapInfo } from "../interfaces";
 import { Land } from "../enums";
+import { waterEdgeValue, isInTileWater, isLakeTile, WaterClearanceOptions } from "../helpers/rivers";
 import { GRASS_VERTEX_SHADER } from "../shaders/grass.vertex";
 import { GRASS_FRAGMENT_SHADER } from "../shaders/grass.fragment";
 
@@ -28,6 +29,15 @@ export interface GrassOptions {
     colorBase?: ColorRepresentation; // root color, default a darker green
     colorTip?: ColorRepresentation;  // tip color, default a lighter green
     fogDarkenFactor?: number; // color multiplier for Explored fog tiles, default 0.45 - see FogOfWar.ts
+
+    //River/lake water clearance (see helpers/rivers.ts's isInTileWater):
+    //blades sit at a flat y=0 baseline, so anything inside the painted water
+    //(including its noise-bent bulges) would stand in the river/lake. Same
+    //fractions-of-tile-radius values as the map's options - keep them in sync.
+    riverWidth?: number;     // default 0.28
+    riverBankWidth?: number; // default 0.14
+    riverCurvature?: number; // default 0.5
+    lakeShoreWidth?: number; // default 0.18
 }
 
 interface TileBladeRange { start: number, count: number }
@@ -138,11 +148,15 @@ export function createGrassField(map: MapInfo, options: GrassOptions): GrassFiel
     const windStrength = options.windStrength ?? bladeHeight * 0.35;
     const windSpeed = options.windSpeed ?? 1.2;
 
+    //Lake tiles are skipped outright: with the waterline's noise wobble the
+    //remaining dry shore rim is too thin to reliably place blades in (and the
+    //10-attempt rejection fallback below would end up dropping them in the
+    //water). River tiles keep their grass - the banks are wide enough.
     const tiles: { x: number, y: number }[] = [];
     for (let x = 0; x < map.w; x++) {
         for (let y = 0; y < map.h; y++) {
             const tile = map.data[x]?.[y];
-            if (tile?.type === Land.land && !tile.city) tiles.push({ x, y });
+            if (tile?.type === Land.land && !tile.city && !isLakeTile(tile)) tiles.push({ x, y });
         }
     }
     if (tiles.length === 0) return null;
@@ -153,6 +167,16 @@ export function createGrassField(map: MapInfo, options: GrassOptions): GrassFiel
     // blades floating above/poking through that sunken edge.
     const polygon = HEXPolygon({ x: 0, y: 0 }, size * 0.8).map(p => [p.x, p.y]);
     const totalBlades = tiles.length * density;
+
+    // On river tiles, keep blades out of the water (its maximum noise-bent
+    // reach included - see isInTileWater). Blades landing in the outer bank
+    // strip are fine - it's a vegetation band.
+    const waterOptions: WaterClearanceOptions = {
+        riverWidth: options.riverWidth ?? 0.28,
+        riverBankWidth: options.riverBankWidth ?? 0.14,
+        riverCurvature: options.riverCurvature ?? 0.5,
+        lakeShoreWidth: options.lakeShoreWidth ?? 0.18
+    };
 
     const offsets = new Float32Array(totalBlades * 2);
     const angles = new Float32Array(totalBlades);
@@ -167,14 +191,24 @@ export function createGrassField(map: MapInfo, options: GrassOptions): GrassFiel
     for (const tile of tiles) {
         const center = getHexCenter(tile.x, tile.y, size);
         const tileStart = instance;
+        const waterValue = waterEdgeValue(map, tile.x, tile.y); // -1 = no water, isInTileWater is then always false
 
         for (let i = 0; i < density; i++) {
-            let lx = 0, ly = 0, attempts = 0;
-            do {
+            let lx = 0, ly = 0, attempts = 0, valid = false;
+            while (!valid && attempts < 20) {
                 lx = getRandomInt(-size, size);
                 ly = getRandomInt(-size, size);
+                valid = pointInPolygon(polygon, [lx, ly]) === -1 // -1 = inside the polygon
+                    && !isInTileWater(lx, ly, waterValue, size, waterOptions);
                 attempts++;
-            } while (pointInPolygon(polygon, [lx, ly]) !== -1 && attempts < 10);
+            }
+            // No dry spot found - DROP the blade rather than placing it at the
+            // last attempt's position: on river tiles the water covers enough
+            // of the hex that the old "place it anyway" fallback dumped a few
+            // blades per tile straight into the channel. The instanced arrays
+            // are simply left oversized; instanceCount below only covers what
+            // was actually placed.
+            if (!valid) continue;
 
             offsets[instance * 2 + 0] = center.x + lx;
             offsets[instance * 2 + 1] = center.y + ly;

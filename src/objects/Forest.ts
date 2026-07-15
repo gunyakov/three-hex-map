@@ -12,6 +12,7 @@ import pointInPolygon from "robust-point-in-polygon";
 import { getRandomInt, HEXPolygon, getHexCenter } from "../helpers/helpers";
 import { loadModel } from "../helpers/models";
 import { MapInfo, Point } from "../interfaces";
+import { waterEdgeValue, isInTileWater, isLakeTile, WaterClearanceOptions } from "../helpers/rivers";
 
 export interface ForestOptions {
     size: number;
@@ -19,6 +20,16 @@ export interface ForestOptions {
     treeModel?: string; // model folder path (see helpers/models.ts), default "Assets/models/pinia"
     treeScale?: number; // extra multiplier on top of the model's own info.json scale, default 1
     fogDarkenFactor?: number; // instance-color multiplier for Explored fog tiles, default 0.45 - see FogOfWar.ts
+
+    //River/lake water clearance on wood+river tiles (see helpers/rivers.ts's
+    //isInTileWater and GrassOptions' matching fields): trees sit at y=0, so
+    //anything inside the painted water (noise-bent bulges included) would
+    //stand in the river/lake. Same fractions-of-tile-radius values as the
+    //map's options - keep them in sync.
+    riverWidth?: number;     // default 0.28
+    riverBankWidth?: number; // default 0.14
+    riverCurvature?: number; // default 0.5
+    lakeShoreWidth?: number; // default 0.18
 }
 
 //Instances belonging to one tile's trees, all drawn by the same model group's
@@ -89,11 +100,15 @@ export async function createForest(map: MapInfo, options: ForestOptions): Promis
     const treeScale = options.treeScale ?? 1;
     const fogDarkenFactor = options.fogDarkenFactor ?? 0.45;
 
+    //Wood is a tile *modifier* (TileInfo.modifiers, like "river"/"lake"/
+    //"hill"), not its own field. Lake tiles are skipped even if marked wood -
+    //the dry shore rim is too thin to reliably place trees in (see Grass.ts's
+    //matching skip).
     const tilesByModel = new Map<string, Point[]>();
     for (let x = 0; x < map.w; x++) {
         for (let y = 0; y < map.h; y++) {
             const tile = map.data[x]?.[y];
-            if (!tile?.wood) continue;
+            if (!tile?.modifiers?.includes("wood") || isLakeTile(tile)) continue;
             const modelPath = tile.treeModel ?? defaultModel;
             const tiles = tilesByModel.get(modelPath) ?? [];
             tiles.push({ x, y });
@@ -105,6 +120,12 @@ export async function createForest(map: MapInfo, options: ForestOptions): Promis
     // polygon slightly shrunk from the hex boundary, same as the old WOOD()
     const treeFootprint = Math.max(1, Math.round(size / 10));
     const polygon = HEXPolygon({ x: 0, y: 0 }, size - treeFootprint).map(p => [p.x, p.y]);
+    const waterOptions: WaterClearanceOptions = {
+        riverWidth: options.riverWidth ?? 0.28,
+        riverBankWidth: options.riverBankWidth ?? 0.14,
+        riverCurvature: options.riverCurvature ?? 0.5,
+        lakeShoreWidth: options.lakeShoreWidth ?? 0.18
+    };
 
     const tileRanges = new Map<string, TileTreeRange>();
     const group = new ForestField(tileRanges, fogDarkenFactor);
@@ -139,6 +160,7 @@ export async function createForest(map: MapInfo, options: ForestOptions): Promis
             const tileStart = instance;
             const originalMatrices: Matrix4[] = [];
             let attempts = 0;
+            const waterValue = waterEdgeValue(map, tile.x, tile.y); // -1 = no water, isInTileWater is then always false
 
             while (placed.length < treesPerTile && attempts < treesPerTile * 20) {
                 attempts++;
@@ -146,6 +168,7 @@ export async function createForest(map: MapInfo, options: ForestOptions): Promis
                 const ly = getRandomInt(-size, size);
 
                 if (pointInPolygon(polygon, [lx, ly]) !== -1) continue; // -1 = inside the polygon
+                if (isInTileWater(lx, ly, waterValue, size, waterOptions)) continue; // keep trees out of river/lake water
 
                 const overlaps = placed.some(p => Math.abs(p.x - lx) < treeFootprint && Math.abs(p.y - ly) < treeFootprint);
                 if (overlaps) continue;

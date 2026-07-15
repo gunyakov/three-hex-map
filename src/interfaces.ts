@@ -30,16 +30,21 @@ export interface CityInfo {
 //Tile info interface
 //`type` is intentionally not closed to today's 6 Land values only in spirit - new
 //terrain types (e.g. "mountain") are added to the Land enum as they're implemented.
-//`modifiers` is a free-form flag list (e.g. ["hill"]) so new modifiers don't require
-//core library changes, only additions to the atlas/shader config that reads them.
-//`treeModel` (only meaningful when `wood` is true) is a model folder path just
-//like city.model above - which tree species/asset to scatter on this specific
-//tile, falling back to HexMapOptions' treeModel if not set.
+//`modifiers` is a free-form flag list so new modifiers don't require core library
+//changes, only additions to the atlas/shader config that reads them. Current ones:
+//  "hill"  - raised-looking tile (style attribute, see TerrainMesh)
+//  "wood"  - scatters tree models on the tile (see Forest.ts)
+//  "river" - (on a Land.land tile) an animated water channel through the hex,
+//            auto-connected to neighboring river/lake/sea/coastal tiles
+//  "lake"  - (on a Land.land tile) water fills the hex except a grass shore rim;
+//            neighboring lake tiles merge into one body - see helpers/rivers.ts
+//`treeModel` (only meaningful with the "wood" modifier) is a model folder path
+//just like city.model above - which tree species/asset to scatter on this
+//specific tile, falling back to HexMapOptions' treeModel if not set.
 //----------------------------------------------------------------------------------
 export interface TileInfo {
     type: Land,
     modifiers?: string[],
-    wood: boolean,
     treeModel?: string,
     rivers?: RiverSegment[],
     unit?: string,

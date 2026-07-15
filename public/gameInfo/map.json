@@ -2,1074 +2,833 @@
   "data": {
     "0": {
       "0": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "1": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "2": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "3": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "4": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "5": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "6": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "7": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "8": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "9": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "10": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "11": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "12": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "13": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "14": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "15": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "16": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "17": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "18": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "19": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "20": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "21": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "22": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "23": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "24": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "25": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "26": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "27": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "28": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "29": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "30": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "31": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "32": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "33": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       }
     },
     "1": {
       "0": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "1": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "2": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "3": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "4": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "5": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "6": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "7": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "8": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "9": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "10": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "11": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "12": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "13": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "14": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "15": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "16": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "17": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "18": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "19": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "20": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "21": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "22": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "23": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "24": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "25": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "26": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "27": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "28": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "29": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "30": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "31": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "32": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "33": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "34": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       }
     },
     "2": {
       "0": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "1": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "2": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "3": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "4": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "5": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "6": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "7": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "8": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "9": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "10": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "11": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "12": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "13": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "14": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "15": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "16": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "17": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "18": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "19": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "20": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "21": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "22": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "23": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "24": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "25": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "26": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "27": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "28": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "29": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "30": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "31": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "32": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "33": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       }
     },
     "3": {
       "0": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "1": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "2": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "3": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "4": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "5": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "6": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "7": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "8": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "9": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "10": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "11": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "12": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "13": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "14": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "15": {
         "type": "coastal",
-        "wood": false,
         "unit": "viking_boat"
       },
       "16": {
         "type": "land",
-        "wood": true,
-        "treeModel": "Assets/models/palm"
+        "treeModel": "Assets/models/palm",
+        "modifiers": [
+          "wood"
+        ]
       },
       "17": {
         "type": "land",
-        "wood": true,
-        "treeModel": "Assets/models/pinia"
+        "treeModel": "Assets/models/pinia",
+        "modifiers": [
+          "wood"
+        ]
       },
       "18": {
         "type": "land",
-        "wood": true,
-        "treeModel": "Assets/models/palm"
+        "treeModel": "Assets/models/palm",
+        "modifiers": [
+          "wood"
+        ]
       },
       "19": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "20": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "21": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "22": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "23": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "24": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "25": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "26": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "27": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "28": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "29": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "30": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "31": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "32": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "33": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "34": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       }
     },
     "4": {
       "0": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "1": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "2": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "3": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "4": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "5": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "6": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "7": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "8": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "9": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "10": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "11": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "12": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "13": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "14": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "15": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "16": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "17": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "18": {
         "type": "land",
-        "wood": true,
-        "treeModel": "Assets/models/palm"
+        "treeModel": "Assets/models/palm",
+        "modifiers": [
+          "wood"
+        ]
       },
       "19": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "20": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "21": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "22": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "23": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "24": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "25": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "26": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "27": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "28": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "29": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "30": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "31": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "32": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "33": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       }
     },
     "5": {
       "0": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "1": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "2": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "3": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "4": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "5": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "6": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "7": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "8": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "9": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "10": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "11": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "12": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "13": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "14": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "15": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "16": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "17": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "18": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "19": {
         "type": "land",
-        "wood": true,
-        "treeModel": "Assets/models/oak"
+        "treeModel": "Assets/models/oak",
+        "modifiers": [
+          "wood"
+        ]
       },
       "20": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "21": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "22": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "23": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "24": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "25": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "26": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "27": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "28": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "29": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "30": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "31": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "32": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "33": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "34": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       }
     },
     "6": {
       "0": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "1": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "2": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "3": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "4": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "5": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "6": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "7": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "8": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "9": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "10": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "11": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "12": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "13": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "14": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "15": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "16": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "17": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "18": {
         "type": "land",
-        "wood": true,
-        "treeModel": "Assets/models/oak"
+        "treeModel": "Assets/models/oak",
+        "modifiers": [
+          "wood"
+        ]
       },
       "19": {
         "type": "land",
-        "wood": true,
-        "treeModel": "Assets/models/palm"
+        "treeModel": "Assets/models/palm",
+        "modifiers": [
+          "wood"
+        ]
       },
       "20": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "21": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "22": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "23": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "24": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "25": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "26": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "27": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "28": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "29": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "30": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "31": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "32": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "33": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       }
     },
     "7": {
       "0": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "1": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "2": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "3": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "4": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "5": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "6": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "7": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "8": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "9": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "10": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "11": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "12": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "13": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "14": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "15": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "16": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "17": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "18": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "19": {
-        "type": "tundra",
-        "wood": false
+        "type": "tundra"
       },
       "20": {
         "type": "land",
-        "wood": false,
         "city": {
           "name": "City 12",
           "model": "Assets/models/monument",
@@ -1078,1656 +837,1280 @@
       },
       "21": {
         "type": "land",
-        "wood": true,
-        "treeModel": "Assets/models/oak"
+        "treeModel": "Assets/models/oak",
+        "modifiers": [
+          "wood"
+        ]
       },
       "22": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "23": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "24": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "25": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "26": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "27": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "28": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "29": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "30": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "31": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "32": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "33": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "34": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       }
     },
     "8": {
       "0": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "1": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "2": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "3": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "4": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "5": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "6": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "7": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "8": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "9": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "10": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "11": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "12": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "13": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "14": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "15": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "16": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "17": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "18": {
-        "type": "tundra",
-        "wood": false
+        "type": "tundra"
       },
       "19": {
-        "type": "tundra",
-        "wood": false
+        "type": "tundra"
       },
       "20": {
-        "type": "tundra",
-        "wood": false
+        "type": "tundra"
       },
       "21": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "22": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "23": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "24": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "25": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "26": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "27": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "28": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "29": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "30": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "31": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "32": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "33": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       }
     },
     "9": {
       "0": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "1": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "2": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "3": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "4": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "5": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "6": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "7": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "8": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "9": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "10": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "11": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "12": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "13": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "14": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "15": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "16": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "17": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "18": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "19": {
-        "type": "tundra",
-        "wood": false
+        "type": "tundra"
       },
       "20": {
-        "type": "tundra",
-        "wood": false
+        "type": "tundra"
       },
       "21": {
-        "type": "snow",
-        "wood": false
+        "type": "snow"
       },
       "22": {
-        "type": "snow",
-        "wood": false
+        "type": "snow"
       },
       "23": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "24": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "25": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "26": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "27": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "28": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "29": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "30": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "31": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "32": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "33": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "34": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       }
     },
     "10": {
       "0": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "1": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "2": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "3": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "4": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "5": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "6": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "7": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "8": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "9": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "10": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "11": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "12": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "13": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "14": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "15": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "16": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "17": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "18": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "19": {
-        "type": "tundra",
-        "wood": false
+        "type": "tundra"
       },
       "20": {
-        "type": "tundra",
-        "wood": false
+        "type": "tundra"
       },
       "21": {
-        "type": "snow",
-        "wood": false
+        "type": "snow"
       },
       "22": {
-        "type": "snow",
-        "wood": false
+        "type": "snow"
       },
       "23": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "24": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "25": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "26": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "27": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "28": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "29": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "30": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "31": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "32": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "33": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       }
     },
     "11": {
       "0": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "1": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "2": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "3": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "4": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "5": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "6": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "7": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "8": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "9": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "10": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "11": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "12": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "13": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "14": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "15": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "16": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "17": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "18": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "19": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "20": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "21": {
-        "type": "snow",
-        "wood": false
+        "type": "snow"
       },
       "22": {
-        "type": "snow",
-        "wood": false
+        "type": "snow"
       },
       "23": {
-        "type": "snow",
-        "wood": false
+        "type": "snow"
       },
       "24": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "25": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "26": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "27": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "28": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "29": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "30": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "31": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "32": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "33": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "34": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       }
     },
     "12": {
       "0": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "1": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "2": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "3": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "4": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "5": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "6": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "7": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "8": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "9": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "10": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "11": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "12": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "13": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "14": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "15": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "16": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "17": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "18": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "19": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "20": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "21": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "22": {
-        "type": "snow",
-        "wood": false
+        "type": "snow"
       },
       "23": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "24": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "25": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "26": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "27": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "28": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "29": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "30": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "31": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "32": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "33": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       }
     },
     "13": {
       "0": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "1": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "2": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "3": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "4": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "5": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "6": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "7": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "8": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "9": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "10": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "11": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "12": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "13": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "14": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "15": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "16": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "17": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "18": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "19": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "20": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "21": {
         "type": "land",
-        "wood": true,
-        "treeModel": "Assets/models/palm"
+        "treeModel": "Assets/models/palm",
+        "modifiers": [
+          "wood"
+        ]
       },
       "22": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "23": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "24": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "25": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "26": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "27": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "28": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "29": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "30": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "31": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "32": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "33": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "34": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       }
     },
     "14": {
       "0": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "1": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "2": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "3": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "4": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "5": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "6": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "7": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "8": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "9": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "10": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "11": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "12": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "13": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "14": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "15": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "16": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "17": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "18": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "19": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "20": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "21": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "22": {
         "type": "land",
-        "wood": false,
         "city": {
           "name": "City 9",
           "model": "Assets/models/monument"
         }
       },
       "23": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "24": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "25": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "26": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "27": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "28": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "29": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "30": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "31": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "32": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "33": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       }
     },
     "15": {
       "0": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "1": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "2": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "3": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "4": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "5": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "6": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "7": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "8": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "9": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "10": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "11": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "12": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "13": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "14": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "15": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "16": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "17": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "18": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "19": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "20": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "21": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "22": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "23": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "24": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "25": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "26": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "27": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "28": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "29": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "30": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "31": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "32": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "33": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "34": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       }
     },
     "16": {
       "0": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "1": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "2": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "3": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "4": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "5": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "6": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "7": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "8": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "9": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "10": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "11": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "12": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "13": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "14": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "15": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "16": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "17": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "18": {
         "type": "land",
-        "wood": true,
-        "treeModel": "Assets/models/pinia"
+        "treeModel": "Assets/models/pinia",
+        "modifiers": [
+          "wood"
+        ]
       },
       "19": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "20": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "21": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "22": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "23": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "24": {
         "type": "land",
-        "wood": true,
-        "treeModel": "Assets/models/pinia"
+        "treeModel": "Assets/models/pinia",
+        "modifiers": [
+          "wood"
+        ]
       },
       "25": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "26": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "27": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "28": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "29": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "30": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "31": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "32": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "33": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       }
     },
     "17": {
       "0": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "1": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "2": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "3": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "4": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "5": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "6": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "7": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "8": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "9": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "10": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "11": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "12": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "13": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "14": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "15": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "16": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "17": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "18": {
         "type": "land",
-        "wood": true,
-        "treeModel": "Assets/models/pinia"
+        "treeModel": "Assets/models/pinia",
+        "modifiers": [
+          "wood"
+        ]
       },
       "19": {
-        "type": "tundra",
-        "wood": false
+        "type": "tundra"
       },
       "20": {
-        "type": "tundra",
-        "wood": false
+        "type": "tundra"
       },
       "21": {
-        "type": "tundra",
-        "wood": false
+        "type": "tundra"
       },
       "22": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "23": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "24": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "25": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "26": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "27": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "28": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "29": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "30": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "31": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "32": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "33": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "34": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       }
     },
     "18": {
       "0": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "1": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "2": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "3": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "4": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "5": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "6": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "7": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "8": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "9": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "10": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "11": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "12": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "13": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "14": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "15": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "16": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "17": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "18": {
-        "type": "tundra",
-        "wood": false
+        "type": "tundra"
       },
       "19": {
-        "type": "tundra",
-        "wood": false
+        "type": "tundra"
       },
       "20": {
-        "type": "tundra",
-        "wood": false
+        "type": "tundra"
       },
       "21": {
-        "type": "tundra",
-        "wood": false
+        "type": "tundra"
       },
       "22": {
         "type": "land",
-        "wood": true,
-        "treeModel": "Assets/models/oak"
+        "treeModel": "Assets/models/oak",
+        "modifiers": [
+          "wood"
+        ]
       },
       "23": {
         "type": "land",
-        "wood": true,
-        "treeModel": "Assets/models/pinia"
+        "treeModel": "Assets/models/pinia",
+        "modifiers": [
+          "wood"
+        ]
       },
       "24": {
         "type": "land",
-        "wood": true,
-        "treeModel": "Assets/models/oak"
+        "treeModel": "Assets/models/oak",
+        "modifiers": [
+          "river",
+          "wood"
+        ]
       },
       "25": {
         "type": "land",
-        "wood": true,
-        "treeModel": "Assets/models/pinia"
+        "treeModel": "Assets/models/pinia",
+        "modifiers": [
+          "wood"
+        ]
       },
       "26": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "27": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "28": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "29": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "30": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "31": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "32": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "33": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       }
     },
     "19": {
       "0": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "1": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "2": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "3": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "4": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "5": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "6": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "7": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "8": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "9": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "10": {
         "type": "land",
-        "wood": false,
         "city": {
           "name": "City 6",
           "model": "Assets/models/monument",
@@ -2735,33 +2118,29 @@
         }
       },
       "11": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "12": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "13": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "14": {
         "type": "land",
-        "wood": true,
-        "treeModel": "Assets/models/palm"
+        "treeModel": "Assets/models/palm",
+        "modifiers": [
+          "wood"
+        ]
       },
       "15": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "16": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "17": {
         "type": "land",
-        "wood": false,
         "city": {
           "name": "City 4",
           "model": "Assets/models/monument",
@@ -2769,32 +2148,25 @@
         }
       },
       "18": {
-        "type": "tundra",
-        "wood": false
+        "type": "tundra"
       },
       "19": {
-        "type": "tundra",
-        "wood": false
+        "type": "tundra"
       },
       "20": {
-        "type": "tundra",
-        "wood": false
+        "type": "tundra"
       },
       "21": {
-        "type": "tundra",
-        "wood": false
+        "type": "tundra"
       },
       "22": {
-        "type": "tundra",
-        "wood": false
+        "type": "tundra"
       },
       "23": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "24": {
         "type": "land",
-        "wood": false,
         "city": {
           "name": "City 3",
           "model": "Assets/models/monument"
@@ -2802,529 +2174,438 @@
       },
       "25": {
         "type": "land",
-        "wood": false
+        "modifiers": [
+          "river"
+        ]
       },
       "26": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "27": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "28": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "29": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "30": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "31": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "32": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "33": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "34": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       }
     },
     "20": {
       "0": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "1": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "2": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "3": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "4": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "5": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "6": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "7": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "8": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "9": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "10": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "11": {
         "type": "land",
-        "wood": true,
-        "treeModel": "Assets/models/pinia"
+        "treeModel": "Assets/models/pinia",
+        "modifiers": [
+          "wood"
+        ]
       },
       "12": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "13": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "14": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "15": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "16": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "17": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "18": {
-        "type": "tundra",
-        "wood": false
+        "type": "tundra"
       },
       "19": {
-        "type": "tundra",
-        "wood": false
+        "type": "tundra"
       },
       "20": {
-        "type": "tundra",
-        "wood": false
+        "type": "tundra"
       },
       "21": {
-        "type": "tundra",
-        "wood": false
+        "type": "tundra"
       },
       "22": {
         "type": "land",
-        "wood": false
+        "modifiers": [
+          "river"
+        ]
       },
       "23": {
         "type": "land",
-        "wood": false
+        "modifiers": [
+          "river"
+        ]
       },
       "24": {
         "type": "land",
-        "wood": false
+        "modifiers": [
+          "river"
+        ]
       },
       "25": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "26": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "27": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "28": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "29": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "30": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "31": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "32": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "33": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       }
     },
     "21": {
       "0": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "1": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "2": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "3": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "4": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "5": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "6": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "7": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "8": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "9": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "10": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "11": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "12": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "13": {
         "type": "land",
-        "wood": true,
-        "treeModel": "Assets/models/palm"
+        "treeModel": "Assets/models/palm",
+        "modifiers": [
+          "wood"
+        ]
       },
       "14": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "15": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "16": {
-        "type": "sand",
-        "wood": false
+        "type": "sand"
       },
       "17": {
-        "type": "sand",
-        "wood": false
+        "type": "sand"
       },
       "18": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "19": {
-        "type": "tundra",
-        "wood": false
+        "type": "tundra"
       },
       "20": {
-        "type": "tundra",
-        "wood": false
+        "type": "tundra"
       },
       "21": {
-        "type": "tundra",
-        "wood": false
+        "type": "tundra"
       },
       "22": {
         "type": "land",
-        "wood": true,
-        "treeModel": "Assets/models/pinia"
+        "treeModel": "Assets/models/pinia",
+        "modifiers": [
+          "river",
+          "wood"
+        ]
       },
       "23": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "24": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "25": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "26": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "27": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "28": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "29": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "30": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "31": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "32": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "33": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "34": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       }
     },
     "22": {
       "0": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "1": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "2": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "3": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "4": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "5": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "6": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "7": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "8": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "9": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "10": {
         "type": "land",
-        "wood": true,
-        "treeModel": "Assets/models/oak"
+        "treeModel": "Assets/models/oak",
+        "modifiers": [
+          "wood"
+        ]
       },
       "11": {
         "type": "land",
-        "wood": true,
-        "treeModel": "Assets/models/pinia"
+        "treeModel": "Assets/models/pinia",
+        "modifiers": [
+          "wood"
+        ]
       },
       "12": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "13": {
         "type": "land",
-        "wood": true,
-        "treeModel": "Assets/models/oak"
+        "treeModel": "Assets/models/oak",
+        "modifiers": [
+          "wood"
+        ]
       },
       "14": {
-        "type": "sand",
-        "wood": false
+        "type": "sand"
       },
       "15": {
-        "type": "sand",
-        "wood": false
+        "type": "sand"
       },
       "16": {
-        "type": "sand",
-        "wood": false
+        "type": "sand"
       },
       "17": {
-        "type": "sand",
-        "wood": false
+        "type": "sand"
       },
       "18": {
-        "type": "sand",
-        "wood": false
+        "type": "sand"
       },
       "19": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "20": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "21": {
         "type": "land",
-        "wood": false
+        "modifiers": [
+          "lake"
+        ]
       },
       "22": {
         "type": "land",
-        "wood": false
+        "modifiers": [
+          "lake"
+        ]
       },
       "23": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "24": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "25": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "26": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "27": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "28": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "29": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "30": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "31": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "32": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "33": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       }
     },
     "23": {
       "0": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "1": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "2": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "3": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "4": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "5": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "6": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "7": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "8": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "9": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "10": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "11": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "12": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "13": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "14": {
         "type": "land",
-        "wood": false,
         "city": {
           "name": "City 8",
           "model": "Assets/models/monument",
@@ -3332,304 +2613,252 @@
         }
       },
       "15": {
-        "type": "sand",
-        "wood": false
+        "type": "sand"
       },
       "16": {
-        "type": "sand",
-        "wood": false
+        "type": "sand"
       },
       "17": {
-        "type": "sand",
-        "wood": false
+        "type": "sand"
       },
       "18": {
-        "type": "sand",
-        "wood": false
+        "type": "sand"
       },
       "19": {
-        "type": "sand",
-        "wood": false
+        "type": "sand"
       },
       "20": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "21": {
         "type": "land",
-        "wood": false
+        "modifiers": [
+          "lake"
+        ]
       },
       "22": {
         "type": "land",
-        "wood": false
+        "modifiers": [
+          "lake"
+        ]
       },
       "23": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "24": {
         "type": "land",
-        "wood": true,
-        "treeModel": "Assets/models/oak"
+        "treeModel": "Assets/models/oak",
+        "modifiers": [
+          "wood"
+        ]
       },
       "25": {
         "type": "land",
-        "wood": true,
-        "treeModel": "Assets/models/oak"
+        "treeModel": "Assets/models/oak",
+        "modifiers": [
+          "wood"
+        ]
       },
       "26": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "27": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "28": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "29": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "30": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "31": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "32": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "33": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "34": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       }
     },
     "24": {
       "0": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "1": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "2": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "3": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "4": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "5": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "6": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "7": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "8": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "9": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "10": {
-        "type": "tundra",
-        "wood": false
+        "type": "tundra"
       },
       "11": {
-        "type": "tundra",
-        "wood": false
+        "type": "tundra"
       },
       "12": {
-        "type": "tundra",
-        "wood": false
+        "type": "tundra"
       },
       "13": {
-        "type": "tundra",
-        "wood": false
+        "type": "tundra"
       },
       "14": {
-        "type": "sand",
-        "wood": false
+        "type": "sand"
       },
       "15": {
-        "type": "sand",
-        "wood": false
+        "type": "sand"
       },
       "16": {
-        "type": "sand",
-        "wood": false
+        "type": "sand"
       },
       "17": {
-        "type": "sand",
-        "wood": false
+        "type": "sand"
       },
       "18": {
-        "type": "sand",
-        "wood": false
+        "type": "sand"
       },
       "19": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "20": {
         "type": "land",
-        "wood": false
+        "modifiers": [
+          "river"
+        ]
       },
       "21": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "22": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "23": {
         "type": "land",
-        "wood": true,
-        "treeModel": "Assets/models/palm"
+        "treeModel": "Assets/models/palm",
+        "modifiers": [
+          "wood"
+        ]
       },
       "24": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "25": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "26": {
         "type": "land",
-        "wood": true,
-        "treeModel": "Assets/models/oak"
+        "treeModel": "Assets/models/oak",
+        "modifiers": [
+          "wood"
+        ]
       },
       "27": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "28": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "29": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "30": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "31": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "32": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "33": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       }
     },
     "25": {
       "0": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "1": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "2": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "3": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "4": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "5": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "6": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "7": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "8": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "9": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "10": {
-        "type": "tundra",
-        "wood": false
+        "type": "tundra"
       },
       "11": {
-        "type": "tundra",
-        "wood": false
+        "type": "tundra"
       },
       "12": {
-        "type": "tundra",
-        "wood": false
+        "type": "tundra"
       },
       "13": {
-        "type": "tundra",
-        "wood": false
+        "type": "tundra"
       },
       "14": {
-        "type": "sand",
-        "wood": false
+        "type": "sand"
       },
       "15": {
-        "type": "sand",
-        "wood": false
+        "type": "sand"
       },
       "16": {
-        "type": "sand",
-        "wood": false
+        "type": "sand"
       },
       "17": {
-        "type": "sand",
-        "wood": false
+        "type": "sand"
       },
       "18": {
         "type": "land",
-        "wood": false,
         "city": {
           "name": "City 2",
           "model": "Assets/models/monument",
@@ -3637,596 +2866,486 @@
         }
       },
       "19": {
-        "type": "tundra",
-        "wood": false
+        "type": "tundra"
       },
       "20": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "21": {
         "type": "land",
-        "wood": false
+        "modifiers": [
+          "river"
+        ]
       },
       "22": {
         "type": "land",
-        "wood": true,
-        "treeModel": "Assets/models/pinia"
+        "treeModel": "Assets/models/pinia",
+        "modifiers": [
+          "wood"
+        ]
       },
       "23": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "24": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "25": {
         "type": "land",
-        "wood": false,
         "city": {
           "name": "City 1",
           "model": "Assets/models/monument"
         }
       },
       "26": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "27": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "28": {
         "type": "land",
-        "wood": true,
-        "treeModel": "Assets/models/pinia"
+        "treeModel": "Assets/models/pinia",
+        "modifiers": [
+          "wood"
+        ]
       },
       "29": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "30": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "31": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "32": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "33": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "34": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       }
     },
     "26": {
       "0": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "1": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "2": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "3": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "4": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "5": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "6": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "7": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "8": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "9": {
-        "type": "tundra",
-        "wood": false
+        "type": "tundra"
       },
       "10": {
-        "type": "tundra",
-        "wood": false
+        "type": "tundra"
       },
       "11": {
-        "type": "tundra",
-        "wood": false
+        "type": "tundra"
       },
       "12": {
-        "type": "tundra",
-        "wood": false
+        "type": "tundra"
       },
       "13": {
-        "type": "tundra",
-        "wood": false
+        "type": "tundra"
       },
       "14": {
-        "type": "snow",
-        "wood": false
+        "type": "snow"
       },
       "15": {
-        "type": "snow",
-        "wood": false
+        "type": "snow"
       },
       "16": {
-        "type": "sand",
-        "wood": false
+        "type": "sand"
       },
       "17": {
-        "type": "tundra",
-        "wood": false
+        "type": "tundra"
       },
       "18": {
-        "type": "tundra",
-        "wood": false
+        "type": "tundra"
       },
       "19": {
-        "type": "tundra",
-        "wood": false
+        "type": "tundra"
       },
       "20": {
-        "type": "tundra",
-        "wood": false
+        "type": "tundra"
       },
       "21": {
         "type": "land",
-        "wood": true,
-        "treeModel": "Assets/models/palm"
+        "treeModel": "Assets/models/palm",
+        "modifiers": [
+          "river",
+          "wood"
+        ]
       },
       "22": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "23": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "24": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "25": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "26": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "27": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "28": {
-        "type": "snow",
-        "wood": false
+        "type": "snow"
       },
       "29": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "30": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "31": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "32": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "33": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       }
     },
     "27": {
       "0": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "1": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "2": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "3": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "4": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "5": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "6": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "7": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "8": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "9": {
-        "type": "tundra",
-        "wood": false
+        "type": "tundra"
       },
       "10": {
-        "type": "tundra",
-        "wood": false
+        "type": "tundra"
       },
       "11": {
-        "type": "tundra",
-        "wood": false
+        "type": "tundra"
       },
       "12": {
-        "type": "tundra",
-        "wood": false
+        "type": "tundra"
       },
       "13": {
-        "type": "tundra",
-        "wood": false
+        "type": "tundra"
       },
       "14": {
-        "type": "snow",
-        "wood": false
+        "type": "snow"
       },
       "15": {
-        "type": "snow",
-        "wood": false
+        "type": "snow"
       },
       "16": {
-        "type": "snow",
-        "wood": false
+        "type": "snow"
       },
       "17": {
-        "type": "tundra",
-        "wood": false
+        "type": "tundra"
       },
       "18": {
-        "type": "tundra",
-        "wood": false
+        "type": "tundra"
       },
       "19": {
-        "type": "tundra",
-        "wood": false
+        "type": "tundra"
       },
       "20": {
-        "type": "sand",
-        "wood": false
+        "type": "sand"
       },
       "21": {
-        "type": "tundra",
-        "wood": false
+        "type": "tundra"
       },
       "22": {
         "type": "land",
-        "wood": true,
-        "treeModel": "Assets/models/oak"
+        "treeModel": "Assets/models/oak",
+        "modifiers": [
+          "river",
+          "wood"
+        ]
       },
       "23": {
         "type": "land",
-        "wood": true,
-        "treeModel": "Assets/models/palm"
+        "treeModel": "Assets/models/palm",
+        "modifiers": [
+          "wood"
+        ]
       },
       "24": {
         "type": "land",
-        "wood": true,
-        "treeModel": "Assets/models/palm"
+        "treeModel": "Assets/models/palm",
+        "modifiers": [
+          "wood"
+        ]
       },
       "25": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "26": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "27": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "28": {
-        "type": "snow",
-        "wood": false
+        "type": "snow"
       },
       "29": {
-        "type": "snow",
-        "wood": false
+        "type": "snow"
       },
       "30": {
-        "type": "snow",
-        "wood": false
+        "type": "snow"
       },
       "31": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "32": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "33": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "34": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       }
     },
     "28": {
       "0": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "1": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "2": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "3": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "4": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "5": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "6": {
-        "type": "sand",
-        "wood": false
+        "type": "sand"
       },
       "7": {
-        "type": "sand",
-        "wood": false
+        "type": "sand"
       },
       "8": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "9": {
-        "type": "sand",
-        "wood": false
+        "type": "sand"
       },
       "10": {
-        "type": "tundra",
-        "wood": false
+        "type": "tundra"
       },
       "11": {
-        "type": "tundra",
-        "wood": false
+        "type": "tundra"
       },
       "12": {
         "type": "land",
-        "wood": false,
         "city": {
           "name": "City 5",
           "model": "Assets/models/monument"
         }
       },
       "13": {
-        "type": "snow",
-        "wood": false
+        "type": "snow"
       },
       "14": {
-        "type": "snow",
-        "wood": false
+        "type": "snow"
       },
       "15": {
-        "type": "snow",
-        "wood": false
+        "type": "snow"
       },
       "16": {
-        "type": "tundra",
-        "wood": false
+        "type": "tundra"
       },
       "17": {
-        "type": "tundra",
-        "wood": false
+        "type": "tundra"
       },
       "18": {
-        "type": "tundra",
-        "wood": false
+        "type": "tundra"
       },
       "19": {
-        "type": "sand",
-        "wood": false
+        "type": "sand"
       },
       "20": {
-        "type": "sand",
-        "wood": false
+        "type": "sand"
       },
       "21": {
-        "type": "sand",
-        "wood": false
+        "type": "sand"
       },
       "22": {
         "type": "land",
-        "wood": false
+        "modifiers": [
+          "river"
+        ]
       },
       "23": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "24": {
         "type": "land",
-        "wood": true,
-        "treeModel": "Assets/models/oak"
+        "treeModel": "Assets/models/oak",
+        "modifiers": [
+          "wood"
+        ]
       },
       "25": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "26": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "27": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "28": {
-        "type": "snow",
-        "wood": false
+        "type": "snow"
       },
       "29": {
-        "type": "snow",
-        "wood": false
+        "type": "snow"
       },
       "30": {
-        "type": "snow",
-        "wood": false
+        "type": "snow"
       },
       "31": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "32": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "33": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       }
     },
     "29": {
       "0": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "1": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "2": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "3": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "4": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "5": {
         "type": "land",
-        "wood": true,
-        "treeModel": "Assets/models/pinia"
+        "treeModel": "Assets/models/pinia",
+        "modifiers": [
+          "wood"
+        ]
       },
       "6": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "7": {
-        "type": "sand",
-        "wood": false
+        "type": "sand"
       },
       "8": {
-        "type": "sand",
-        "wood": false
+        "type": "sand"
       },
       "9": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "10": {
-        "type": "tundra",
-        "wood": false
+        "type": "tundra"
       },
       "11": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "12": {
-        "type": "sand",
-        "wood": false
+        "type": "sand"
       },
       "13": {
-        "type": "sand",
-        "wood": false
+        "type": "sand"
       },
       "14": {
-        "type": "snow",
-        "wood": false
+        "type": "snow"
       },
       "15": {
-        "type": "snow",
-        "wood": false
+        "type": "snow"
       },
       "16": {
-        "type": "snow",
-        "wood": false
+        "type": "snow"
       },
       "17": {
-        "type": "tundra",
-        "wood": false
+        "type": "tundra"
       },
       "18": {
-        "type": "tundra",
-        "wood": false
+        "type": "tundra"
       },
       "19": {
-        "type": "sand",
-        "wood": false
+        "type": "sand"
       },
       "20": {
-        "type": "sand",
-        "wood": false
+        "type": "sand"
       },
       "21": {
-        "type": "sand",
-        "wood": false
+        "type": "sand"
       },
       "22": {
         "type": "land",
-        "wood": false,
         "city": {
           "name": "City 10",
           "model": "Assets/models/monument",
@@ -4235,1324 +3354,1024 @@
       },
       "23": {
         "type": "land",
-        "wood": true,
-        "treeModel": "Assets/models/oak"
+        "treeModel": "Assets/models/oak",
+        "modifiers": [
+          "river",
+          "wood"
+        ]
       },
       "24": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "25": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "26": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "27": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "28": {
         "type": "land",
-        "wood": true,
-        "treeModel": "Assets/models/pinia"
+        "treeModel": "Assets/models/pinia",
+        "modifiers": [
+          "wood"
+        ]
       },
       "29": {
         "type": "land",
-        "wood": false,
         "city": {
           "name": "City 11",
           "model": "Assets/models/monument"
         }
       },
       "30": {
-        "type": "snow",
-        "wood": false
+        "type": "snow"
       },
       "31": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "32": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "33": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "34": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       }
     },
     "30": {
       "0": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "1": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "2": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "3": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "4": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "5": {
-        "type": "snow",
-        "wood": false
+        "type": "snow"
       },
       "6": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "7": {
-        "type": "sand",
-        "wood": false
+        "type": "sand"
       },
       "8": {
-        "type": "sand",
-        "wood": false
+        "type": "sand"
       },
       "9": {
-        "type": "sand",
-        "wood": false
+        "type": "sand"
       },
       "10": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "11": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "12": {
-        "type": "sand",
-        "wood": false
+        "type": "sand"
       },
       "13": {
-        "type": "sand",
-        "wood": false
+        "type": "sand"
       },
       "14": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "15": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "16": {
-        "type": "tundra",
-        "wood": false
+        "type": "tundra"
       },
       "17": {
-        "type": "tundra",
-        "wood": false
+        "type": "tundra"
       },
       "18": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "19": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "20": {
-        "type": "sand",
-        "wood": false
+        "type": "sand"
       },
       "21": {
-        "type": "sand",
-        "wood": false
+        "type": "sand"
       },
       "22": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "23": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "24": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "25": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "26": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "27": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "28": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "29": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "30": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "31": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "32": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "33": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       }
     },
     "31": {
       "0": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "1": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "2": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "3": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "4": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "5": {
-        "type": "snow",
-        "wood": false
+        "type": "snow"
       },
       "6": {
-        "type": "snow",
-        "wood": false
+        "type": "snow"
       },
       "7": {
-        "type": "snow",
-        "wood": false
+        "type": "snow"
       },
       "8": {
-        "type": "sand",
-        "wood": false
+        "type": "sand"
       },
       "9": {
-        "type": "snow",
-        "wood": false
+        "type": "snow"
       },
       "10": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "11": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "12": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "13": {
-        "type": "sand",
-        "wood": false
+        "type": "sand"
       },
       "14": {
-        "type": "sand",
-        "wood": false
+        "type": "sand"
       },
       "15": {
-        "type": "sand",
-        "wood": false
+        "type": "sand"
       },
       "16": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "17": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "18": {
-        "type": "tundra",
-        "wood": false
+        "type": "tundra"
       },
       "19": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "20": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "21": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "22": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "23": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "24": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "25": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "26": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "27": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "28": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "29": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "30": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "31": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "32": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "33": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "34": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       }
     },
     "32": {
       "0": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "1": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "2": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "3": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "4": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "5": {
-        "type": "snow",
-        "wood": false
+        "type": "snow"
       },
       "6": {
-        "type": "snow",
-        "wood": false
+        "type": "snow"
       },
       "7": {
-        "type": "snow",
-        "wood": false
+        "type": "snow"
       },
       "8": {
-        "type": "snow",
-        "wood": false
+        "type": "snow"
       },
       "9": {
-        "type": "snow",
-        "wood": false
+        "type": "snow"
       },
       "10": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "11": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "12": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "13": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "14": {
-        "type": "sand",
-        "wood": false
+        "type": "sand"
       },
       "15": {
-        "type": "sand",
-        "wood": false
+        "type": "sand"
       },
       "16": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "17": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "18": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "19": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "20": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "21": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "22": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "23": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "24": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "25": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "26": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "27": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "28": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "29": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "30": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "31": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "32": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "33": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       }
     },
     "33": {
       "0": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "1": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "2": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "3": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "4": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "5": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "6": {
         "type": "snow",
-        "wood": true,
-        "treeModel": "Assets/models/oak"
+        "treeModel": "Assets/models/oak",
+        "modifiers": [
+          "wood"
+        ]
       },
       "7": {
         "type": "land",
-        "wood": true,
         "city": {
           "name": "City 7",
           "model": "Assets/models/monument"
         },
-        "treeModel": "Assets/models/palm"
+        "treeModel": "Assets/models/palm",
+        "modifiers": [
+          "wood"
+        ]
       },
       "8": {
-        "type": "snow",
-        "wood": false
+        "type": "snow"
       },
       "9": {
-        "type": "snow",
-        "wood": false
+        "type": "snow"
       },
       "10": {
-        "type": "snow",
-        "wood": false
+        "type": "snow"
       },
       "11": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "12": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "13": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "14": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "15": {
-        "type": "sand",
-        "wood": false
+        "type": "sand"
       },
       "16": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "17": {
         "type": "land",
-        "wood": true,
-        "treeModel": "Assets/models/palm"
+        "treeModel": "Assets/models/palm",
+        "modifiers": [
+          "wood"
+        ]
       },
       "18": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "19": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "20": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "21": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "22": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "23": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "24": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "25": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "26": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "27": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "28": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "29": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "30": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "31": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "32": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "33": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "34": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       }
     },
     "34": {
       "0": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "1": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "2": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "3": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "4": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "5": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "6": {
-        "type": "snow",
-        "wood": false
+        "type": "snow"
       },
       "7": {
-        "type": "snow",
-        "wood": false
+        "type": "snow"
       },
       "8": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "9": {
-        "type": "snow",
-        "wood": false
+        "type": "snow"
       },
       "10": {
         "type": "land",
-        "wood": true,
-        "treeModel": "Assets/models/pinia"
+        "treeModel": "Assets/models/pinia",
+        "modifiers": [
+          "wood"
+        ]
       },
       "11": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "12": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "13": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "14": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "15": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "16": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "17": {
         "type": "land",
-        "wood": true,
-        "treeModel": "Assets/models/palm"
+        "treeModel": "Assets/models/palm",
+        "modifiers": [
+          "wood"
+        ]
       },
       "18": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "19": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "20": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "21": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "22": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "23": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "24": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "25": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "26": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "27": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "28": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "29": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "30": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "31": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "32": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "33": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       }
     },
     "35": {
       "0": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "1": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "2": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "3": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "4": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "5": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "6": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "7": {
-        "type": "snow",
-        "wood": false
+        "type": "snow"
       },
       "8": {
-        "type": "snow",
-        "wood": false
+        "type": "snow"
       },
       "9": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "10": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "11": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "12": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "13": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "14": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "15": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "16": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "17": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "18": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "19": {
-        "type": "land",
-        "wood": false
+        "type": "land"
       },
       "20": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "21": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "22": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "23": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "24": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "25": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "26": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "27": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "28": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "29": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "30": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "31": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "32": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "33": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "34": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       }
     },
     "36": {
       "0": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "1": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "2": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "3": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "4": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "5": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "6": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "7": {
-        "type": "snow",
-        "wood": false
+        "type": "snow"
       },
       "8": {
-        "type": "snow",
-        "wood": false
+        "type": "snow"
       },
       "9": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "10": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "11": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "12": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "13": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "14": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "15": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "16": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "17": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "18": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "19": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "20": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "21": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "22": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "23": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "24": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "25": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "26": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "27": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "28": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "29": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "30": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "31": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "32": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "33": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       }
     },
     "37": {
       "0": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "1": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "2": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "3": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "4": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "5": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "6": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "7": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "8": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "9": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "10": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "11": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "12": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "13": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "14": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "15": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "16": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "17": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "18": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "19": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "20": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "21": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "22": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "23": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "24": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "25": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "26": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "27": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "28": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "29": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "30": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "31": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "32": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "33": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "34": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       }
     },
     "38": {
       "0": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "1": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "2": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "3": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "4": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "5": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "6": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "7": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "8": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "9": {
-        "type": "coastal",
-        "wood": false
+        "type": "coastal"
       },
       "10": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "11": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "12": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "13": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "14": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "15": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "16": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "17": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "18": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "19": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "20": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "21": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "22": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "23": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "24": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "25": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "26": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "27": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "28": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "29": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "30": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "31": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "32": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       },
       "33": {
-        "type": "sea",
-        "wood": false
+        "type": "sea"
       }
     }
   },
