@@ -83,6 +83,44 @@ export function waterEdgeValue(map: MapInfo, x: number, y: number): number {
     return -1;
 }
 
+export function riverSeaMouthEdgeValue(map: MapInfo, x: number, y: number): number {
+    const tile = map.data[x]?.[y];
+    if (!isRiverTile(tile)) return 0;
+
+    let mask = 0;
+    MASK_DIRECTIONS.forEach((direction, bit) => {
+        const n = getNeighborCoords(x, y, direction);
+        const neighbor = map.data[n.x]?.[n.y];
+        if (neighbor && isSeaOrCoastal(neighbor)) mask |= 1 << bit;
+    });
+    return mask;
+}
+
+export function riverLakeMouthEdgeValue(map: MapInfo, x: number, y: number): number {
+    const tile = map.data[x]?.[y];
+    if (!isRiverTile(tile)) return 0;
+
+    let mask = 0;
+    MASK_DIRECTIONS.forEach((direction, bit) => {
+        const n = getNeighborCoords(x, y, direction);
+        const neighbor = map.data[n.x]?.[n.y];
+        if (isLakeTile(neighbor)) mask |= 1 << bit;
+    });
+    return mask;
+}
+
+export function lakeNeighborEdgeValue(map: MapInfo, x: number, y: number): number {
+    const tile = map.data[x]?.[y];
+    if (!tile || isLakeTile(tile)) return 0;
+
+    let mask = 0;
+    MASK_DIRECTIONS.forEach((direction, bit) => {
+        const n = getNeighborCoords(x, y, direction);
+        if (isLakeTile(map.data[n.x]?.[n.y])) mask |= 1 << bit;
+    });
+    return mask;
+}
+
 //Distance (world units) from a tile-local point (lx, ly - offsets from the hex
 //center in the X/Z ground plane) to the river channel's centerline: the union
 //of segments from the center to each connected edge's midpoint (at the
@@ -118,31 +156,62 @@ export interface WaterClearanceOptions {
 //riverCurvature * 0.6 in the fragment shader, so up to 0.3*curvature of the tile
 //radius) - clearing only the un-bent waterline left blades standing in every
 //noise-pushed bulge of the water.
-export function isInTileWater(lx: number, ly: number, value: number, size: number, options: WaterClearanceOptions): boolean {
+function isInRiverMouthWater(lx: number, ly: number, mask: number, size: number, options: WaterClearanceOptions): boolean {
+    if (mask <= 0) return false;
+
+    const apothem = size * 0.8660254;
+    const wobble = 0.3 * options.riverCurvature + 0.03;
+    for (let bit = 0; bit < 6; bit++) {
+        if (!(mask & (1 << bit))) continue;
+        const [dx, dy] = EDGE_DIRS[bit];
+        const t = Math.min(Math.max(lx * dx + ly * dy, 0), apothem);
+        const progress = t / apothem;
+        // Shader river widths are half-widths. 0.4 here gives a full mouth
+        // width of 0.8 hex side at the outlet.
+        const mouthWidth = options.riverWidth + (0.4 - options.riverWidth) * progress * progress * (3 - 2 * progress);
+        const clearance = (mouthWidth + Math.max(options.riverBankWidth, wobble)) * size;
+        if (Math.hypot(lx - dx * t, ly - dy * t) < clearance) return true;
+    }
+
+    return false;
+}
+
+function isInLakeNeighborWater(lx: number, ly: number, mask: number, size: number, options: WaterClearanceOptions): boolean {
+    if (mask <= 0) return false;
+
+    const apothem = size * 0.8660254;
+    const wobble = 0.3 * options.riverCurvature + 0.03;
+    let shore = 0;
+    for (let bit = 0; bit < 6; bit++) {
+        if (!(mask & (1 << bit))) continue;
+        const [dx, dy] = EDGE_DIRS[bit];
+        shore = Math.max(shore, (lx * dx + ly * dy) / apothem);
+    }
+
+    return shore + wobble >= 1.0 - options.lakeShoreWidth;
+}
+
+export function isInTileWater(
+    lx: number,
+    ly: number,
+    value: number,
+    size: number,
+    options: WaterClearanceOptions,
+    riverSeaMouthValue: number = 0,
+    riverLakeMouthValue: number = 0,
+    lakeNeighborValue: number = 0
+): boolean {
+    if (isInLakeNeighborWater(lx, ly, lakeNeighborValue, size, options)) return true;
     if (value < 0) return false;
 
     const wobble = 0.3 * options.riverCurvature + 0.03;
     const channelClearance = (options.riverWidth + Math.max(options.riverBankWidth, wobble)) * size;
 
     if (value >= LAKE_FLAG) {
-        const openMask = Math.floor((value - LAKE_FLAG) / 64);
-        const channelMask = (value - LAKE_FLAG) % 64;
-
-        // shore factor: how far towards the nearest *shored* edge this point
-        // sits (1 = exactly on that edge) - mirrors the shader's lakeShore().
-        const apothem = size * 0.8660254;
-        let shore = 0;
-        for (let bit = 0; bit < 6; bit++) {
-            if (openMask & (1 << bit)) continue;
-            const [dx, dy] = EDGE_DIRS[bit];
-            shore = Math.max(shore, (lx * dx + ly * dy) / apothem);
-        }
-        // shore stays 0 on a fully-open (lake interior) tile, so this also
-        // covers the "everything is water" case
-        if (shore < 1.0 - options.lakeShoreWidth + wobble) return true;
-
-        return channelMask > 0 && riverChannelDistance(lx, ly, channelMask, size) < channelClearance;
+        return true;
     }
 
-    return riverChannelDistance(lx, ly, value, size) < channelClearance;
+    return riverChannelDistance(lx, ly, value, size) < channelClearance
+        || isInRiverMouthWater(lx, ly, riverSeaMouthValue, size, options)
+        || isInRiverMouthWater(lx, ly, riverLakeMouthValue, size, options);
 }

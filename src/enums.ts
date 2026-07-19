@@ -20,7 +20,8 @@ export enum Land {
     land = "land",
     sand = "sand",
     tundra = "tundra",
-    snow = "snow"
+    snow = "snow",
+    mountain = "mountain"
 }
 
 export let LandColor: { [key in Land]: ColorRepresentation} =  {
@@ -29,7 +30,8 @@ export let LandColor: { [key in Land]: ColorRepresentation} =  {
     [Land.sea]: 0x2a368c,
     [Land.sand]: 0xaea765,
     [Land.tundra]: 0xffffff,
-    [Land.snow]: 0xffffff
+    [Land.snow]: 0xffffff,
+    [Land.mountain]: 0x8b8075
 }
 
 //----------------------------------------------------------------------------------
@@ -45,13 +47,17 @@ export let LandColor: { [key in Land]: ColorRepresentation} =  {
 //them, and blendEdge() skips the blend entirely on both sides (a hard, un-
 //blended border between e.g. sand and snow instead of a soft transition).
 //----------------------------------------------------------------------------------
+//Mountain sits highest so surrounding tiles blend towards its rock texture at
+//shared edges - the foot-of-the-mountain transition comes from the existing
+//blendEdge() with no extra shader work.
 export let LandPriority: { [key in Land]: number } = {
     [Land.sea]: 0,
     [Land.coastal]: 1,
     [Land.land]: 2,
     [Land.sand]: 3,
     [Land.tundra]: 4,
-    [Land.snow]: 5
+    [Land.snow]: 5,
+    [Land.mountain]: 6
 }
 
 export enum UnitActions {

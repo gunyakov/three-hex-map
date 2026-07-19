@@ -64,7 +64,7 @@
     // ---------------------------------------------------------------------
     const mapOptions = {
         element: "[game-scene]",
-        size: 40,                    // hex circumradius, world units
+        size: 48,                    // hex circumradius, world units
         texturesBaseUrl: "textures/",
 
         gridVisible: true,
@@ -114,6 +114,16 @@
         // a corner with only one coastal edge is never rounded).
         landBlendWidth: 0.5,
         waterCornerRounding: 0.5,
+
+        // Curved coastline & organic land transitions: how strongly static
+        // world-space noise bends the waterline off the straight hex edges
+        // (bays/headlands) and meanders the land-type transition bands.
+        // 0 restores the old straight-edge look. Mountains: "mountain" tiles
+        // (see gameInfo/map.json) rise into craggy peaks; adjacent ones merge
+        // into ridgelines. mountainHeight defaults to size * 0.6.
+        coastCurvature: 0.5,
+        landBlendCurvature: 0.5,
+        // mountainHeight: 28,
 
         // Rivers & lakes - drawn on any land tile whose map data carries the
         // "river"/"lake" modifier (see gameInfo/map.json), auto-connected to
@@ -207,9 +217,14 @@
 
         const blendFolder = gui.addFolder("Blending & beach");
         blendFolder.add(game.map, "landBlendWidth", 0, 1, 0.01).name("land blend width");
+        blendFolder.add(game.map, "landBlendCurvature", 0, 1, 0.01).name("blend curvature");
         blendFolder.add(game.map, "waterCornerRounding", 0, 1, 0.01).name("corner rounding");
         blendFolder.add(game.map, "beachWidth", 0, 1, 0.01).name("beach width");
+        blendFolder.add(game.map, "coastCurvature", 0, 1, 0.01).name("coast curvature");
         blendFolder.add(game.map, "waterDepth", 0, 20, 0.5).name("water depth");
+
+        const mountainFolder = gui.addFolder("Mountains");
+        mountainFolder.add(game.map, "mountainHeight", 0, 80, 1).name("peak height");
 
         const riverFolder = gui.addFolder("Rivers & lakes");
         riverFolder.add(game.map, "riverWidth", 0.05, 0.6, 0.01).name("river width");

@@ -5,6 +5,68 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-07-19
+
+### Added
+
+- **Curved coastlines** - the visual land/sea waterline is bent by static world-space
+  value noise (the same technique as the river banks), so bays and headlands cut
+  across the straight hex edges instead of tracing them:
+  - the bend is one-sided (inland only): the land layer paints animated sea water
+    (shore-matched color + ripple) ringed by the sand beach up to the bent line, so
+    the whole visible waterline is drawn from a single tile's own data and stays
+    seam-free (per-tile shore fields of neighboring water tiles disagree near shared
+    corners, so nothing hard is ever painted on the water side);
+  - coastal foam (lapping strip + travelling bands) and the shore lightening recede
+    with the bent waterline; the land side draws the strip's inland continuation;
+  - new `coastCurvature` option/property (0..1, live uniform, default 0.5) - 0
+    restores the old straight-edge coasts.
+- **Mountains** - new `Land.mountain` terrain type (`"type": "mountain"` in map
+  data, `mountain` texture cell in the atlas):
+  - tiles rise into noise-craggy 3D peaks on the land layer (no extra mesh), with
+    finite-difference lighting normals and a snow-tinted cap near the summit;
+  - adjacent mountain tiles hold their shared edge up at a saddle height, connecting
+    into continuous ridgelines; saddles taper at corners whose third tile is not a
+    mountain (and towards water edges), keeping the displaced surfaces crack-free;
+  - flattens under unseen war fog like the beach sink (relief must not betray what
+    fog hides), and surrounding tiles blend towards the rock texture at the foot
+    (highest `LandPriority`);
+  - impassable to units unless their info.json sets `"mountain": true` (new optional
+    `UnitInfo.mountain` flag); new `mountainHeight` option/property (world units,
+    live uniform, default `size * 0.6`). Don't combine the river/lake modifiers with
+    mountain tiles - the carve wins and the peak stays flat.
+- **Organic land-type transitions** - the `landBlendWidth` band between
+  differently-typed land tiles meanders with the same world-space noise and its
+  strength is modulated into patches, replacing the straight edge-parallel bands.
+  New `landBlendCurvature` option/property (0..1, live uniform, default 0.5).
+- **Lake-side shore rendering** - lake tiles now render as full water bodies while
+  adjacent land tiles paint the curved green shoreline/water strip, matching the
+  land/sea coastline model and giving lakes more natural, non-hex-shaped edges.
+
+### Changed
+
+- The land layer's hex geometry is subdivided one level deeper (3 instead of 2) so
+  mountain peaks bend smoothly; the demo's hex size is now 48 (was 40) to give the
+  new coast/relief detail more room.
+- `waterCornerRounding` now also shapes the land layer's per-pixel coast field, so
+  both sides of a rounded corner agree (it is applied to both materials).
+- Coastal foam waves now also animate on the land-painted water strips created by
+  curved coastlines, instead of appearing only on real sea/coastal water tiles.
+- River mouths that connect to sea/coastal or lake tiles now widen smoothly toward
+  the target edge, up to 80% of one hex side. Sea mouths blend into coastal water
+  color; lake mouths keep the river/lake water color.
+- Lake-to-river openings now use the same widened mouth shape from both sides, with
+  matching terrain carving.
+
+### Fixed
+
+- Units created through `GameEngine` now use the active `HexMap` size, keeping unit
+  placement and movement aligned with terrain when maps use a non-default hex size.
+- Tree placement now avoids shader-painted shore areas: curved land/sea coastlines,
+  curved lake shorelines, and widened river mouths.
+- Grass/tree water clearance now accounts for widened river mouths and the new
+  lake-adjacent shoreline painted on land tiles.
+
 ## [0.4.0] - 2026-07-15
 
 ### Added

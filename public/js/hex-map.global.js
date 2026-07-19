@@ -7661,6 +7661,7 @@
 	  Land2["sand"] = "sand";
 	  Land2["tundra"] = "tundra";
 	  Land2["snow"] = "snow";
+	  Land2["mountain"] = "mountain";
 	  return Land2;
 	})(Land || {});
 	var LandColor = {
@@ -7669,7 +7670,8 @@
 	  ["sea" /* sea */]: 2766476,
 	  ["sand" /* sand */]: 11446117,
 	  ["tundra" /* tundra */]: 16777215,
-	  ["snow" /* snow */]: 16777215
+	  ["snow" /* snow */]: 16777215,
+	  ["mountain" /* mountain */]: 9142389
 	};
 	var LandPriority = {
 	  ["sea" /* sea */]: 0,
@@ -7677,7 +7679,8 @@
 	  ["land" /* land */]: 2,
 	  ["sand" /* sand */]: 3,
 	  ["tundra" /* tundra */]: 4,
-	  ["snow" /* snow */]: 5
+	  ["snow" /* snow */]: 5,
+	  ["mountain" /* mountain */]: 6
 	};
 	var UnitActions = /* @__PURE__ */ ((UnitActions3) => {
 	  UnitActions3["attack"] = "attack";
@@ -7833,6 +7836,38 @@
 	  }
 	  return -1;
 	}
+	function riverSeaMouthEdgeValue(map, x, y) {
+	  const tile = map.data[x]?.[y];
+	  if (!isRiverTile(tile)) return 0;
+	  let mask = 0;
+	  MASK_DIRECTIONS.forEach((direction, bit) => {
+	    const n = getNeighborCoords(x, y, direction);
+	    const neighbor = map.data[n.x]?.[n.y];
+	    if (neighbor && isSeaOrCoastal(neighbor)) mask |= 1 << bit;
+	  });
+	  return mask;
+	}
+	function riverLakeMouthEdgeValue(map, x, y) {
+	  const tile = map.data[x]?.[y];
+	  if (!isRiverTile(tile)) return 0;
+	  let mask = 0;
+	  MASK_DIRECTIONS.forEach((direction, bit) => {
+	    const n = getNeighborCoords(x, y, direction);
+	    const neighbor = map.data[n.x]?.[n.y];
+	    if (isLakeTile(neighbor)) mask |= 1 << bit;
+	  });
+	  return mask;
+	}
+	function lakeNeighborEdgeValue(map, x, y) {
+	  const tile = map.data[x]?.[y];
+	  if (!tile || isLakeTile(tile)) return 0;
+	  let mask = 0;
+	  MASK_DIRECTIONS.forEach((direction, bit) => {
+	    const n = getNeighborCoords(x, y, direction);
+	    if (isLakeTile(map.data[n.x]?.[n.y])) mask |= 1 << bit;
+	  });
+	  return mask;
+	}
 	function riverChannelDistance(lx, ly, mask, size) {
 	  if (mask < 0) return Infinity;
 	  const apothem = size * 0.8660254;
@@ -7845,24 +7880,42 @@
 	  }
 	  return best;
 	}
-	function isInTileWater(lx, ly, value, size, options) {
+	function isInRiverMouthWater(lx, ly, mask, size, options) {
+	  if (mask <= 0) return false;
+	  const apothem = size * 0.8660254;
+	  const wobble = 0.3 * options.riverCurvature + 0.03;
+	  for (let bit = 0; bit < 6; bit++) {
+	    if (!(mask & 1 << bit)) continue;
+	    const [dx, dy] = EDGE_DIRS[bit];
+	    const t = Math.min(Math.max(lx * dx + ly * dy, 0), apothem);
+	    const progress = t / apothem;
+	    const mouthWidth = options.riverWidth + (0.4 - options.riverWidth) * progress * progress * (3 - 2 * progress);
+	    const clearance = (mouthWidth + Math.max(options.riverBankWidth, wobble)) * size;
+	    if (Math.hypot(lx - dx * t, ly - dy * t) < clearance) return true;
+	  }
+	  return false;
+	}
+	function isInLakeNeighborWater(lx, ly, mask, size, options) {
+	  if (mask <= 0) return false;
+	  const apothem = size * 0.8660254;
+	  const wobble = 0.3 * options.riverCurvature + 0.03;
+	  let shore = 0;
+	  for (let bit = 0; bit < 6; bit++) {
+	    if (!(mask & 1 << bit)) continue;
+	    const [dx, dy] = EDGE_DIRS[bit];
+	    shore = Math.max(shore, (lx * dx + ly * dy) / apothem);
+	  }
+	  return shore + wobble >= 1 - options.lakeShoreWidth;
+	}
+	function isInTileWater(lx, ly, value, size, options, riverSeaMouthValue = 0, riverLakeMouthValue = 0, lakeNeighborValue = 0) {
+	  if (isInLakeNeighborWater(lx, ly, lakeNeighborValue, size, options)) return true;
 	  if (value < 0) return false;
 	  const wobble = 0.3 * options.riverCurvature + 0.03;
 	  const channelClearance = (options.riverWidth + Math.max(options.riverBankWidth, wobble)) * size;
 	  if (value >= LAKE_FLAG) {
-	    const openMask = Math.floor((value - LAKE_FLAG) / 64);
-	    const channelMask = (value - LAKE_FLAG) % 64;
-	    const apothem = size * 0.8660254;
-	    let shore = 0;
-	    for (let bit = 0; bit < 6; bit++) {
-	      if (openMask & 1 << bit) continue;
-	      const [dx, dy] = EDGE_DIRS[bit];
-	      shore = Math.max(shore, (lx * dx + ly * dy) / apothem);
-	    }
-	    if (shore < 1 - options.lakeShoreWidth + wobble) return true;
-	    return channelMask > 0 && riverChannelDistance(lx, ly, channelMask, size) < channelClearance;
+	    return true;
 	  }
-	  return riverChannelDistance(lx, ly, value, size) < channelClearance;
+	  return riverChannelDistance(lx, ly, value, size) < channelClearance || isInRiverMouthWater(lx, ly, riverSeaMouthValue, size, options) || isInRiverMouthWater(lx, ly, riverLakeMouthValue, size, options);
 	}
 	function subdivideTriangle(a, b, c, numSubdivisions) {
 	  if ((numSubdivisions || 0) <= 0) return [a, b, c];
@@ -8026,6 +8079,15 @@ uniform float waterLevel;
 uniform float beachWidth;
 uniform float sandAtlasIndex;
 
+// Mountains (Land.mountain tiles - style.x == mountainAtlasIndex): the whole
+// tile rises to a craggy peak. The height is a pure function of the tile-local
+// position (mountainHeightAt below) so the lighting normal can be derived from
+// it by finite differences - an analytic chain rule through the noise octaves
+// would be far messier than two extra evaluations. mountainHeight is the peak
+// height in world units.
+uniform float mountainAtlasIndex;
+uniform float mountainHeight;
+
 // Rivers/lakes (tiles with the "river"/"lake" modifier - see helpers/rivers.ts
 // and terrain.fragment.ts). The vertex stage only carves the bed: a smooth
 // sink towards -riverDepth around a river's channel centerline / across a
@@ -8058,6 +8120,9 @@ attribute vec3 neighborsKindB; // NW/N/NE
 // N,NE); 4096 + openMask*64 + channelMask = lake - see helpers/rivers.ts's
 // waterEdgeValue() for the authoritative encoding.
 attribute float riverEdges;
+attribute float riverSeaMouthEdges;
+attribute float riverLakeMouthEdges;
+attribute float lakeNeighborEdges;
 attribute float fogState; // 0 = unseen, 1 = explored (darkened), 2 = visible - see FogOfWar.ts
 
 varying vec2 vUV;
@@ -8077,8 +8142,14 @@ varying float vBeachT; // 0 = normal land color, 1 = fully sand (see terrain.fra
 varying float vFogState;
 varying vec2 vFogUV; // world-space fog texture coords, continuous across tiles
 varying float vRiverEdges; // riverEdges passed through (flat per tile - every vertex of an instance carries the same value)
+varying float vRiverSeaMouthEdges;
+varying float vRiverLakeMouthEdges;
+varying float vLakeNeighborEdges;
 varying vec2 vLocal;       // tile-local (x,z), for the fragment stage's channel distance
 varying vec2 vWorldXZ;     // world (x,z), for the fragment stage's world-space bank/ripple noise
+varying vec3 vNeighborsKindA; // passed through for the fragment stage's per-pixel curved coastline
+varying vec3 vNeighborsKindB;
+varying float vElevation;  // normalized mountain elevation (0 flat .. ~1 peak), for snowcap tinting
 
 const vec2 DIR_SE = vec2(0.8660254, 0.5);
 const vec2 DIR_S  = vec2(0.0, 1.0);
@@ -8097,6 +8168,88 @@ vec2 cellIndexToUV(float idx) {
     float y = floor(idx / cols);
 
     return vec2(x / cols + uv.x / cols, 1.0 - (y / rows + (1.0 - uv.y) / rows));
+}
+
+// Same cheap value noise as the fragment stages - the mountain relief has to
+// be world-space so adjacent mountain tiles' crags line up across the shared
+// edge exactly like the river banks do.
+float hash21(vec2 p) {
+    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
+}
+
+float valueNoise(vec2 p) {
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+    vec2 u = f * f * (3.0 - 2.0 * f);
+    return mix(
+        mix(hash21(i), hash21(i + vec2(1.0, 0.0)), u.x),
+        mix(hash21(i + vec2(0.0, 1.0)), hash21(i + vec2(1.0, 1.0)), u.x),
+        u.y
+    );
+}
+
+// Saddle corner taper - a ridge saddle's height at an edge CORNER must agree
+// across all three tiles meeting there, or the surfaces crack open (visible
+// as background-colored triangular holes). If the corner's third tile is a
+// mountain too, all three raise it to the same saddle height (no taper); if
+// it isn't, the saddle fades to 0 towards that corner - the flat third tile
+// stays at 0 there, and both mountain tiles taper symmetrically (the
+// adjacent-edge factor measures the same corner distance from either side).
+float saddleTaper(float adjIsMountain, float adjFactor) {
+    return adjIsMountain > 0.5 ? 1.0 : 1.0 - smoothstep(0.6, 1.0, adjFactor);
+}
+
+// Normalized mountain height (0..~1.2) at a tile-local point p. Three parts:
+//  - a central peak: (1 - rim)^1.2, 1 at the tile center, 0 on the rim;
+//  - ridge saddles: towards every edge whose neighbor is also a mountain, the
+//    height only falls to 0.55 at the shared edge instead of 0. Both tiles
+//    compute the same 0.55 * edgeFactor there (each side's factor is 1.0 on
+//    the edge), so adjacent mountains connect into a continuous ridgeline;
+//  - two octaves of world-space noise multiplying the whole profile into
+//    irregular crags (world-space: continuous across the shared edges too).
+// Kept a pure function of p so main() can finite-difference it for normals.
+float mountainHeightAt(vec2 p) {
+    float apothem = hexSize * 0.8660254;
+    vec3 efA = vec3(dot(p, DIR_SE), dot(p, DIR_S), dot(p, DIR_SW)) / apothem;
+    vec3 efB = vec3(dot(p, DIR_NW), dot(p, DIR_N), dot(p, DIR_NE)) / apothem;
+    float rim = max(max(max(efA.x, efA.y), max(efA.z, efB.x)), max(efB.y, efB.z));
+    float h = pow(clamp(1.0 - rim, 0.0, 1.0), 1.2);
+
+    float mSE = abs(neighborsA.x - mountainAtlasIndex) < 0.5 ? 1.0 : 0.0;
+    float mS  = abs(neighborsA.y - mountainAtlasIndex) < 0.5 ? 1.0 : 0.0;
+    float mSW = abs(neighborsA.z - mountainAtlasIndex) < 0.5 ? 1.0 : 0.0;
+    float mNW = abs(neighborsB.x - mountainAtlasIndex) < 0.5 ? 1.0 : 0.0;
+    float mN  = abs(neighborsB.y - mountainAtlasIndex) < 0.5 ? 1.0 : 0.0;
+    float mNE = abs(neighborsB.z - mountainAtlasIndex) < 0.5 ? 1.0 : 0.0;
+
+    // ring adjacency: SE-S-SW-NW-N-NE-SE (see the DIR_* constants' angles)
+    float ridge = 0.0;
+    if (mSE > 0.5) ridge = max(ridge, efA.x * saddleTaper(mNE, efB.z) * saddleTaper(mS,  efA.y));
+    if (mS  > 0.5) ridge = max(ridge, efA.y * saddleTaper(mSE, efA.x) * saddleTaper(mSW, efA.z));
+    if (mSW > 0.5) ridge = max(ridge, efA.z * saddleTaper(mS,  efA.y) * saddleTaper(mNW, efB.x));
+    if (mNW > 0.5) ridge = max(ridge, efB.x * saddleTaper(mSW, efA.z) * saddleTaper(mN,  efB.y));
+    if (mN  > 0.5) ridge = max(ridge, efB.y * saddleTaper(mNW, efB.x) * saddleTaper(mNE, efB.z));
+    if (mNE > 0.5) ridge = max(ridge, efB.z * saddleTaper(mN,  efB.y) * saddleTaper(mSE, efA.x));
+    h = max(h, clamp(ridge, 0.0, 1.0) * 0.55);
+
+    // Shore flattening - a coastal mountain still gets its beach. Done here
+    // per water-adjacent direction (not by multiplying with the vertex's own
+    // beachT in main()) so it stays a symmetric function of the corner
+    // distance: a mountain NEIGHBOR at the shared corner of a water tile
+    // computes the same falloff from its own side, keeping the saddle heights
+    // crack-free (same reasoning as saddleTaper above - the water tile at
+    // such a corner is a direct neighbor of both mountain tiles).
+    if (neighborsKindA.x >= 0.5) h *= 1.0 - smoothstep(0.5, 0.95, efA.x);
+    if (neighborsKindA.y >= 0.5) h *= 1.0 - smoothstep(0.5, 0.95, efA.y);
+    if (neighborsKindA.z >= 0.5) h *= 1.0 - smoothstep(0.5, 0.95, efA.z);
+    if (neighborsKindB.x >= 0.5) h *= 1.0 - smoothstep(0.5, 0.95, efB.x);
+    if (neighborsKindB.y >= 0.5) h *= 1.0 - smoothstep(0.5, 0.95, efB.y);
+    if (neighborsKindB.z >= 0.5) h *= 1.0 - smoothstep(0.5, 0.95, efB.z);
+
+    vec2 w = offset + p;
+    float n = valueNoise(w * (1.6 / hexSize));
+    n = 0.65 * n + 0.35 * valueNoise(w * (4.0 / hexSize));
+    return h * (0.72 + 1.1 * (n - 0.5));
 }
 
 // Tracks the strongest "closeness to a water-adjacent edge" (see
@@ -8130,6 +8283,44 @@ float riverChannelDist(vec2 p, float mask, float apothem) {
     if (mod(floor(mask / 16.0), 2.0) > 0.5) d = min(d, riverSegDist(p, DIR_N,  apothem));
     if (mod(floor(mask / 32.0), 2.0) > 0.5) d = min(d, riverSegDist(p, DIR_NE, apothem));
     return d;
+}
+
+vec2 riverMouthSeg(vec2 p, vec2 dir, float apothem) {
+    float t = clamp(dot(p, dir), 0.0, apothem);
+    return vec2(length(p - dir * t), t / apothem);
+}
+
+float riverMouthBedT(vec2 p, float mask, float apothem) {
+    float bedT = 0.0;
+    for (int i = 0; i < 6; i++) {
+        float bit = pow(2.0, float(i));
+        if (mod(floor(mask / bit), 2.0) < 0.5) continue;
+
+        vec2 dir = DIR_SE;
+        if (i == 1) dir = DIR_S;
+        else if (i == 2) dir = DIR_SW;
+        else if (i == 3) dir = DIR_NW;
+        else if (i == 4) dir = DIR_N;
+        else if (i == 5) dir = DIR_NE;
+
+        vec2 seg = riverMouthSeg(p, dir, apothem);
+        // 0.4 half-width = 0.8 full outlet width relative to one hex side.
+        float mouthWidth = mix(riverWidth, 0.4, smoothstep(0.0, 1.0, seg.y));
+        float d = seg.x / hexSize;
+        bedT = max(bedT, 1.0 - smoothstep(mouthWidth * 0.5, mouthWidth + riverBankWidth, d));
+    }
+    return bedT;
+}
+
+float edgeFieldFromMask(float mask, vec3 efA, vec3 efB) {
+    float f = 0.0;
+    if (mod(floor(mask /  1.0), 2.0) > 0.5) f = max(f, efA.x);
+    if (mod(floor(mask /  2.0), 2.0) > 0.5) f = max(f, efA.y);
+    if (mod(floor(mask /  4.0), 2.0) > 0.5) f = max(f, efA.z);
+    if (mod(floor(mask /  8.0), 2.0) > 0.5) f = max(f, efB.x);
+    if (mod(floor(mask / 16.0), 2.0) > 0.5) f = max(f, efB.y);
+    if (mod(floor(mask / 32.0), 2.0) > 0.5) f = max(f, efB.z);
+    return f;
 }
 
 // Lake shore factor: how far this point sits towards the nearest *shored* edge
@@ -8195,31 +8386,59 @@ void main() {
         if (riverEdges >= 2048.0) {
             float openMask = floor((riverEdges - 4096.0) / 64.0);
             float channelMask = riverEdges - 4096.0 - openMask * 64.0;
-            float s0 = 1.0 - lakeShoreWidth;
-            float shore = lakeShore(openMask, vEdgeFactorsA, vEdgeFactorsB);
-            bedT = 1.0 - smoothstep(s0 - 0.25, s0 + riverBankWidth, shore);
+            bedT = 1.0;
             if (channelMask > 0.5) {
-                float dChan = riverChannelDist(local, channelMask, apothem) / hexSize;
-                bedT = max(bedT, 1.0 - smoothstep(riverWidth * 0.5, riverWidth + riverBankWidth, dChan));
+                bedT = max(bedT, riverMouthBedT(local, channelMask, apothem));
             }
         } else {
             float dRiver = riverChannelDist(local, riverEdges, apothem) / hexSize;
             bedT = 1.0 - smoothstep(riverWidth * 0.5, riverWidth + riverBankWidth, dRiver);
+            bedT = max(bedT, riverMouthBedT(local, floor(riverSeaMouthEdges + 0.5), apothem));
+            bedT = max(bedT, riverMouthBedT(local, floor(riverLakeMouthEdges + 0.5), apothem));
         }
         riverSink = -riverDepth * bedT * fogVisible;
     }
+    float lakeEdge = edgeFieldFromMask(floor(lakeNeighborEdges + 0.5), vEdgeFactorsA, vEdgeFactorsB);
+    if (lakeEdge > 0.0) {
+        float s0Lake = 1.0 - clamp(lakeShoreWidth, 0.001, 1.0);
+        float lakeSinkT = smoothstep(s0Lake, 1.0, lakeEdge);
+        riverSink = min(riverSink, -riverDepth * lakeSinkT * fogVisible);
+    }
     sinkY = min(sinkY, riverSink);
 
-    vec3 pos = vec3(offset.x + position.x, position.y + sinkY, offset.y + position.z);
+    // Mountain elevation - flattened towards water edges inside
+    // mountainHeightAt itself (so a coastal mountain still gets a shore),
+    // gated to 0 on river/lake tiles (the carved bed wins - rivers stay
+    // exactly as they were; don't combine the river/lake modifiers with
+    // mountain tiles) and under unseen fog (same reasoning as the beach
+    // sink above: relief betrays what's there).
+    float raiseY = 0.0;
+    vec2 mountainSlope = vec2(0.0);
+    float elevation = 0.0;
+    if (abs(style.x - mountainAtlasIndex) < 0.5) {
+        float gate = fogVisible * (riverEdges >= 0.0 ? 0.0 : 1.0);
+        if (gate > 0.0) {
+            float eps = hexSize * 0.08;
+            float h0 = mountainHeightAt(local);
+            float hx = mountainHeightAt(local + vec2(eps, 0.0));
+            float hz = mountainHeightAt(local + vec2(0.0, eps));
+            elevation = h0 * gate;
+            raiseY = elevation * mountainHeight;
+            mountainSlope = vec2(hx - h0, hz - h0) / eps * mountainHeight * gate;
+        }
+    }
+
+    vec3 pos = vec3(offset.x + position.x, position.y + sinkY + raiseY, offset.y + position.z);
     gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
 
     // analytic slope of sinkY w.r.t. local (x,z), via the chain rule through
     // smoothstep, for lighting - see water.vertex.ts for the same idea applied
     // to waves. Only the single dominant edge direction is considered, which is
     // exact away from corners and a reasonable approximation right at them.
+    // The mountain raise's finite-difference slope just adds on top.
     float xN = clamp((waterEdge - e0) / (1.0 - e0), 0.0, 1.0);
     float dSmooth = waterEdge > 0.0 ? 6.0 * xN * (1.0 - xN) / (1.0 - e0) : 0.0;
-    vec2 slope = (waterLevel * 0.5) * 1.2 * dSmooth * (best.yz / apothem) * fogVisible;
+    vec2 slope = (waterLevel * 0.5) * 1.2 * dSmooth * (best.yz / apothem) * fogVisible + mountainSlope;
     vNormal = normalize(normalMatrix * normalize(vec3(-slope.x, 1.0, -slope.y)));
 
     // Rim distance for the grid line - NOT radial distance from center
@@ -8246,8 +8465,14 @@ void main() {
     vNeighborsB = neighborsB;
     vNeighborsPriorityA = neighborsPriorityA;
     vNeighborsPriorityB = neighborsPriorityB;
+    vNeighborsKindA = neighborsKindA;
+    vNeighborsKindB = neighborsKindB;
+    vElevation = elevation;
     vFogState = fogState;
     vRiverEdges = riverEdges;
+    vRiverSeaMouthEdges = riverSeaMouthEdges;
+    vRiverLakeMouthEdges = riverLakeMouthEdges;
+    vLakeNeighborEdges = lakeNeighborEdges;
     vLocal = local;
     vWorldXZ = pos.xz;
     // Axes swapped/negated (not a plain pos.xz mapping) so the image reads
@@ -8273,6 +8498,27 @@ uniform vec4 textureAtlasMeta;
 uniform float sandAtlasIndex;
 uniform float landBlendWidth; // 0..1 fraction of tile radius, land-to-land diffusion size
 
+// Curved coastline: the visual waterline is bent by *static* world-space value
+// noise (same recipe as the river banks below) so bays and headlands cut
+// across the straight hex edges. Where the bent waterline pushes inland, this
+// shader paints animated sea water on the land tile - the water layer paints
+// beach sand where it recedes seaward (see water.fragment.ts), both sampling
+// the same world-space noise so the waterline stays continuous across the two
+// meshes' shared edge. beachWidth/waterCornerRounding mirror the values the
+// vertex/water stages use for the same signals.
+uniform float beachWidth;
+uniform float waterCornerRounding;
+uniform float coastCurvature;   // 0..1, how strongly noise bends the waterline
+uniform vec3 seaColorShallow;   // painted coast water colors - the SAME Color
+uniform vec3 seaColorDeep;      // instances as the water layer's
+                                // waterColorShallow/Deep (see TerrainMesh), so
+                                // live color changes update both together
+
+// Organic land-type transitions: the blendEdge() band is bent by the same
+// world-space noise and its strength modulated by a finer octave, so borders
+// read as patchy growth instead of straight strips parallel to hex edges.
+uniform float landBlendCurvature; // 0..1
+
 uniform sampler2D fogMap;        // war-fog.jpg, tiled per-tile via vUV (not atlas-indexed)
 uniform float fogDarkenFactor;   // color multiplier for Explored (fogState 1) tiles
 
@@ -8292,6 +8538,14 @@ uniform vec3 lightDir;
 // the water inside them.
 uniform float hexSize;          // tile circumradius (shared via commonUniforms)
 uniform float uTime;            // seconds, drives the ripple animation
+uniform float foamEnabled;      // coastal wave foam on shader-painted coastal water
+uniform vec3 foamColor;
+uniform float foamCount;
+uniform float foamSpeed;
+uniform float foamWidth;
+uniform float foamRange;
+uniform float foamDistortion;
+uniform float foamOpacity;
 uniform float riverWidth;       // channel waterline half-width, fraction of tile radius
 uniform float riverBankWidth;   // bank strip width beyond the waterline, same units
 uniform float riverCurvature;   // 0..1, how strongly noise bends the banks
@@ -8318,8 +8572,14 @@ varying float vBeachT;
 varying float vFogState;
 varying vec2 vFogUV;
 varying float vRiverEdges;
+varying float vRiverSeaMouthEdges;
+varying float vRiverLakeMouthEdges;
+varying float vLakeNeighborEdges;
 varying vec2 vLocal;
 varying vec2 vWorldXZ;
+varying vec3 vNeighborsKindA; // -1 no tile, 0 land, 1 sea, 2 coastal (SE,S,SW)
+varying vec3 vNeighborsKindB; // (NW,N,NE)
+varying float vElevation;     // normalized mountain elevation, 0 on flat tiles
 
 const vec3 lightAmbient = vec3(0.55, 0.55, 0.55);
 const vec3 lightDiffuse = vec3(0.55, 0.55, 0.55);
@@ -8367,6 +8627,45 @@ float riverChannelDist(vec2 p, float mask, float apothem) {
     return d;
 }
 
+vec2 riverMouthSeg(vec2 p, vec2 dir, float apothem) {
+    float t = clamp(dot(p, dir), 0.0, apothem);
+    return vec2(length(p - dir * t), t / apothem);
+}
+
+// River mouths widen from the tile center to an outlet whose FULL width is
+// 80% of one hex side. riverWidth/mouthWidth are half-widths, so the maximum
+// half-width is 0.4 of hexSize.
+// x = water mask strength, y = bank mask strength, z = deep-center strength,
+// w = edge progress.
+vec4 riverMouthShape(vec2 p, float mask, float apothem, float bendOff) {
+    vec4 outShape = vec4(0.0);
+    for (int i = 0; i < 6; i++) {
+        float bit = pow(2.0, float(i));
+        if (mod(floor(mask / bit), 2.0) < 0.5) continue;
+
+        vec2 dir = DIR_SE;
+        if (i == 1) dir = DIR_S;
+        else if (i == 2) dir = DIR_SW;
+        else if (i == 3) dir = DIR_NW;
+        else if (i == 4) dir = DIR_N;
+        else if (i == 5) dir = DIR_NE;
+
+        vec2 seg = riverMouthSeg(p, dir, apothem);
+        float progress = smoothstep(0.0, 1.0, seg.y);
+        float mouthWidth = mix(riverWidth, 0.4, progress);
+        float d = seg.x / hexSize + bendOff;
+
+        float water = 1.0 - smoothstep(mouthWidth - 0.04, mouthWidth, d);
+        float bank = 1.0 - smoothstep(mouthWidth + riverBankWidth * 0.35, mouthWidth + riverBankWidth, d);
+        float depth = 1.0 - smoothstep(0.0, mouthWidth, d);
+        outShape.x = max(outShape.x, water);
+        outShape.y = max(outShape.y, bank);
+        outShape.z = max(outShape.z, depth);
+        outShape.w = max(outShape.w, progress * water);
+    }
+    return outShape;
+}
+
 // Lake shore factor - see terrain.vertex.ts's identical helper (and its CPU
 // mirror in helpers/rivers.ts): closeness to the nearest *shored* edge, 1.0
 // exactly on it, 0 on a fully-open lake-interior tile.
@@ -8407,7 +8706,11 @@ vec2 cellIndexToUV(float idx) {
 // both ways at once (e.g. land fading into water AND water fading into land),
 // which reads as a fuzzy halo on both sides of every border instead of a single
 // one-directional transition.
-vec4 blendEdge(vec4 inputColor, float neighborTerrain, float neighborPriority, float factor) {
+//
+// bend (world-space noise, shared by all 6 calls) shifts the band's position
+// so the border meanders instead of running parallel to the hex edge; patch
+// modulates its strength so the mixed-in texture reads as patchy growth.
+vec4 blendEdge(vec4 inputColor, float neighborTerrain, float neighborPriority, float factor, float bend, float patch) {
     if (neighborTerrain < 0.0 || neighborTerrain == vTerrain) return inputColor;
     if (neighborPriority <= vPriority) return inputColor;
 
@@ -8415,8 +8718,121 @@ vec4 blendEdge(vec4 inputColor, float neighborTerrain, float neighborPriority, f
     vec4 neighborColor = texture2D(map, otherUV);
 
     float e0 = 1.0 - clamp(landBlendWidth, 0.001, 1.0);
-    float t = smoothstep(e0, 1.0, factor);
+    float t = smoothstep(e0, 1.0, factor + bend) * patch;
     return mix(inputColor, neighborColor, t);
+}
+
+// Same corner treatment as water.vertex.ts's roundedCorner() - see the
+// comment there. Applied per-pixel here so the land side's coastal-distance
+// field has the same rounded shape as the water layer's own.
+float roundedCorner(float isWaterA, float isWaterB, float dA, float dB) {
+    if (isWaterA < 0.5 || isWaterB < 0.5) return -1.0;
+    float sharp = max(dA, dB);
+    float rounded = length(vec2(dA, dB));
+    return mix(sharp, rounded, clamp(waterCornerRounding, 0.0, 1.0));
+}
+
+float lakeNeighborField(float mask) {
+    float wSE = mod(floor(mask /  1.0), 2.0) > 0.5 ? 1.0 : 0.0;
+    float wS  = mod(floor(mask /  2.0), 2.0) > 0.5 ? 1.0 : 0.0;
+    float wSW = mod(floor(mask /  4.0), 2.0) > 0.5 ? 1.0 : 0.0;
+    float wNW = mod(floor(mask /  8.0), 2.0) > 0.5 ? 1.0 : 0.0;
+    float wN  = mod(floor(mask / 16.0), 2.0) > 0.5 ? 1.0 : 0.0;
+    float wNE = mod(floor(mask / 32.0), 2.0) > 0.5 ? 1.0 : 0.0;
+
+    float f = 0.0;
+    f = max(f, wSE > 0.5 ? vEdgeFactorsA.x : 0.0);
+    f = max(f, wS  > 0.5 ? vEdgeFactorsA.y : 0.0);
+    f = max(f, wSW > 0.5 ? vEdgeFactorsA.z : 0.0);
+    f = max(f, wNW > 0.5 ? vEdgeFactorsB.x : 0.0);
+    f = max(f, wN  > 0.5 ? vEdgeFactorsB.y : 0.0);
+    f = max(f, wNE > 0.5 ? vEdgeFactorsB.z : 0.0);
+    if (f <= 0.0) return 0.0;
+
+    float dSE = max(vEdgeFactorsA.x, 0.0);
+    float dS  = max(vEdgeFactorsA.y, 0.0);
+    float dSW = max(vEdgeFactorsA.z, 0.0);
+    float dNW = max(vEdgeFactorsB.x, 0.0);
+    float dN  = max(vEdgeFactorsB.y, 0.0);
+    float dNE = max(vEdgeFactorsB.z, 0.0);
+
+    f = max(f, roundedCorner(wSE, wS,  dSE, dS));
+    f = max(f, roundedCorner(wS,  wSW, dS,  dSW));
+    f = max(f, roundedCorner(wSW, wNW, dSW, dNW));
+    f = max(f, roundedCorner(wNW, wN,  dNW, dN));
+    f = max(f, roundedCorner(wN,  wNE, dN,  dNE));
+    f = max(f, roundedCorner(wNE, wSE, dNE, dSE));
+    return f;
+}
+
+// Per-pixel "closeness to the coastline" field: max over the water-neighbor
+// edges' factors, with shared corners between two water edges rounded off.
+// Returns vec2(field, kind): field is 1.0 exactly on the mesh edge shared
+// with a water tile, 0 on a tile with no water neighbor at all (never grows
+// a coast); kind is the dominant water neighbor's kind (1 sea, 2 coastal),
+// so the painted water can start from the same deep/shallow base color that
+// actual neighbor tile renders - without it, an island in deep sea got a
+// visibly lighter hex-shaped ring (shallow-based paint against deep water).
+// Kinds arrive as varyings and must be re-rounded (floor(v + 0.5)): varying
+// interpolation is not exact even for per-instance-constant values, and the
+// >= 0.5 water test would otherwise flip per pixel (see vRiverEdges below).
+vec2 coastField() {
+    vec3 kA = floor(vNeighborsKindA + 0.5);
+    vec3 kB = floor(vNeighborsKindB + 0.5);
+    float wSE = kA.x >= 0.5 ? 1.0 : 0.0;
+    float wS  = kA.y >= 0.5 ? 1.0 : 0.0;
+    float wSW = kA.z >= 0.5 ? 1.0 : 0.0;
+    float wNW = kB.x >= 0.5 ? 1.0 : 0.0;
+    float wN  = kB.y >= 0.5 ? 1.0 : 0.0;
+    float wNE = kB.z >= 0.5 ? 1.0 : 0.0;
+
+    // straight per-edge max, tracking which edge's kind won
+    float f = 0.0;
+    float kind = 2.0;
+    if (wSE > 0.5 && vEdgeFactorsA.x > f) { f = vEdgeFactorsA.x; kind = kA.x; }
+    if (wS  > 0.5 && vEdgeFactorsA.y > f) { f = vEdgeFactorsA.y; kind = kA.y; }
+    if (wSW > 0.5 && vEdgeFactorsA.z > f) { f = vEdgeFactorsA.z; kind = kA.z; }
+    if (wNW > 0.5 && vEdgeFactorsB.x > f) { f = vEdgeFactorsB.x; kind = kB.x; }
+    if (wN  > 0.5 && vEdgeFactorsB.y > f) { f = vEdgeFactorsB.y; kind = kB.y; }
+    if (wNE > 0.5 && vEdgeFactorsB.z > f) { f = vEdgeFactorsB.z; kind = kB.z; }
+    if (f <= 0.0) return vec2(0.0, kind);
+
+    float dSE = max(vEdgeFactorsA.x, 0.0);
+    float dS  = max(vEdgeFactorsA.y, 0.0);
+    float dSW = max(vEdgeFactorsA.z, 0.0);
+    float dNW = max(vEdgeFactorsB.x, 0.0);
+    float dN  = max(vEdgeFactorsB.y, 0.0);
+    float dNE = max(vEdgeFactorsB.z, 0.0);
+
+    // rounded corners only strengthen the field; the winning edge's kind from
+    // above is kept (a corner blends two edges anyway - the stronger one's
+    // kind is the reasonable pick).
+    f = max(f, roundedCorner(wSE, wS,  dSE, dS));
+    f = max(f, roundedCorner(wS,  wSW, dS,  dSW));
+    f = max(f, roundedCorner(wSW, wNW, dSW, dNW));
+    f = max(f, roundedCorner(wNW, wN,  dNW, dN));
+    f = max(f, roundedCorner(wN,  wNE, dN,  dNE));
+    f = max(f, roundedCorner(wNE, wSE, dNE, dSE));
+    return vec2(f, kind);
+}
+
+// Same travelling coastal foam bands as water.fragment.ts, used here for the
+// part of the sea that the land shader paints when a curved coastline pushes
+// water inland onto a land tile.
+float coastalFoam(vec2 worldXZ, float t, float shoreDist) {
+    float n = valueNoise(worldXZ * (3.0 / hexSize) + vec2(0.0, t * 0.2));
+    n = 0.5 * n + 0.5 * valueNoise(worldXZ * (7.0 / hexSize) - vec2(t * 0.15, 0.0));
+    float distort = (n - 0.5) * foamDistortion;
+
+    float phase = fract(shoreDist * foamCount + t * foamSpeed + distort * 2.0);
+    float halfW = clamp(foamWidth, 0.02, 1.0) * 0.5;
+    float band = smoothstep(halfW, halfW * 0.35, abs(phase - 0.5));
+    float fade = 1.0 - smoothstep(foamRange * 0.35, max(foamRange, 0.001), shoreDist);
+    band *= fade * (0.55 + 0.45 * n);
+
+    float edge = smoothstep(0.12, 0.0, shoreDist + distort * 0.35);
+
+    return clamp(edge + band, 0.0, 1.0) * foamOpacity;
 }
 
 void main() {
@@ -8432,26 +8848,95 @@ void main() {
 
     vec4 texColor = texture2D(map, vTexCoord);
 
-    texColor = blendEdge(texColor, vNeighborsA.x, vNeighborsPriorityA.x, vEdgeFactorsA.x); // SE
-    texColor = blendEdge(texColor, vNeighborsA.y, vNeighborsPriorityA.y, vEdgeFactorsA.y); // S
-    texColor = blendEdge(texColor, vNeighborsA.z, vNeighborsPriorityA.z, vEdgeFactorsA.z); // SW
-    texColor = blendEdge(texColor, vNeighborsB.x, vNeighborsPriorityB.x, vEdgeFactorsB.x); // NW
-    texColor = blendEdge(texColor, vNeighborsB.y, vNeighborsPriorityB.y, vEdgeFactorsB.y); // N
-    texColor = blendEdge(texColor, vNeighborsB.z, vNeighborsPriorityB.z, vEdgeFactorsB.z); // NE
+    // One noise evaluation shared by all 6 blendEdge calls: a coarse octave
+    // meanders the border position, a finer one modulates its strength into
+    // patches (like the river banks' bankPatchiness below).
+    float blendNoise = valueNoise(vWorldXZ * (3.0 / hexSize));
+    float blendBend = (blendNoise - 0.5) * landBlendCurvature * 0.5;
+    float blendPatch = clamp(0.6 + 0.8 * valueNoise(vWorldXZ * (8.0 / hexSize)), 0.0, 1.0);
 
-    // Beach: fade to sand near any edge that slopes down towards water (see
-    // vBeachT / neighborsKindA/B in terrain.vertex.ts) - this is what actually
-    // reads as a "shore" once the tile sinks towards waterLevel there, instead
-    // of a flat 2D color blend against the water tile's own color.
-    if (vBeachT > 0.0) {
-        vec4 sandColor = texture2D(map, cellIndexToUV(sandAtlasIndex));
-        texColor = mix(texColor, sandColor, vBeachT);
+    texColor = blendEdge(texColor, vNeighborsA.x, vNeighborsPriorityA.x, vEdgeFactorsA.x, blendBend, blendPatch); // SE
+    texColor = blendEdge(texColor, vNeighborsA.y, vNeighborsPriorityA.y, vEdgeFactorsA.y, blendBend, blendPatch); // S
+    texColor = blendEdge(texColor, vNeighborsA.z, vNeighborsPriorityA.z, vEdgeFactorsA.z, blendBend, blendPatch); // SW
+    texColor = blendEdge(texColor, vNeighborsB.x, vNeighborsPriorityB.x, vEdgeFactorsB.x, blendBend, blendPatch); // NW
+    texColor = blendEdge(texColor, vNeighborsB.y, vNeighborsPriorityB.y, vEdgeFactorsB.y, blendBend, blendPatch); // N
+    texColor = blendEdge(texColor, vNeighborsB.z, vNeighborsPriorityB.z, vEdgeFactorsB.z, blendBend, blendPatch); // NE
+
+    // Curved coastline. coastField() is 1.0 exactly on the mesh edge shared
+    // with a water tile; bending it with static world-space noise moves the
+    // *visual* waterline off that straight edge. The bend is ONE-SIDED
+    // (inland only, noise >= 0): the whole visible waterline - sand band,
+    // painted sea, foam strip - then lives on the land tile, drawn from this
+    // single tile's own field, so it is continuous by construction. An
+    // earlier two-sided version also painted sand on the water layer where
+    // the line receded seaward, but the water tiles' per-tile shore fields
+    // disagree near shared corners (each tile only knows its own neighbors),
+    // which cut visible gaps/straight seams into the painted sand - see
+    // water.fragment.ts, whose foam now just softly continues this line.
+    vec2 coastFK = coastField();
+    float coast = coastFK.x;
+    if (coast > 0.0) {
+        float cn = valueNoise(vWorldXZ * (1.3 / hexSize));
+        cn = 0.6 * cn + 0.4 * valueNoise(vWorldXZ * (3.2 / hexSize));
+        float f = coast + cn * coastCurvature * 0.5;
+
+        // sand beach: replaces the old vBeachT vertex blend with the same
+        // smoothstep keyed to the bent per-pixel field.
+        float e0Beach = 1.0 - clamp(beachWidth, 0.001, 1.0) * 0.5;
+        float beachT = smoothstep(e0Beach, 1.0, f);
+        if (beachT > 0.0) {
+            vec4 sandColor = texture2D(map, cellIndexToUV(sandAtlasIndex));
+            texColor = mix(texColor, sandColor, beachT);
+        }
+
+        // painted sea past the bent waterline. Color-matched to what the
+        // water layer shows right across the mesh seam: the base color is
+        // the dominant water neighbor's own (deep for a sea tile, shallow
+        // for coastal - coastFK.y), and its shore-distance field at the same
+        // physical point equals (2 - f) in this side's units (both fields
+        // are 1.0 on the mesh edge and bent by the same noise), so feeding
+        // that through the water shader's own shore lightening (base
+        // brightened towards white, see water.fragment.ts) makes the strip
+        // continue the water tile's color seamlessly - no darker band, no
+        // lighter ring around deep-sea islands. A mean-neutral ripple (like
+        // the river water below) keeps it alive without shifting brightness.
+        float seaT = smoothstep(1.0, 1.04, f);
+        if (seaT > 0.0) {
+            vec3 seaBase = coastFK.y < 1.5 ? seaColorDeep : seaColorShallow;
+            float shoreT = smoothstep(e0Beach, 1.0, 2.0 - f);
+            vec3 shoreCol = mix(seaColorShallow, vec3(1.0), 0.5);
+            vec3 seaColor = mix(seaBase, shoreCol, shoreT);
+            float t = uTime;
+            float ripple = valueNoise(vWorldXZ * (6.0 / hexSize) + vec2(t * 0.35, t * 0.2));
+            ripple = 0.5 * ripple + 0.5 * valueNoise(vWorldXZ * (12.0 / hexSize) - vec2(t * 0.25, t * 0.4));
+            seaColor *= 0.85 + 0.3 * ripple;
+            texColor = mix(texColor, vec4(seaColor, 1.0), seaT);
+
+            if (foamEnabled > 0.5) {
+                texColor.rgb = mix(texColor.rgb, foamColor, coastalFoam(vWorldXZ, uTime, max(f - 1.0, 0.0)) * seaT);
+            }
+        }
+
+        if (foamEnabled < 0.5) {
+            // a thin non-animated lapping-foam strip for maps that disable
+            // coastal wave bands but still want the curved waterline readable.
+            float foamStrip = smoothstep(0.98, 1.005, f) - smoothstep(1.04, 1.1, f);
+            texColor.rgb = mix(texColor.rgb, vec3(1.0), clamp(foamStrip, 0.0, 1.0) * 0.35);
+        }
+    }
+
+    // Mountain snowcap: tint the rock towards snow near the peak (vElevation
+    // is 0 on every non-mountain tile). The relief itself comes from the
+    // vertex stage's displacement + normals; this is just the color accent.
+    if (vElevation > 0.0) {
+        float snowT = smoothstep(0.55, 0.95, vElevation);
+        texColor.rgb = mix(texColor.rgb, vec3(0.93, 0.95, 0.98), snowT * 0.85);
     }
 
     // Rivers/lakes (see the uniform block's comment above). Drawn before
     // lighting/fog/grid so all three keep applying to them unchanged; the
     // Unseen fog short-circuit at the top already hides them entirely.
-    if (vRiverEdges > -0.5) {
+    if (vRiverEdges > -0.5 || vLakeNeighborEdges > 0.5) {
         // Round the mask back to an exact integer: every vertex of an instance
         // carries the same riverEdges value, but varying interpolation is not
         // exact - a mask of 34.0 can arrive as 33.99997 on some fragments, and
@@ -8469,35 +8954,47 @@ void main() {
         float waterT = 0.0; // 1 = water surface
         float bankT = 0.0;  // 1 = inside the vegetation band (water overdraws its inner part)
         float depthT = 0.0; // 0 shallow (waterline) .. 1 deep (channel center / lake body)
+        float seaMouthT = 0.0;
 
         if (mask >= 2048.0) {
-            // lake: water fills the hex except a grass rim inset from every
-            // *shored* edge; edges to river tiles keep the rim but get a
-            // channel-shaped opening so the river visibly flows in/out. The
-            // shared segment geometry makes that opening line up exactly with
-            // the river neighbor's own channel at the border.
+            // Lake tiles are full water. The curved green shoreline is painted
+            // by neighboring land tiles (like sea/coast), which gives the lake
+            // more room and avoids a straight hex-shaped rim on the lake tile.
             float openMask = floor((mask - 4096.0) / 64.0);
             float channelMask = mask - 4096.0 - openMask * 64.0;
-            float s0 = 1.0 - lakeShoreWidth;
-            float shore = lakeShore(openMask, vEdgeFactorsA, vEdgeFactorsB) + bendOff;
-            bankT = 1.0 - smoothstep(s0 + riverBankWidth * 0.35, s0 + riverBankWidth, shore);
-            waterT = 1.0 - smoothstep(s0 - 0.04, s0, shore);
-            // short shallow-to-deep ramp: most of the body reads uniformly
-            // deep, so the river-channel openings (depthT 1 at their
-            // centerline) don't draw visibly darker strips across the lake.
-            depthT = 1.0 - smoothstep(s0 - 0.22, s0, shore);
-            if (channelMask > 0.5) {
-                float dChan = riverChannelDist(vLocal, channelMask, apothem) / hexSize + bendOff;
-                bankT = max(bankT, 1.0 - smoothstep(riverWidth + riverBankWidth * 0.35, riverWidth + riverBankWidth, dChan));
-                waterT = max(waterT, 1.0 - smoothstep(riverWidth - 0.04, riverWidth, dChan));
-                depthT = max(depthT, 1.0 - smoothstep(0.0, riverWidth, dChan));
-            }
-        } else {
+            waterT = 1.0;
+            depthT = 1.0;
+        } else if (mask >= 0.0) {
             // river: water along the channel centerline segments
             float d = riverChannelDist(vLocal, mask, apothem) / hexSize + bendOff;
             bankT = 1.0 - smoothstep(riverWidth + riverBankWidth * 0.35, riverWidth + riverBankWidth, d);
             waterT = 1.0 - smoothstep(riverWidth - 0.04, riverWidth, d);
             depthT = 1.0 - smoothstep(0.0, riverWidth, d);
+
+            float seaMouthMask = floor(vRiverSeaMouthEdges + 0.5);
+            float lakeMouthMask = floor(vRiverLakeMouthEdges + 0.5);
+            vec4 seaMouth = riverMouthShape(vLocal, seaMouthMask, apothem, bendOff);
+            vec4 lakeMouth = riverMouthShape(vLocal, lakeMouthMask, apothem, bendOff);
+            bankT = max(bankT, max(seaMouth.y, lakeMouth.y));
+            waterT = max(waterT, max(seaMouth.x, lakeMouth.x));
+            depthT = max(depthT, max(seaMouth.z, lakeMouth.z));
+            seaMouthT = smoothstep(0.45, 1.0, seaMouth.w);
+        }
+
+        float lakeNeighborMask = floor(vLakeNeighborEdges + 0.5);
+        if (mask < 2048.0 && lakeNeighborMask > 0.5) {
+            float lakeField = lakeNeighborField(lakeNeighborMask);
+            if (lakeField > 0.0) {
+                float lakeNoise = valueNoise(vWorldXZ * (1.3 / hexSize));
+                lakeNoise = 0.6 * lakeNoise + 0.4 * valueNoise(vWorldXZ * (3.2 / hexSize));
+                float fLake = lakeField + lakeNoise * coastCurvature * 0.5;
+                float s0Lake = 1.0 - clamp(lakeShoreWidth, 0.001, 1.0);
+                float lakeBankT = smoothstep(s0Lake, 1.0, fLake);
+                float lakeWaterT = smoothstep(1.0, 1.04, fLake);
+                bankT = max(bankT, lakeBankT);
+                waterT = max(waterT, lakeWaterT);
+                depthT = max(depthT, smoothstep(1.0, 1.2, fLake));
+            }
         }
 
         // bank strip first: a light vegetation band reaching past the
@@ -8512,6 +9009,7 @@ void main() {
         // on purpose, since a junction/lake has no single flow direction.
         if (waterT > 0.0) {
             vec3 waterColor = mix(riverColorShallow, riverColorDeep, depthT);
+            waterColor = mix(waterColor, seaColorShallow, seaMouthT);
 
             float t = uTime * riverFlowSpeed;
             float ripple = valueNoise(vWorldXZ * (6.0 / hexSize) + vec2(t * 0.35, t * 0.2));
@@ -8758,6 +9256,19 @@ precision highp float;
 
 uniform vec4 textureAtlasMeta;
 
+// Curved coastline (see terrain.fragment.ts's coast block - this is its water
+// side): the shore-distance field is recomputed per-pixel and bent by the SAME
+// static world-space noise the land layer uses. The bend is one-sided (inland
+// only), so the actual waterline always lies on the LAND tile - this shader
+// never paints past it, it only keys the foam and shore lightening off the
+// bent field so they softly continue the land side's line across the seam.
+// (Painting hard features like sand here doesn't work: the per-tile shore
+// fields of neighboring water tiles disagree near shared corners, cutting
+// visible gaps/straight seams into anything they draw.)
+uniform float waterCornerRounding;
+uniform float coastCurvature;
+uniform float beachWidth;
+
 uniform sampler2D fogMap;        // war-fog.jpg, tiled per-tile via vUV
 uniform float fogDarkenFactor;   // color multiplier for Explored (fogState 1) tiles
 
@@ -8839,18 +9350,64 @@ float valueNoise(vec2 p) {
     );
 }
 
+// Same corner treatment as water.vertex.ts's roundedCorner() - duplicated per
+// pixel here so the bent waterline works with the rounded field, not the
+// vertex-interpolated approximation of it.
+float roundedCorner(float isLandA, float isLandB, float dA, float dB) {
+    if (isLandA < 0.5 || isLandB < 0.5) return -1.0;
+    float sharp = max(dA, dB);
+    float rounded = length(vec2(dA, dB));
+    return mix(sharp, rounded, clamp(waterCornerRounding, 0.0, 1.0));
+}
+
+// Per-pixel shore-distance field: mirrors water.vertex.ts's coastal factor
+// (straight per-edge max + rounded corners), 1.0 exactly on an edge shared
+// with land, 0 on tiles without land neighbors. Kinds are re-rounded first -
+// varying interpolation is not exact even for per-instance-constant values.
+float shoreField() {
+    vec3 kA = floor(vNeighborsKindA + 0.5);
+    vec3 kB = floor(vNeighborsKindB + 0.5);
+    float lSE = (kA.x > -0.5 && kA.x < 0.5) ? 1.0 : 0.0;
+    float lS  = (kA.y > -0.5 && kA.y < 0.5) ? 1.0 : 0.0;
+    float lSW = (kA.z > -0.5 && kA.z < 0.5) ? 1.0 : 0.0;
+    float lNW = (kB.x > -0.5 && kB.x < 0.5) ? 1.0 : 0.0;
+    float lN  = (kB.y > -0.5 && kB.y < 0.5) ? 1.0 : 0.0;
+    float lNE = (kB.z > -0.5 && kB.z < 0.5) ? 1.0 : 0.0;
+
+    float s = 0.0;
+    s = max(s, lSE > 0.5 ? vEdgeFactorsA.x : 0.0);
+    s = max(s, lS  > 0.5 ? vEdgeFactorsA.y : 0.0);
+    s = max(s, lSW > 0.5 ? vEdgeFactorsA.z : 0.0);
+    s = max(s, lNW > 0.5 ? vEdgeFactorsB.x : 0.0);
+    s = max(s, lN  > 0.5 ? vEdgeFactorsB.y : 0.0);
+    s = max(s, lNE > 0.5 ? vEdgeFactorsB.z : 0.0);
+    if (s <= 0.0) return 0.0;
+
+    float dSE = max(vEdgeFactorsA.x, 0.0);
+    float dS  = max(vEdgeFactorsA.y, 0.0);
+    float dSW = max(vEdgeFactorsA.z, 0.0);
+    float dNW = max(vEdgeFactorsB.x, 0.0);
+    float dN  = max(vEdgeFactorsB.y, 0.0);
+    float dNE = max(vEdgeFactorsB.z, 0.0);
+
+    s = max(s, roundedCorner(lSE, lS,  dSE, dS));
+    s = max(s, roundedCorner(lS,  lSW, dS,  dSW));
+    s = max(s, roundedCorner(lSW, lNW, dSW, dNW));
+    s = max(s, roundedCorner(lNW, lN,  dNW, dN));
+    s = max(s, roundedCorner(lN,  lNE, dN,  dNE));
+    s = max(s, roundedCorner(lNE, lSE, dNE, dSE));
+    return s;
+}
+
 // Coastal foam factor (0..1) for the current fragment. Two parts, both keyed
-// off shoreDist = 1 - vShoreT (0 exactly at the waterline, i.e. the edge
-// shared with a land tile - where the water's rise and land's sink meet):
+// off shoreDist (0 exactly at the - possibly noise-bent - waterline):
 //   1) travelling bands: fract(shoreDist * foamCount + t) makes foamCount
 //      bands whose crests march towards the shore as t grows, faded out with
 //      distance so they read as swells rolling in and dying at the beach;
 //   2) lapping edge: a solid strip of foam hugging the waterline itself.
 // World-space value noise perturbs both so the bands wobble and tear instead
 // of tracing the hex outline as perfect straight/parallel lines.
-float coastalFoam(vec2 worldXZ, float t) {
-    float shoreDist = 1.0 - vShoreT;
-
+float coastalFoam(vec2 worldXZ, float t, float shoreDist) {
     // ~3 noise cells per tile radius; the second, slowly scrolling octave
     // keeps the tear pattern itself alive instead of frozen in world space.
     float n = valueNoise(worldXZ * (3.0 / hexSize) + vec2(0.0, t * 0.2));
@@ -8901,18 +9458,31 @@ void main() {
         texColor = mix(texColor, vec4(otherColor, 1.0), clamp(water.x, 0.0, 1.0));
     }
 
-    // shoreline: lighten towards a foamy/sandy tint as the water nears an
-    // actual coastline (vBeachT, computed from land-adjacent edges/corners in
-    // water.vertex.ts - mirrors the land layer's own beach slope, each side
-    // covering half of beachWidth so they meet in the middle of the shared
-    // edge). Blending towards waterColorShallow itself would be a no-op on a
-    // map with no "sea" tiles (every water tile is already priority 1 =
-    // shallow, so texColor is already waterColorShallow) - blend towards a
-    // brightened version instead so the effect is visible regardless of
-    // whether the tile started as deep or shallow.
-    if (vBeachT > 0.0) {
+    // Curved coastline: recompute the shore field per-pixel and bend it with
+    // the SAME one-sided static world-space noise as the land layer's coast
+    // block (see terrain.fragment.ts) - the waterline sits inland, and the
+    // shore visuals below (lightening, foam) recede with it so they continue
+    // the land side's line across the seam. The wave-damping geometry stays
+    // keyed to the un-bent vertex factors, which only affects height.
+    float shore = shoreField();
+    float fBent = 0.0;
+    if (shore > 0.0) {
+        float cn = valueNoise(vWorldPos.xz * (1.3 / hexSize));
+        cn = 0.6 * cn + 0.4 * valueNoise(vWorldPos.xz * (3.2 / hexSize));
+        fBent = shore - cn * coastCurvature * 0.5;
+    }
+
+    // shoreline: lighten towards a foamy/sandy tint as the water nears the
+    // (bent) coastline. Blending towards waterColorShallow itself would be a
+    // no-op on a map with no "sea" tiles (every water tile is already
+    // priority 1 = shallow, so texColor is already waterColorShallow) - blend
+    // towards a brightened version instead so the effect is visible
+    // regardless of whether the tile started as deep or shallow.
+    float e0Beach = 1.0 - clamp(beachWidth, 0.001, 1.0) * 0.5;
+    float shoreT = smoothstep(e0Beach, 1.0, fBent);
+    if (shoreT > 0.0) {
         vec3 shoreColor = mix(waterColorShallow, vec3(1.0), 0.5);
-        texColor = mix(texColor, vec4(shoreColor, 1.0), vBeachT);
+        texColor = mix(texColor, vec4(shoreColor, 1.0), shoreT);
     }
 
     vec3 normal = normalize(vNormal);
@@ -8932,11 +9502,13 @@ void main() {
     float fresnel = pow(1.0 - clamp(dot(normal, viewDir), 0.0, 1.0), 3.0);
     color = mix(color, skyTint, fresnel * 0.5 * fresnelIntensity);
 
-    // coastal foam waves - only fragments on a land-adjacent tile have
-    // vShoreT > 0, so open sea skips the noise work entirely. Applied before
-    // the fog darkening below so foam on Explored tiles dims with the water.
-    if (foamEnabled > 0.5 && vShoreT > 0.001) {
-        color = mix(color, foamColor, coastalFoam(vWorldPos.xz, uTime));
+    // coastal foam waves - only fragments on a land-adjacent tile have a
+    // shore field > 0, so open sea skips the noise work entirely. Keyed to
+    // the bent waterline's distance so the bands/lapping edge follow the
+    // curve. Applied before the fog darkening below so foam on Explored
+    // tiles dims with the water.
+    if (foamEnabled > 0.5 && shore > 0.001) {
+        color = mix(color, foamColor, coastalFoam(vWorldPos.xz, uTime, max(1.0 - fBent, 0.0)));
     }
 
     // Explored (previously seen, currently outside every unit's view range):
@@ -8968,15 +9540,18 @@ void main() {
 	    this.map = map;
 	    this.buildAtlasCellIndex();
 	    this.fogTexture = this.loadFogTexture();
+	    this.atlasTexture = this.loadAtlasTexture();
+	    this.waterShallow = new three.Color(options.waterColorShallow ?? LandColor["coastal" /* coastal */]);
+	    this.waterDeep = new three.Color(options.waterColorDeep ?? LandColor["sea" /* sea */]);
 	    const allTiles = [];
 	    for (let x = 0; x < this.map.w; x++) {
 	      for (let y = 0; y < this.map.h; y++) {
 	        if (this.map.data[x]?.[y]) allTiles.push({ x, y });
 	      }
 	    }
-	    const isWater = (tile) => WATER_TYPES.includes(this.map.data[tile.x][tile.y].type);
-	    this.buildLandLayer(allTiles.filter((t) => !isWater(t)));
-	    this.buildWaterLayer(allTiles.filter(isWater));
+	    const isWater2 = (tile) => WATER_TYPES.includes(this.map.data[tile.x][tile.y].type);
+	    this.buildLandLayer(allTiles.filter((t) => !isWater2(t)));
+	    this.buildWaterLayer(allTiles.filter(isWater2));
 	  }
 	  buildAtlasCellIndex() {
 	    const atlas = this.options.atlas;
@@ -9027,6 +9602,9 @@ void main() {
 	      neighborsKindA: new Float32Array(tiles.length * 3),
 	      neighborsKindB: new Float32Array(tiles.length * 3),
 	      riverEdges: new Float32Array(tiles.length),
+	      riverSeaMouthEdges: new Float32Array(tiles.length),
+	      riverLakeMouthEdges: new Float32Array(tiles.length),
+	      lakeNeighborEdges: new Float32Array(tiles.length),
 	      fogState: new Float32Array(tiles.length).fill(2)
 	      // default Visible - see FogOfWar.ts
 	    };
@@ -9063,6 +9641,9 @@ void main() {
 	      attrs.neighborsKindB[i * 3 + 1] = this.kindFor(n.x, n.y);
 	      attrs.neighborsKindB[i * 3 + 2] = this.kindFor(ne.x, ne.y);
 	      attrs.riverEdges[i] = waterEdgeValue(this.map, tile.x, tile.y);
+	      attrs.riverSeaMouthEdges[i] = riverSeaMouthEdgeValue(this.map, tile.x, tile.y);
+	      attrs.riverLakeMouthEdges[i] = riverLakeMouthEdgeValue(this.map, tile.x, tile.y);
+	      attrs.lakeNeighborEdges[i] = lakeNeighborEdgeValue(this.map, tile.x, tile.y);
 	    });
 	    return attrs;
 	  }
@@ -9083,6 +9664,9 @@ void main() {
 	    geometry.setAttribute("neighborsKindA", new three.InstancedBufferAttribute(attrs.neighborsKindA, 3));
 	    geometry.setAttribute("neighborsKindB", new three.InstancedBufferAttribute(attrs.neighborsKindB, 3));
 	    geometry.setAttribute("riverEdges", new three.InstancedBufferAttribute(attrs.riverEdges, 1));
+	    geometry.setAttribute("riverSeaMouthEdges", new three.InstancedBufferAttribute(attrs.riverSeaMouthEdges, 1));
+	    geometry.setAttribute("riverLakeMouthEdges", new three.InstancedBufferAttribute(attrs.riverLakeMouthEdges, 1));
+	    geometry.setAttribute("lakeNeighborEdges", new three.InstancedBufferAttribute(attrs.lakeNeighborEdges, 1));
 	    geometry.setAttribute("fogState", new three.InstancedBufferAttribute(attrs.fogState, 1));
 	    return geometry;
 	  }
@@ -9092,9 +9676,12 @@ void main() {
 	    return {
 	      textureAtlasMeta: { value: new three.Vector4(atlas.width, atlas.height, atlas.cellSize, atlas.cellSpacing) },
 	      hexSize: { value: size },
+	      map: { value: this.atlasTexture },
 	      sandAtlasIndex: { value: this.atlasCellIndex["sand" /* sand */] ?? 0 },
 	      waterLevel: { value: -(this.options.waterDepth ?? size * 0.25) },
 	      beachWidth: { value: this.options.beachWidth ?? 0.35 },
+	      waterCornerRounding: { value: this.options.waterCornerRounding ?? 0.4 },
+	      coastCurvature: { value: this.options.coastCurvature ?? 0.5 },
 	      fogMap: { value: this.fogTexture },
 	      fogDarkenFactor: { value: this.options.fogDarkenFactor ?? 0.45 },
 	      fogTextureSize: { value: this.options.fogTextureSize ?? size * 8 },
@@ -9140,13 +9727,25 @@ void main() {
 	  //interpolates between those 2 fixed extremes no matter the configured width.
 	  buildLandLayer(tiles) {
 	    if (tiles.length === 0) return;
-	    const geometry = this.buildInstancedGeometry(tiles, 2);
+	    const geometry = this.buildInstancedGeometry(tiles, 3);
 	    tiles.forEach((tile, i) => this.tileIndex.set(`${tile.x},${tile.y}`, i));
 	    this.landMaterial = new three.RawShaderMaterial({
 	      uniforms: {
-	        map: { value: this.loadAtlasTexture() },
 	        landBlendWidth: { value: this.options.landBlendWidth ?? 0.5 },
+	        landBlendCurvature: { value: this.options.landBlendCurvature ?? 0.5 },
+	        mountainAtlasIndex: { value: this.atlasCellIndex["mountain" /* mountain */] ?? -2 },
+	        mountainHeight: { value: this.options.mountainHeight ?? this.options.size * 0.6 },
+	        seaColorShallow: { value: this.waterShallow },
+	        seaColorDeep: { value: this.waterDeep },
 	        uTime: { value: 0 },
+	        foamEnabled: { value: this.options.coastalWavesEnabled ?? true ? 1 : 0 },
+	        foamColor: { value: new three.Color(this.options.coastalWaveColor ?? 16777215) },
+	        foamCount: { value: this.options.coastalWaveCount ?? 3 },
+	        foamSpeed: { value: this.options.coastalWaveSpeed ?? 0.6 },
+	        foamWidth: { value: this.options.coastalWaveWidth ?? 0.3 },
+	        foamRange: { value: this.options.coastalWaveRange ?? 0.8 },
+	        foamDistortion: { value: this.options.coastalWaveDistortion ?? 0.5 },
+	        foamOpacity: { value: this.options.coastalWaveOpacity ?? 0.85 },
 	        riverWidth: { value: this.options.riverWidth ?? 0.28 },
 	        riverBankWidth: { value: this.options.riverBankWidth ?? 0.14 },
 	        riverCurvature: { value: this.options.riverCurvature ?? 0.5 },
@@ -9188,9 +9787,8 @@ void main() {
 	        foamRange: { value: this.options.coastalWaveRange ?? 0.8 },
 	        foamDistortion: { value: this.options.coastalWaveDistortion ?? 0.5 },
 	        foamOpacity: { value: this.options.coastalWaveOpacity ?? 0.85 },
-	        waterCornerRounding: { value: this.options.waterCornerRounding ?? 0.4 },
-	        waterColorDeep: { value: new three.Color(this.options.waterColorDeep ?? LandColor["sea" /* sea */]) },
-	        waterColorShallow: { value: new three.Color(this.options.waterColorShallow ?? LandColor["coastal" /* coastal */]) },
+	        waterColorDeep: { value: this.waterDeep },
+	        waterColorShallow: { value: this.waterShallow },
 	        ...this.commonUniforms()
 	      },
 	      vertexShader: WATER_VERTEX_SHADER,
@@ -9338,11 +9936,34 @@ void main() {
 	  set lakeShoreWidth(value) {
 	    if (this.landMaterial) this.landMaterial.uniforms.lakeShoreWidth.value = value;
 	  }
+	  //Both materials carry this one now (commonUniforms) - the land layer's
+	  //curved-coast field uses the same corner rounding as the water layer's.
 	  get waterCornerRounding() {
-	    return this.waterMaterial?.uniforms.waterCornerRounding.value ?? 0.4;
+	    return (this.waterMaterial ?? this.landMaterial)?.uniforms.waterCornerRounding.value ?? 0.4;
 	  }
 	  set waterCornerRounding(value) {
+	    if (this.landMaterial) this.landMaterial.uniforms.waterCornerRounding.value = value;
 	    if (this.waterMaterial) this.waterMaterial.uniforms.waterCornerRounding.value = value;
+	  }
+	  //Curved-coastline strength - a commonUniforms member, so write both.
+	  get coastCurvature() {
+	    return (this.landMaterial ?? this.waterMaterial)?.uniforms.coastCurvature.value ?? 0.5;
+	  }
+	  set coastCurvature(value) {
+	    if (this.landMaterial) this.landMaterial.uniforms.coastCurvature.value = value;
+	    if (this.waterMaterial) this.waterMaterial.uniforms.coastCurvature.value = value;
+	  }
+	  get landBlendCurvature() {
+	    return this.landMaterial?.uniforms.landBlendCurvature.value ?? 0.5;
+	  }
+	  set landBlendCurvature(value) {
+	    if (this.landMaterial) this.landMaterial.uniforms.landBlendCurvature.value = value;
+	  }
+	  get mountainHeight() {
+	    return this.landMaterial?.uniforms.mountainHeight.value ?? this.options.size * 0.6;
+	  }
+	  set mountainHeight(value) {
+	    if (this.landMaterial) this.landMaterial.uniforms.mountainHeight.value = value;
 	  }
 	  get beachWidth() {
 	    return this.landMaterial?.uniforms.beachWidth.value ?? this.waterMaterial?.uniforms.beachWidth.value ?? 0.35;
@@ -9396,67 +10017,80 @@ void main() {
 	  set waterFresnelIntensity(value) {
 	    if (this.waterMaterial) this.waterMaterial.uniforms.fresnelIntensity.value = value;
 	  }
+	  //Mutates the shared Color instances (see their field comment), so the
+	  //water layer AND the land layer's painted curved-coast water update
+	  //together - no per-material bookkeeping.
 	  get waterColorShallow() {
-	    return this.waterMaterial?.uniforms.waterColorShallow.value?.getHex() ?? 0;
+	    return this.waterShallow.getHex();
 	  }
 	  set waterColorShallow(value) {
-	    this.waterMaterial?.uniforms.waterColorShallow.value?.set(value);
+	    this.waterShallow.set(value);
 	  }
 	  get waterColorDeep() {
-	    return this.waterMaterial?.uniforms.waterColorDeep.value?.getHex() ?? 0;
+	    return this.waterDeep.getHex();
 	  }
 	  set waterColorDeep(value) {
-	    this.waterMaterial?.uniforms.waterColorDeep.value?.set(value);
+	    this.waterDeep.set(value);
 	  }
 	  //Coastal foam waves - all plain uniforms on the water material, so
-	  //toggling/tuning is live.
+	  //toggling/tuning is live. The land material mirrors these for the small
+	  //shader-painted water strips on curved coastal land tiles.
 	  get coastalWavesEnabled() {
-	    return (this.waterMaterial?.uniforms.foamEnabled.value ?? 1) > 0.5;
+	    return ((this.waterMaterial ?? this.landMaterial)?.uniforms.foamEnabled.value ?? 1) > 0.5;
 	  }
 	  set coastalWavesEnabled(value) {
-	    if (this.waterMaterial) this.waterMaterial.uniforms.foamEnabled.value = value ? 1 : 0;
+	    const v = value ? 1 : 0;
+	    if (this.waterMaterial) this.waterMaterial.uniforms.foamEnabled.value = v;
+	    if (this.landMaterial) this.landMaterial.uniforms.foamEnabled.value = v;
 	  }
 	  get coastalWaveColor() {
-	    return this.waterMaterial?.uniforms.foamColor.value?.getHex() ?? 16777215;
+	    return (this.waterMaterial ?? this.landMaterial)?.uniforms.foamColor.value?.getHex() ?? 16777215;
 	  }
 	  set coastalWaveColor(value) {
 	    this.waterMaterial?.uniforms.foamColor.value?.set(value);
+	    this.landMaterial?.uniforms.foamColor.value?.set(value);
 	  }
 	  get coastalWaveCount() {
-	    return this.waterMaterial?.uniforms.foamCount.value ?? 3;
+	    return (this.waterMaterial ?? this.landMaterial)?.uniforms.foamCount.value ?? 3;
 	  }
 	  set coastalWaveCount(value) {
 	    if (this.waterMaterial) this.waterMaterial.uniforms.foamCount.value = value;
+	    if (this.landMaterial) this.landMaterial.uniforms.foamCount.value = value;
 	  }
 	  get coastalWaveSpeed() {
-	    return this.waterMaterial?.uniforms.foamSpeed.value ?? 0.6;
+	    return (this.waterMaterial ?? this.landMaterial)?.uniforms.foamSpeed.value ?? 0.6;
 	  }
 	  set coastalWaveSpeed(value) {
 	    if (this.waterMaterial) this.waterMaterial.uniforms.foamSpeed.value = value;
+	    if (this.landMaterial) this.landMaterial.uniforms.foamSpeed.value = value;
 	  }
 	  get coastalWaveWidth() {
-	    return this.waterMaterial?.uniforms.foamWidth.value ?? 0.3;
+	    return (this.waterMaterial ?? this.landMaterial)?.uniforms.foamWidth.value ?? 0.3;
 	  }
 	  set coastalWaveWidth(value) {
 	    if (this.waterMaterial) this.waterMaterial.uniforms.foamWidth.value = value;
+	    if (this.landMaterial) this.landMaterial.uniforms.foamWidth.value = value;
 	  }
 	  get coastalWaveRange() {
-	    return this.waterMaterial?.uniforms.foamRange.value ?? 0.8;
+	    return (this.waterMaterial ?? this.landMaterial)?.uniforms.foamRange.value ?? 0.8;
 	  }
 	  set coastalWaveRange(value) {
 	    if (this.waterMaterial) this.waterMaterial.uniforms.foamRange.value = value;
+	    if (this.landMaterial) this.landMaterial.uniforms.foamRange.value = value;
 	  }
 	  get coastalWaveDistortion() {
-	    return this.waterMaterial?.uniforms.foamDistortion.value ?? 0.5;
+	    return (this.waterMaterial ?? this.landMaterial)?.uniforms.foamDistortion.value ?? 0.5;
 	  }
 	  set coastalWaveDistortion(value) {
 	    if (this.waterMaterial) this.waterMaterial.uniforms.foamDistortion.value = value;
+	    if (this.landMaterial) this.landMaterial.uniforms.foamDistortion.value = value;
 	  }
 	  get coastalWaveOpacity() {
-	    return this.waterMaterial?.uniforms.foamOpacity.value ?? 0.85;
+	    return (this.waterMaterial ?? this.landMaterial)?.uniforms.foamOpacity.value ?? 0.85;
 	  }
 	  set coastalWaveOpacity(value) {
 	    if (this.waterMaterial) this.waterMaterial.uniforms.foamOpacity.value = value;
+	    if (this.landMaterial) this.landMaterial.uniforms.foamOpacity.value = value;
 	  }
 	  //Index of a tile within the land layer's instanced attributes, for future
 	  //point updates (e.g. HexMap.setTile) without rebuilding the whole geometry.
@@ -9505,13 +10139,141 @@ void main() {
 	  //helpers/models.ts), reused by future loads, not owned by this instance.
 	  dispose() {
 	    this.landMesh?.geometry.dispose();
-	    this.landMaterial?.uniforms.map?.value?.dispose();
 	    this.landMaterial?.dispose();
 	    this.waterMesh?.geometry.dispose();
 	    this.waterMaterial?.dispose();
+	    this.atlasTexture.dispose();
 	    this.fogTexture.dispose();
 	  }
 	};
+
+	// src/helpers/coast.ts
+	var DIRS = {
+	  SE: { x: 0.8660254, y: 0.5 },
+	  S: { x: 0, y: 1 },
+	  SW: { x: -0.8660254, y: 0.5 },
+	  NW: { x: -0.8660254, y: -0.5 },
+	  N: { x: 0, y: -1 },
+	  NE: { x: 0.8660254, y: -0.5 }
+	};
+	var COAST_DIRECTIONS = ["SE", "S", "SW", "NW", "N", "NE"];
+	function clamp(value, min, max) {
+	  return Math.min(max, Math.max(min, value));
+	}
+	function fract(value) {
+	  return value - Math.floor(value);
+	}
+	function mix(a, b, t) {
+	  return a * (1 - t) + b * t;
+	}
+	function hash21(x, y) {
+	  return fract(Math.sin(x * 127.1 + y * 311.7) * 43758.5453123);
+	}
+	function valueNoise(x, y) {
+	  const ix = Math.floor(x);
+	  const iy = Math.floor(y);
+	  const fx = fract(x);
+	  const fy = fract(y);
+	  const ux = fx * fx * (3 - 2 * fx);
+	  const uy = fy * fy * (3 - 2 * fy);
+	  return mix(
+	    mix(hash21(ix, iy), hash21(ix + 1, iy), ux),
+	    mix(hash21(ix, iy + 1), hash21(ix + 1, iy + 1), ux),
+	    uy
+	  );
+	}
+	function isWater(tile) {
+	  return tile?.type === "sea" /* sea */ || tile?.type === "coastal" /* coastal */;
+	}
+	function isLake(tile) {
+	  return !!tile?.modifiers?.includes("lake");
+	}
+	function roundedCorner(isWaterA, isWaterB, dA, dB, waterCornerRounding) {
+	  if (!isWaterA || !isWaterB) return -1;
+	  return mix(Math.max(dA, dB), Math.hypot(dA, dB), clamp(waterCornerRounding, 0, 1));
+	}
+	function isInCoastalShore(map, tileX, tileY, localX, localY, worldX, worldY, size, options = {}) {
+	  const tile = map.data[tileX]?.[tileY];
+	  if (!tile || isWater(tile)) return true;
+	  const apothem = size * 0.8660254;
+	  const waterByDirection = /* @__PURE__ */ new Map();
+	  const factorByDirection = /* @__PURE__ */ new Map();
+	  for (const direction of COAST_DIRECTIONS) {
+	    const neighbor = getNeighborCoords(tileX, tileY, direction);
+	    waterByDirection.set(direction, isWater(map.data[neighbor.x]?.[neighbor.y]));
+	    const dir = DIRS[direction];
+	    factorByDirection.set(direction, (localX * dir.x + localY * dir.y) / apothem);
+	  }
+	  let coast = 0;
+	  for (const direction of COAST_DIRECTIONS) {
+	    const factor = factorByDirection.get(direction) ?? 0;
+	    if (waterByDirection.get(direction) && factor > coast) coast = factor;
+	  }
+	  if (coast <= 0) return false;
+	  const waterCornerRounding = options.waterCornerRounding ?? 0.4;
+	  for (let i = 0; i < COAST_DIRECTIONS.length; i++) {
+	    const a = COAST_DIRECTIONS[i];
+	    const b = COAST_DIRECTIONS[(i + 1) % COAST_DIRECTIONS.length];
+	    coast = Math.max(
+	      coast,
+	      roundedCorner(
+	        waterByDirection.get(a) ?? false,
+	        waterByDirection.get(b) ?? false,
+	        Math.max(factorByDirection.get(a) ?? 0, 0),
+	        Math.max(factorByDirection.get(b) ?? 0, 0),
+	        waterCornerRounding
+	      )
+	    );
+	  }
+	  const coastCurvature = options.coastCurvature ?? 0.5;
+	  const coarse = valueNoise(worldX * (1.3 / size), worldY * (1.3 / size));
+	  const fine = valueNoise(worldX * (3.2 / size), worldY * (3.2 / size));
+	  const curvedCoast = coast + (0.6 * coarse + 0.4 * fine) * coastCurvature * 0.5;
+	  const beachStart = 1 - clamp(options.beachWidth ?? 0.35, 1e-3, 1) * 0.5;
+	  return curvedCoast >= beachStart;
+	}
+	function isInLakeShore(map, tileX, tileY, localX, localY, worldX, worldY, size, options = {}) {
+	  const tile = map.data[tileX]?.[tileY];
+	  if (!tile || isLake(tile)) return true;
+	  const apothem = size * 0.8660254;
+	  const lakeByDirection = /* @__PURE__ */ new Map();
+	  const factorByDirection = /* @__PURE__ */ new Map();
+	  for (const direction of COAST_DIRECTIONS) {
+	    const neighbor = getNeighborCoords(tileX, tileY, direction);
+	    lakeByDirection.set(direction, isLake(map.data[neighbor.x]?.[neighbor.y]));
+	    const dir = DIRS[direction];
+	    factorByDirection.set(direction, (localX * dir.x + localY * dir.y) / apothem);
+	  }
+	  let lakeField = 0;
+	  for (const direction of COAST_DIRECTIONS) {
+	    const factor = factorByDirection.get(direction) ?? 0;
+	    if (lakeByDirection.get(direction) && factor > lakeField) lakeField = factor;
+	  }
+	  if (lakeField <= 0) return false;
+	  const waterCornerRounding = options.waterCornerRounding ?? 0.4;
+	  for (let i = 0; i < COAST_DIRECTIONS.length; i++) {
+	    const a = COAST_DIRECTIONS[i];
+	    const b = COAST_DIRECTIONS[(i + 1) % COAST_DIRECTIONS.length];
+	    lakeField = Math.max(
+	      lakeField,
+	      roundedCorner(
+	        lakeByDirection.get(a) ?? false,
+	        lakeByDirection.get(b) ?? false,
+	        Math.max(factorByDirection.get(a) ?? 0, 0),
+	        Math.max(factorByDirection.get(b) ?? 0, 0),
+	        waterCornerRounding
+	      )
+	    );
+	  }
+	  const coastCurvature = options.coastCurvature ?? 0.5;
+	  const coarse = valueNoise(worldX * (1.3 / size), worldY * (1.3 / size));
+	  const fine = valueNoise(worldX * (3.2 / size), worldY * (3.2 / size));
+	  const curvedLake = lakeField + (0.6 * coarse + 0.4 * fine) * coastCurvature * 0.5;
+	  const shoreStart = 1 - clamp(options.lakeShoreWidth ?? 0.18, 1e-3, 1);
+	  return curvedLake >= shoreStart;
+	}
+
+	// src/objects/Forest.ts
 	var ForestField = class extends three.Group {
 	  constructor(tileRanges, fogDarkenFactor) {
 	    super();
@@ -9561,6 +10323,12 @@ void main() {
 	    riverCurvature: options.riverCurvature ?? 0.5,
 	    lakeShoreWidth: options.lakeShoreWidth ?? 0.18
 	  };
+	  const coastOptions = {
+	    beachWidth: options.beachWidth ?? 0.35,
+	    lakeShoreWidth: options.lakeShoreWidth ?? 0.18,
+	    waterCornerRounding: options.waterCornerRounding ?? 0.4,
+	    coastCurvature: options.coastCurvature ?? 0.5
+	  };
 	  const tileRanges = /* @__PURE__ */ new Map();
 	  const group = new ForestField(tileRanges, fogDarkenFactor);
 	  for (const [modelPath, tiles] of tilesByModel) {
@@ -9592,12 +10360,17 @@ void main() {
 	      const originalMatrices = [];
 	      let attempts = 0;
 	      const waterValue = waterEdgeValue(map, tile.x, tile.y);
+	      const seaMouthValue = riverSeaMouthEdgeValue(map, tile.x, tile.y);
+	      const lakeMouthValue = riverLakeMouthEdgeValue(map, tile.x, tile.y);
+	      const lakeNeighborValue = lakeNeighborEdgeValue(map, tile.x, tile.y);
 	      while (placed.length < treesPerTile && attempts < treesPerTile * 20) {
 	        attempts++;
 	        const lx = getRandomInt(-size, size);
 	        const ly = getRandomInt(-size, size);
 	        if (pointInPolygon2(polygon, [lx, ly]) !== -1) continue;
-	        if (isInTileWater(lx, ly, waterValue, size, waterOptions)) continue;
+	        if (isInTileWater(lx, ly, waterValue, size, waterOptions, seaMouthValue, lakeMouthValue, lakeNeighborValue)) continue;
+	        if (isInCoastalShore(map, tile.x, tile.y, lx, ly, center.x + lx, center.y + ly, size, coastOptions)) continue;
+	        if (isInLakeShore(map, tile.x, tile.y, lx, ly, center.x + lx, center.y + ly, size, coastOptions)) continue;
 	        const overlaps = placed.some((p) => Math.abs(p.x - lx) < treeFootprint && Math.abs(p.y - ly) < treeFootprint);
 	        if (overlaps) continue;
 	        placed.push({ x: lx, y: ly });
@@ -9800,12 +10573,15 @@ void main() {
 	    const center = getHexCenter(tile.x, tile.y, size);
 	    const tileStart = instance;
 	    const waterValue = waterEdgeValue(map, tile.x, tile.y);
+	    const seaMouthValue = riverSeaMouthEdgeValue(map, tile.x, tile.y);
+	    const lakeMouthValue = riverLakeMouthEdgeValue(map, tile.x, tile.y);
+	    const lakeNeighborValue = lakeNeighborEdgeValue(map, tile.x, tile.y);
 	    for (let i = 0; i < density; i++) {
 	      let lx = 0, ly = 0, attempts = 0, valid = false;
 	      while (!valid && attempts < 20) {
 	        lx = getRandomInt(-size, size);
 	        ly = getRandomInt(-size, size);
-	        valid = pointInPolygon2(polygon, [lx, ly]) === -1 && !isInTileWater(lx, ly, waterValue, size, waterOptions);
+	        valid = pointInPolygon2(polygon, [lx, ly]) === -1 && !isInTileWater(lx, ly, waterValue, size, waterOptions, seaMouthValue, lakeMouthValue, lakeNeighborValue);
 	        attempts++;
 	      }
 	      if (!valid) continue;
@@ -9963,6 +10739,8 @@ void main() {
 	  beachWidth: 0.35,
 	  landBlendWidth: 0.5,
 	  waterCornerRounding: 0.4,
+	  coastCurvature: 0.5,
+	  landBlendCurvature: 0.5,
 	  riverWidth: 0.28,
 	  riverBankWidth: 0.14,
 	  riverCurvature: 0.5,
@@ -10057,7 +10835,8 @@ void main() {
 	      fogTextureSize: options.fogTextureSize ?? (options.size ?? DEFAULT_OPTIONS.size) * 8,
 	      riverColorShallow: options.riverColorShallow ?? options.waterColorShallow ?? DEFAULT_OPTIONS.waterColorShallow,
 	      riverColorDeep: options.riverColorDeep ?? options.waterColorDeep ?? DEFAULT_OPTIONS.waterColorDeep,
-	      riverDepth: options.riverDepth ?? waterDepth * 0.6
+	      riverDepth: options.riverDepth ?? waterDepth * 0.6,
+	      mountainHeight: options.mountainHeight ?? (options.size ?? DEFAULT_OPTIONS.size) * 0.6
 	    };
 	    const el = document.querySelector(this.options.element);
 	    if (!(el instanceof HTMLCanvasElement)) {
@@ -10201,6 +10980,9 @@ void main() {
 	      beachWidth: this.options.beachWidth,
 	      landBlendWidth: this.options.landBlendWidth,
 	      waterCornerRounding: this.options.waterCornerRounding,
+	      coastCurvature: this.options.coastCurvature,
+	      landBlendCurvature: this.options.landBlendCurvature,
+	      mountainHeight: this.options.mountainHeight,
 	      riverWidth: this.options.riverWidth,
 	      riverBankWidth: this.options.riverBankWidth,
 	      riverCurvature: this.options.riverCurvature,
@@ -10241,7 +11023,10 @@ void main() {
 	      riverWidth: this.options.riverWidth,
 	      riverBankWidth: this.options.riverBankWidth,
 	      riverCurvature: this.options.riverCurvature,
-	      lakeShoreWidth: this.options.lakeShoreWidth
+	      lakeShoreWidth: this.options.lakeShoreWidth,
+	      beachWidth: this.options.beachWidth,
+	      waterCornerRounding: this.options.waterCornerRounding,
+	      coastCurvature: this.options.coastCurvature
 	    }) ?? void 0;
 	    if (this.forest) {
 	      this.scene.add(this.forest);
@@ -10465,6 +11250,27 @@ void main() {
 	    this.options.waterCornerRounding = value;
 	    if (this.terrain) this.terrain.waterCornerRounding = value;
 	  }
+	  get coastCurvature() {
+	    return this.terrain?.coastCurvature ?? this.options.coastCurvature;
+	  }
+	  set coastCurvature(value) {
+	    this.options.coastCurvature = value;
+	    if (this.terrain) this.terrain.coastCurvature = value;
+	  }
+	  get landBlendCurvature() {
+	    return this.terrain?.landBlendCurvature ?? this.options.landBlendCurvature;
+	  }
+	  set landBlendCurvature(value) {
+	    this.options.landBlendCurvature = value;
+	    if (this.terrain) this.terrain.landBlendCurvature = value;
+	  }
+	  get mountainHeight() {
+	    return this.terrain?.mountainHeight ?? this.options.mountainHeight;
+	  }
+	  set mountainHeight(value) {
+	    this.options.mountainHeight = value;
+	    if (this.terrain) this.terrain.mountainHeight = value;
+	  }
 	  get beachWidth() {
 	    return this.terrain?.beachWidth ?? this.options.beachWidth;
 	  }
@@ -10624,6 +11430,9 @@ void main() {
 	  get selectedTile() {
 	    return this.lastSelected;
 	  }
+	  get size() {
+	    return this.options.size;
+	  }
 	  drawRoutePath(path) {
 	    this.cleanRoutePath();
 	    const points = path.map((p) => {
@@ -10703,7 +11512,8 @@ void main() {
 	      land: false,
 	      sand: false,
 	      tundra: false,
-	      snow: false
+	      snow: false,
+	      mountain: false
 	    };
 	    setOptions(this, options);
 	  }
@@ -10744,7 +11554,8 @@ void main() {
 	      ["land" /* land */]: this.options.land,
 	      ["sand" /* sand */]: this.options.sand,
 	      ["tundra" /* tundra */]: this.options.tundra,
-	      ["snow" /* snow */]: this.options.snow
+	      ["snow" /* snow */]: this.options.snow,
+	      ["mountain" /* mountain */]: this.options.mountain
 	    };
 	  }
 	  //Where the unit actually is *right now* - the cell nearest the animated
@@ -11079,7 +11890,7 @@ void main() {
 	    this._mapData = mapData;
 	    await this._map.load(mapData);
 	    for (const unitInfo of unitsData) {
-	      const unit = new Unit(unitInfo);
+	      const unit = new Unit({ ...unitInfo, size: this._map.size });
 	      await unit.setUnit();
 	      unit.on("start_move", (payload) => this.emit("start_move", payload));
 	      unit.on("end_move", (payload) => this.emit("end_move", payload));
@@ -11166,7 +11977,8 @@ void main() {
 	      land: true,
 	      sand: true,
 	      tundra: true,
-	      snow: true
+	      snow: true,
+	      mountain: true
 	    };
 	    const fog = this._fog;
 	    const pathFinder = new PathFinder(

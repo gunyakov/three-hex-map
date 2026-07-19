@@ -57,7 +57,8 @@ export class Unit extends EventEmitter {
         land: false,
         sand: false,
         tundra: false,
-        snow: false
+        snow: false,
+        mountain: false
     };
 
     constructor(options:object = {}) {
@@ -118,7 +119,8 @@ export class Unit extends EventEmitter {
             [Land.land]: this.options.land,
             [Land.sand]: this.options.sand,
             [Land.tundra]: this.options.tundra,
-            [Land.snow]: this.options.snow
+            [Land.snow]: this.options.snow,
+            [Land.mountain]: this.options.mountain
         };
     }
 

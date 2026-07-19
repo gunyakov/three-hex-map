@@ -54,7 +54,7 @@ export class GameEngine extends EventEmitter {
         await this._map.load(mapData);
 
         for (const unitInfo of unitsData) {
-            const unit = new Unit(unitInfo);
+            const unit = new Unit({ ...unitInfo, size: this._map.size });
             await unit.setUnit();
             unit.on("start_move", payload => this.emit("start_move", payload));
             unit.on("end_move", payload => this.emit("end_move", payload));
@@ -161,7 +161,8 @@ export class GameEngine extends EventEmitter {
             land: true,
             sand: true,
             tundra: true,
-            snow: true
+            snow: true,
+            mountain: true
         };
 
         //Tiles still under war fog (Unseen - never viewed by any unit) are

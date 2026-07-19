@@ -20,7 +20,7 @@ import { MapInfo, TileInfo, Point } from "../interfaces";
 import { Land, LandPriority, LandColor } from "../enums";
 import { getHexCenter } from "../helpers/helpers";
 import { getNeighborCoords } from "../helpers/neighbors";
-import { waterEdgeValue } from "../helpers/rivers";
+import { lakeNeighborEdgeValue, riverLakeMouthEdgeValue, riverSeaMouthEdgeValue, waterEdgeValue } from "../helpers/rivers";
 import { createHexagonGeometry } from "./hexagonGeometry";
 import { makeTextSprite } from "./citysprite";
 import { loadModel } from "../helpers/models";
@@ -89,6 +89,25 @@ export interface TerrainMeshOptions {
     landBlendWidth?: number;
     waterCornerRounding?: number;
 
+    //Curved coastline: 0..1, how strongly static world-space noise bends the
+    //visual waterline off the straight hex edges. The bend is one-sided
+    //(inland only): the land layer paints sea/sand/foam up to the bent line,
+    //the water layer's foam and shore lightening recede to continue it - so
+    //the whole visible waterline is drawn from a single tile's data and stays
+    //seam-free. 0 restores straight hex-edge coasts. Live uniform on both
+    //materials.
+    coastCurvature?: number;
+
+    //Organic land-type transitions: 0..1, how strongly the same noise bends
+    //the landBlendWidth transition band between differently-typed land tiles
+    //(plus patchy strength modulation). 0 restores straight bands.
+    landBlendCurvature?: number;
+
+    //Mountains: peak height (world units) of Land.mountain tiles. Adjacent
+    //mountain tiles connect into continuous ridgelines (see the terrain
+    //vertex shader's mountainHeightAt). Default size * 0.6.
+    mountainHeight?: number;
+
     //Rivers/lakes: land tiles with the "river"/"lake" modifier render animated
     //water on the land layer - a channel through the hex (river) or a full
     //water body with a grass shore rim (lake) - see helpers/rivers.ts for the
@@ -142,6 +161,9 @@ interface InstanceAttributes {
     neighborsKindA: Float32Array;
     neighborsKindB: Float32Array;
     riverEdges: Float32Array;
+    riverSeaMouthEdges: Float32Array;
+    riverLakeMouthEdges: Float32Array;
+    lakeNeighborEdges: Float32Array;
     fogState: Float32Array;
 }
 
@@ -167,10 +189,10 @@ interface CityFogEntry {
 //tundra/snow) and an animated "water" layer (sea/coastal, see shaders/water.*.ts - sum-of-sines
 //vertex displacement with analytically derived normals, no normal map, solid
 //colors instead of a texture). Both share the same per-tile neighbor/priority/
-//kind computation below. A future "mountain" layer (new Land value, own shader
-//with vertex displacement) would plug into this the same way, reusing the
-//neighbor data to blend/raise shared borders between adjacent mountain tiles
-//into a continuous ridge instead of isolated peaks.
+//kind computation below. Mountain tiles (Land.mountain) stay on the land layer
+//- the terrain vertex shader raises them into noise-craggy peaks, reusing the
+//neighbor data to hold shared borders between adjacent mountain tiles up at a
+//saddle height so they form a continuous ridge instead of isolated peaks.
 //
 //The neighborsA/neighborsB attribute order (SE,S,SW / NW,N,NE) must match
 //NEIGHBOR_DIRECTIONS' angle convention (see helpers/neighbors.ts) and the
@@ -198,15 +220,29 @@ export class TerrainMesh extends Group {
     private waterTileIndex = new Map<string, number>(); // "x,y" -> instance index (water layer only)
     private cityFog = new Map<string, CityFogEntry>(); // "x,y" -> that tile's city model/label
     private fogTexture: Texture;
+    private atlasTexture: Texture;
     private map: MapInfo;
     private atlasCellIndex: { [type: string]: number } = {};
     private clock = 0;
+    //Single Color instances shared by BOTH materials' uniforms (the water
+    //layer's own colors AND the land layer's painted curved-coast water - see
+    //seaColorShallow in terrain.fragment.ts): mutating them via the
+    //waterColorShallow/Deep setters updates every use at once, so the painted
+    //inland water can never drift out of sync with the water tiles' color.
+    private waterShallow: Color;
+    private waterDeep: Color;
 
     constructor(map: MapInfo, private options: TerrainMeshOptions) {
         super();
         this.map = map;
         this.buildAtlasCellIndex();
         this.fogTexture = this.loadFogTexture();
+        //One shared texture for both layers (via commonUniforms) - only the
+        //land shader samples it today, but it's shared so a water-side use
+        //never duplicates the load.
+        this.atlasTexture = this.loadAtlasTexture();
+        this.waterShallow = new Color(options.waterColorShallow ?? LandColor[Land.coastal]);
+        this.waterDeep = new Color(options.waterColorDeep ?? LandColor[Land.sea]);
 
         const allTiles: Point[] = [];
         for (let x = 0; x < this.map.w; x++) {
@@ -273,6 +309,9 @@ export class TerrainMesh extends Group {
             neighborsKindA: new Float32Array(tiles.length * 3),
             neighborsKindB: new Float32Array(tiles.length * 3),
             riverEdges: new Float32Array(tiles.length),
+            riverSeaMouthEdges: new Float32Array(tiles.length),
+            riverLakeMouthEdges: new Float32Array(tiles.length),
+            lakeNeighborEdges: new Float32Array(tiles.length),
             fogState: new Float32Array(tiles.length).fill(2) // default Visible - see FogOfWar.ts
         };
 
@@ -319,6 +358,9 @@ export class TerrainMesh extends Group {
             attrs.neighborsKindB[i * 3 + 2] = this.kindFor(ne.x, ne.y);
 
             attrs.riverEdges[i] = waterEdgeValue(this.map, tile.x, tile.y);
+            attrs.riverSeaMouthEdges[i] = riverSeaMouthEdgeValue(this.map, tile.x, tile.y);
+            attrs.riverLakeMouthEdges[i] = riverLakeMouthEdgeValue(this.map, tile.x, tile.y);
+            attrs.lakeNeighborEdges[i] = lakeNeighborEdgeValue(this.map, tile.x, tile.y);
         });
 
         return attrs;
@@ -342,6 +384,9 @@ export class TerrainMesh extends Group {
         geometry.setAttribute("neighborsKindA", new InstancedBufferAttribute(attrs.neighborsKindA, 3));
         geometry.setAttribute("neighborsKindB", new InstancedBufferAttribute(attrs.neighborsKindB, 3));
         geometry.setAttribute("riverEdges", new InstancedBufferAttribute(attrs.riverEdges, 1));
+        geometry.setAttribute("riverSeaMouthEdges", new InstancedBufferAttribute(attrs.riverSeaMouthEdges, 1));
+        geometry.setAttribute("riverLakeMouthEdges", new InstancedBufferAttribute(attrs.riverLakeMouthEdges, 1));
+        geometry.setAttribute("lakeNeighborEdges", new InstancedBufferAttribute(attrs.lakeNeighborEdges, 1));
         geometry.setAttribute("fogState", new InstancedBufferAttribute(attrs.fogState, 1));
 
         return geometry;
@@ -353,9 +398,12 @@ export class TerrainMesh extends Group {
         return {
             textureAtlasMeta: { value: new Vector4(atlas.width, atlas.height, atlas.cellSize, atlas.cellSpacing) },
             hexSize: { value: size },
+            map: { value: this.atlasTexture },
             sandAtlasIndex: { value: this.atlasCellIndex[Land.sand] ?? 0 },
             waterLevel: { value: -(this.options.waterDepth ?? size * 0.25) },
             beachWidth: { value: this.options.beachWidth ?? 0.35 },
+            waterCornerRounding: { value: this.options.waterCornerRounding ?? 0.4 },
+            coastCurvature: { value: this.options.coastCurvature ?? 0.5 },
             fogMap: { value: this.fogTexture },
             fogDarkenFactor: { value: this.options.fogDarkenFactor ?? 0.45 },
             fogTextureSize: { value: this.options.fogTextureSize ?? size * 8 },
@@ -405,14 +453,29 @@ export class TerrainMesh extends Group {
     private buildLandLayer(tiles: Point[]): void {
         if (tiles.length === 0) return;
 
-        const geometry = this.buildInstancedGeometry(tiles, 2);
+        //Subdivision 3 (not the water layer's 2): the mountain displacement
+        //needs the extra interior vertices to bend into a smooth peak instead
+        //of a coarse tent.
+        const geometry = this.buildInstancedGeometry(tiles, 3);
         tiles.forEach((tile, i) => this.tileIndex.set(`${tile.x},${tile.y}`, i));
 
         this.landMaterial = new RawShaderMaterial({
             uniforms: {
-                map: { value: this.loadAtlasTexture() },
                 landBlendWidth: { value: this.options.landBlendWidth ?? 0.5 },
+                landBlendCurvature: { value: this.options.landBlendCurvature ?? 0.5 },
+                mountainAtlasIndex: { value: this.atlasCellIndex[Land.mountain] ?? -2 },
+                mountainHeight: { value: this.options.mountainHeight ?? this.options.size * 0.6 },
+                seaColorShallow: { value: this.waterShallow },
+                seaColorDeep: { value: this.waterDeep },
                 uTime: { value: 0 },
+                foamEnabled: { value: (this.options.coastalWavesEnabled ?? true) ? 1.0 : 0.0 },
+                foamColor: { value: new Color(this.options.coastalWaveColor ?? 0xffffff) },
+                foamCount: { value: this.options.coastalWaveCount ?? 3 },
+                foamSpeed: { value: this.options.coastalWaveSpeed ?? 0.6 },
+                foamWidth: { value: this.options.coastalWaveWidth ?? 0.3 },
+                foamRange: { value: this.options.coastalWaveRange ?? 0.8 },
+                foamDistortion: { value: this.options.coastalWaveDistortion ?? 0.5 },
+                foamOpacity: { value: this.options.coastalWaveOpacity ?? 0.85 },
                 riverWidth: { value: this.options.riverWidth ?? 0.28 },
                 riverBankWidth: { value: this.options.riverBankWidth ?? 0.14 },
                 riverCurvature: { value: this.options.riverCurvature ?? 0.5 },
@@ -458,9 +521,8 @@ export class TerrainMesh extends Group {
                 foamRange: { value: this.options.coastalWaveRange ?? 0.8 },
                 foamDistortion: { value: this.options.coastalWaveDistortion ?? 0.5 },
                 foamOpacity: { value: this.options.coastalWaveOpacity ?? 0.85 },
-                waterCornerRounding: { value: this.options.waterCornerRounding ?? 0.4 },
-                waterColorDeep: { value: new Color(this.options.waterColorDeep ?? LandColor[Land.sea]) },
-                waterColorShallow: { value: new Color(this.options.waterColorShallow ?? LandColor[Land.coastal]) },
+                waterColorDeep: { value: this.waterDeep },
+                waterColorShallow: { value: this.waterShallow },
                 ...this.commonUniforms()
             },
             vertexShader: WATER_VERTEX_SHADER,
@@ -636,11 +698,37 @@ export class TerrainMesh extends Group {
         if (this.landMaterial) this.landMaterial.uniforms.lakeShoreWidth.value = value;
     }
 
+    //Both materials carry this one now (commonUniforms) - the land layer's
+    //curved-coast field uses the same corner rounding as the water layer's.
     public get waterCornerRounding(): number {
-        return this.waterMaterial?.uniforms.waterCornerRounding.value ?? 0.4;
+        return (this.waterMaterial ?? this.landMaterial)?.uniforms.waterCornerRounding.value ?? 0.4;
     }
     public set waterCornerRounding(value: number) {
+        if (this.landMaterial) this.landMaterial.uniforms.waterCornerRounding.value = value;
         if (this.waterMaterial) this.waterMaterial.uniforms.waterCornerRounding.value = value;
+    }
+
+    //Curved-coastline strength - a commonUniforms member, so write both.
+    public get coastCurvature(): number {
+        return (this.landMaterial ?? this.waterMaterial)?.uniforms.coastCurvature.value ?? 0.5;
+    }
+    public set coastCurvature(value: number) {
+        if (this.landMaterial) this.landMaterial.uniforms.coastCurvature.value = value;
+        if (this.waterMaterial) this.waterMaterial.uniforms.coastCurvature.value = value;
+    }
+
+    public get landBlendCurvature(): number {
+        return this.landMaterial?.uniforms.landBlendCurvature.value ?? 0.5;
+    }
+    public set landBlendCurvature(value: number) {
+        if (this.landMaterial) this.landMaterial.uniforms.landBlendCurvature.value = value;
+    }
+
+    public get mountainHeight(): number {
+        return this.landMaterial?.uniforms.mountainHeight.value ?? this.options.size * 0.6;
+    }
+    public set mountainHeight(value: number) {
+        if (this.landMaterial) this.landMaterial.uniforms.mountainHeight.value = value;
     }
 
     public get beachWidth(): number {
@@ -702,76 +790,89 @@ export class TerrainMesh extends Group {
         if (this.waterMaterial) this.waterMaterial.uniforms.fresnelIntensity.value = value;
     }
 
+    //Mutates the shared Color instances (see their field comment), so the
+    //water layer AND the land layer's painted curved-coast water update
+    //together - no per-material bookkeeping.
     public get waterColorShallow(): number {
-        return (this.waterMaterial?.uniforms.waterColorShallow.value as Color)?.getHex() ?? 0;
+        return this.waterShallow.getHex();
     }
     public set waterColorShallow(value: ColorRepresentation) {
-        (this.waterMaterial?.uniforms.waterColorShallow.value as Color)?.set(value);
+        this.waterShallow.set(value);
     }
 
     public get waterColorDeep(): number {
-        return (this.waterMaterial?.uniforms.waterColorDeep.value as Color)?.getHex() ?? 0;
+        return this.waterDeep.getHex();
     }
     public set waterColorDeep(value: ColorRepresentation) {
-        (this.waterMaterial?.uniforms.waterColorDeep.value as Color)?.set(value);
+        this.waterDeep.set(value);
     }
 
     //Coastal foam waves - all plain uniforms on the water material, so
-    //toggling/tuning is live.
+    //toggling/tuning is live. The land material mirrors these for the small
+    //shader-painted water strips on curved coastal land tiles.
     public get coastalWavesEnabled(): boolean {
-        return (this.waterMaterial?.uniforms.foamEnabled.value ?? 1.0) > 0.5;
+        return ((this.waterMaterial ?? this.landMaterial)?.uniforms.foamEnabled.value ?? 1.0) > 0.5;
     }
     public set coastalWavesEnabled(value: boolean) {
-        if (this.waterMaterial) this.waterMaterial.uniforms.foamEnabled.value = value ? 1.0 : 0.0;
+        const v = value ? 1.0 : 0.0;
+        if (this.waterMaterial) this.waterMaterial.uniforms.foamEnabled.value = v;
+        if (this.landMaterial) this.landMaterial.uniforms.foamEnabled.value = v;
     }
 
     public get coastalWaveColor(): number {
-        return (this.waterMaterial?.uniforms.foamColor.value as Color)?.getHex() ?? 0xffffff;
+        return ((this.waterMaterial ?? this.landMaterial)?.uniforms.foamColor.value as Color)?.getHex() ?? 0xffffff;
     }
     public set coastalWaveColor(value: ColorRepresentation) {
         (this.waterMaterial?.uniforms.foamColor.value as Color)?.set(value);
+        (this.landMaterial?.uniforms.foamColor.value as Color)?.set(value);
     }
 
     public get coastalWaveCount(): number {
-        return this.waterMaterial?.uniforms.foamCount.value ?? 3;
+        return (this.waterMaterial ?? this.landMaterial)?.uniforms.foamCount.value ?? 3;
     }
     public set coastalWaveCount(value: number) {
         if (this.waterMaterial) this.waterMaterial.uniforms.foamCount.value = value;
+        if (this.landMaterial) this.landMaterial.uniforms.foamCount.value = value;
     }
 
     public get coastalWaveSpeed(): number {
-        return this.waterMaterial?.uniforms.foamSpeed.value ?? 0.6;
+        return (this.waterMaterial ?? this.landMaterial)?.uniforms.foamSpeed.value ?? 0.6;
     }
     public set coastalWaveSpeed(value: number) {
         if (this.waterMaterial) this.waterMaterial.uniforms.foamSpeed.value = value;
+        if (this.landMaterial) this.landMaterial.uniforms.foamSpeed.value = value;
     }
 
     public get coastalWaveWidth(): number {
-        return this.waterMaterial?.uniforms.foamWidth.value ?? 0.3;
+        return (this.waterMaterial ?? this.landMaterial)?.uniforms.foamWidth.value ?? 0.3;
     }
     public set coastalWaveWidth(value: number) {
         if (this.waterMaterial) this.waterMaterial.uniforms.foamWidth.value = value;
+        if (this.landMaterial) this.landMaterial.uniforms.foamWidth.value = value;
     }
 
     public get coastalWaveRange(): number {
-        return this.waterMaterial?.uniforms.foamRange.value ?? 0.8;
+        return (this.waterMaterial ?? this.landMaterial)?.uniforms.foamRange.value ?? 0.8;
     }
     public set coastalWaveRange(value: number) {
         if (this.waterMaterial) this.waterMaterial.uniforms.foamRange.value = value;
+        if (this.landMaterial) this.landMaterial.uniforms.foamRange.value = value;
     }
 
     public get coastalWaveDistortion(): number {
-        return this.waterMaterial?.uniforms.foamDistortion.value ?? 0.5;
+        return (this.waterMaterial ?? this.landMaterial)?.uniforms.foamDistortion.value ?? 0.5;
     }
     public set coastalWaveDistortion(value: number) {
         if (this.waterMaterial) this.waterMaterial.uniforms.foamDistortion.value = value;
+        if (this.landMaterial) this.landMaterial.uniforms.foamDistortion.value = value;
     }
 
     public get coastalWaveOpacity(): number {
-        return this.waterMaterial?.uniforms.foamOpacity.value ?? 0.85;
+        return (this.waterMaterial ?? this.landMaterial)?.uniforms.foamOpacity.value ?? 0.85;
     }
     public set coastalWaveOpacity(value: number) {
         if (this.waterMaterial) this.waterMaterial.uniforms.foamOpacity.value = value;
+        if (this.landMaterial) this.landMaterial.uniforms.foamOpacity.value = value;
     }
 
     //Index of a tile within the land layer's instanced attributes, for future
@@ -830,10 +931,10 @@ export class TerrainMesh extends Group {
     //helpers/models.ts), reused by future loads, not owned by this instance.
     public dispose(): void {
         this.landMesh?.geometry.dispose();
-        (this.landMaterial?.uniforms.map?.value as Texture | undefined)?.dispose();
         this.landMaterial?.dispose();
         this.waterMesh?.geometry.dispose();
         this.waterMaterial?.dispose();
+        this.atlasTexture.dispose(); // shared by both materials - dispose once
         this.fogTexture.dispose();
     }
 }

@@ -12,7 +12,8 @@ import pointInPolygon from "robust-point-in-polygon";
 import { getRandomInt, HEXPolygon, getHexCenter } from "../helpers/helpers";
 import { loadModel } from "../helpers/models";
 import { MapInfo, Point } from "../interfaces";
-import { waterEdgeValue, isInTileWater, isLakeTile, WaterClearanceOptions } from "../helpers/rivers";
+import { waterEdgeValue, isInTileWater, isLakeTile, lakeNeighborEdgeValue, riverLakeMouthEdgeValue, riverSeaMouthEdgeValue, WaterClearanceOptions } from "../helpers/rivers";
+import { isInCoastalShore, isInLakeShore, CoastClearanceOptions } from "../helpers/coast";
 
 export interface ForestOptions {
     size: number;
@@ -30,6 +31,12 @@ export interface ForestOptions {
     riverBankWidth?: number; // default 0.14
     riverCurvature?: number; // default 0.5
     lakeShoreWidth?: number; // default 0.18
+
+    //Curved coastline clearance: mirrors terrain.fragment.ts's land-side
+    //painted beach/water band so trees do not spawn in the visual shore.
+    beachWidth?: number;           // default 0.35
+    waterCornerRounding?: number;  // default 0.4
+    coastCurvature?: number;       // default 0.5
 }
 
 //Instances belonging to one tile's trees, all drawn by the same model group's
@@ -126,6 +133,12 @@ export async function createForest(map: MapInfo, options: ForestOptions): Promis
         riverCurvature: options.riverCurvature ?? 0.5,
         lakeShoreWidth: options.lakeShoreWidth ?? 0.18
     };
+    const coastOptions: CoastClearanceOptions = {
+        beachWidth: options.beachWidth ?? 0.35,
+        lakeShoreWidth: options.lakeShoreWidth ?? 0.18,
+        waterCornerRounding: options.waterCornerRounding ?? 0.4,
+        coastCurvature: options.coastCurvature ?? 0.5
+    };
 
     const tileRanges = new Map<string, TileTreeRange>();
     const group = new ForestField(tileRanges, fogDarkenFactor);
@@ -161,6 +174,9 @@ export async function createForest(map: MapInfo, options: ForestOptions): Promis
             const originalMatrices: Matrix4[] = [];
             let attempts = 0;
             const waterValue = waterEdgeValue(map, tile.x, tile.y); // -1 = no water, isInTileWater is then always false
+            const seaMouthValue = riverSeaMouthEdgeValue(map, tile.x, tile.y);
+            const lakeMouthValue = riverLakeMouthEdgeValue(map, tile.x, tile.y);
+            const lakeNeighborValue = lakeNeighborEdgeValue(map, tile.x, tile.y);
 
             while (placed.length < treesPerTile && attempts < treesPerTile * 20) {
                 attempts++;
@@ -168,7 +184,9 @@ export async function createForest(map: MapInfo, options: ForestOptions): Promis
                 const ly = getRandomInt(-size, size);
 
                 if (pointInPolygon(polygon, [lx, ly]) !== -1) continue; // -1 = inside the polygon
-                if (isInTileWater(lx, ly, waterValue, size, waterOptions)) continue; // keep trees out of river/lake water
+                if (isInTileWater(lx, ly, waterValue, size, waterOptions, seaMouthValue, lakeMouthValue, lakeNeighborValue)) continue; // keep trees out of river/lake water
+                if (isInCoastalShore(map, tile.x, tile.y, lx, ly, center.x + lx, center.y + ly, size, coastOptions)) continue;
+                if (isInLakeShore(map, tile.x, tile.y, lx, ly, center.x + lx, center.y + ly, size, coastOptions)) continue;
 
                 const overlaps = placed.some(p => Math.abs(p.x - lx) < treeFootprint && Math.abs(p.y - ly) < treeFootprint);
                 if (overlaps) continue;

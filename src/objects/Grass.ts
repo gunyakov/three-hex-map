@@ -14,7 +14,7 @@ import pointInPolygon from "robust-point-in-polygon";
 import { getRandomInt, HEXPolygon, getHexCenter } from "../helpers/helpers";
 import { MapInfo } from "../interfaces";
 import { Land } from "../enums";
-import { waterEdgeValue, isInTileWater, isLakeTile, WaterClearanceOptions } from "../helpers/rivers";
+import { waterEdgeValue, isInTileWater, isLakeTile, lakeNeighborEdgeValue, riverLakeMouthEdgeValue, riverSeaMouthEdgeValue, WaterClearanceOptions } from "../helpers/rivers";
 import { GRASS_VERTEX_SHADER } from "../shaders/grass.vertex";
 import { GRASS_FRAGMENT_SHADER } from "../shaders/grass.fragment";
 
@@ -192,6 +192,9 @@ export function createGrassField(map: MapInfo, options: GrassOptions): GrassFiel
         const center = getHexCenter(tile.x, tile.y, size);
         const tileStart = instance;
         const waterValue = waterEdgeValue(map, tile.x, tile.y); // -1 = no water, isInTileWater is then always false
+        const seaMouthValue = riverSeaMouthEdgeValue(map, tile.x, tile.y);
+        const lakeMouthValue = riverLakeMouthEdgeValue(map, tile.x, tile.y);
+        const lakeNeighborValue = lakeNeighborEdgeValue(map, tile.x, tile.y);
 
         for (let i = 0; i < density; i++) {
             let lx = 0, ly = 0, attempts = 0, valid = false;
@@ -199,7 +202,7 @@ export function createGrassField(map: MapInfo, options: GrassOptions): GrassFiel
                 lx = getRandomInt(-size, size);
                 ly = getRandomInt(-size, size);
                 valid = pointInPolygon(polygon, [lx, ly]) === -1 // -1 = inside the polygon
-                    && !isInTileWater(lx, ly, waterValue, size, waterOptions);
+                    && !isInTileWater(lx, ly, waterValue, size, waterOptions, seaMouthValue, lakeMouthValue, lakeNeighborValue);
                 attempts++;
             }
             // No dry spot found - DROP the blade rather than placing it at the

@@ -938,7 +938,7 @@
         "type": "coastal"
       },
       "18": {
-        "type": "tundra"
+        "type": "mountain"
       },
       "19": {
         "type": "tundra"
@@ -2540,7 +2540,7 @@
         "type": "land"
       },
       "27": {
-        "type": "land"
+        "type": "mountain"
       },
       "28": {
         "type": "coastal"
@@ -2834,7 +2834,7 @@
         "type": "land"
       },
       "10": {
-        "type": "tundra"
+        "type": "mountain"
       },
       "11": {
         "type": "tundra"
@@ -2961,10 +2961,10 @@
         "type": "tundra"
       },
       "10": {
-        "type": "tundra"
+        "type": "mountain"
       },
       "11": {
-        "type": "tundra"
+        "type": "mountain"
       },
       "12": {
         "type": "tundra"
@@ -3070,10 +3070,10 @@
         "type": "tundra"
       },
       "10": {
-        "type": "tundra"
+        "type": "mountain"
       },
       "11": {
-        "type": "tundra"
+        "type": "mountain"
       },
       "12": {
         "type": "tundra"

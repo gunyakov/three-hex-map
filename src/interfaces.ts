@@ -82,6 +82,9 @@ export interface UnitInfo {
     sand: boolean,
     tundra: boolean,
     snow: boolean,
+    //Optional so existing units' info.json stay valid - a missing flag means
+    //impassable (PathFinder denies any type not explicitly set to true).
+    mountain?: boolean,
     movement: number,
     health: number,
     attack: number,

@@ -86,6 +86,20 @@ export interface HexMapOptions {
     landBlendWidth?: number;    // default 0.5
     waterCornerRounding?: number; // default 0.4
 
+    //Curved coastline: how strongly static world-space noise bends the visual
+    //waterline off the straight hex edges (one-sided, inland only - the land
+    //layer draws the whole waterline, the water layer's foam recedes to
+    //continue it). 0 restores straight hex-edge coasts. Organic land
+    //transitions: the same idea applied to landBlendWidth's transition band
+    //between differently-typed land tiles. Both live shader uniforms.
+    coastCurvature?: number;      // 0..1, default 0.5
+    landBlendCurvature?: number;  // 0..1, default 0.5
+
+    //Mountains: Land.mountain tiles rise into noise-craggy peaks; adjacent
+    //mountain tiles connect into continuous ridgelines. Peak height in world
+    //units; default size * 0.6. Live shader uniform.
+    mountainHeight?: number;
+
     //Rivers/lakes: land ("grass") tiles carrying the free-form "river"/"lake"
     //modifier (TileInfo.modifiers) render animated water on the land layer,
     //banks bent by world-space noise so the waterline curves naturally. A
@@ -145,10 +159,11 @@ export interface HexMapOptions {
     fogTextureSize?: number;
 }
 
-//waterDepth/fogTextureSize/riverColorShallow/riverColorDeep/riverDepth have
-//*derived* defaults (computed from size/waterColor*/waterDepth in the
-//constructor), so they're omitted here rather than given fixed values.
-const DEFAULT_OPTIONS: Required<Omit<HexMapOptions, "element" | "waterDepth" | "fogTextureSize" | "riverColorShallow" | "riverColorDeep" | "riverDepth">> = {
+//waterDepth/fogTextureSize/riverColorShallow/riverColorDeep/riverDepth/
+//mountainHeight have *derived* defaults (computed from size/waterColor*/
+//waterDepth in the constructor), so they're omitted here rather than given
+//fixed values.
+const DEFAULT_OPTIONS: Required<Omit<HexMapOptions, "element" | "waterDepth" | "fogTextureSize" | "riverColorShallow" | "riverColorDeep" | "riverDepth" | "mountainHeight">> = {
     size: 40,
     texturesBaseUrl: "textures/",
     gridVisible: true,
@@ -176,6 +191,8 @@ const DEFAULT_OPTIONS: Required<Omit<HexMapOptions, "element" | "waterDepth" | "
     beachWidth: 0.35,
     landBlendWidth: 0.5,
     waterCornerRounding: 0.4,
+    coastCurvature: 0.5,
+    landBlendCurvature: 0.5,
     riverWidth: 0.28,
     riverBankWidth: 0.14,
     riverCurvature: 0.5,
@@ -209,8 +226,8 @@ const DEFAULT_OPTIONS: Required<Omit<HexMapOptions, "element" | "waterDepth" | "
 //   map.on("hover", ({x, y, tile}) => ...);
 //----------------------------------------------------------------------------------
 export class HexMap extends EventEmitter {
-    private options: Required<Omit<HexMapOptions, "element" | "waterDepth" | "fogTextureSize" | "riverColorShallow" | "riverColorDeep" | "riverDepth">>
-        & { element: string, waterDepth: number, fogTextureSize: number, riverColorShallow: ColorRepresentation, riverColorDeep: ColorRepresentation, riverDepth: number };
+    private options: Required<Omit<HexMapOptions, "element" | "waterDepth" | "fogTextureSize" | "riverColorShallow" | "riverColorDeep" | "riverDepth" | "mountainHeight">>
+        & { element: string, waterDepth: number, fogTextureSize: number, riverColorShallow: ColorRepresentation, riverColorDeep: ColorRepresentation, riverDepth: number, mountainHeight: number };
 
     private canvas: HTMLCanvasElement;
     private renderer: WebGLRenderer;
@@ -249,7 +266,8 @@ export class HexMap extends EventEmitter {
             fogTextureSize: options.fogTextureSize ?? (options.size ?? DEFAULT_OPTIONS.size) * 8,
             riverColorShallow: options.riverColorShallow ?? options.waterColorShallow ?? DEFAULT_OPTIONS.waterColorShallow,
             riverColorDeep: options.riverColorDeep ?? options.waterColorDeep ?? DEFAULT_OPTIONS.waterColorDeep,
-            riverDepth: options.riverDepth ?? waterDepth * 0.6
+            riverDepth: options.riverDepth ?? waterDepth * 0.6,
+            mountainHeight: options.mountainHeight ?? (options.size ?? DEFAULT_OPTIONS.size) * 0.6
         };
 
         const el = document.querySelector(this.options.element);
@@ -490,6 +508,9 @@ export class HexMap extends EventEmitter {
             beachWidth: this.options.beachWidth,
             landBlendWidth: this.options.landBlendWidth,
             waterCornerRounding: this.options.waterCornerRounding,
+            coastCurvature: this.options.coastCurvature,
+            landBlendCurvature: this.options.landBlendCurvature,
+            mountainHeight: this.options.mountainHeight,
             riverWidth: this.options.riverWidth,
             riverBankWidth: this.options.riverBankWidth,
             riverCurvature: this.options.riverCurvature,
@@ -532,7 +553,10 @@ export class HexMap extends EventEmitter {
             riverWidth: this.options.riverWidth,
             riverBankWidth: this.options.riverBankWidth,
             riverCurvature: this.options.riverCurvature,
-            lakeShoreWidth: this.options.lakeShoreWidth
+            lakeShoreWidth: this.options.lakeShoreWidth,
+            beachWidth: this.options.beachWidth,
+            waterCornerRounding: this.options.waterCornerRounding,
+            coastCurvature: this.options.coastCurvature
         })) ?? undefined;
 
         if (this.forest) {
@@ -785,6 +809,30 @@ export class HexMap extends EventEmitter {
         if (this.terrain) this.terrain.waterCornerRounding = value;
     }
 
+    public get coastCurvature(): number {
+        return this.terrain?.coastCurvature ?? this.options.coastCurvature;
+    }
+    public set coastCurvature(value: number) {
+        this.options.coastCurvature = value;
+        if (this.terrain) this.terrain.coastCurvature = value;
+    }
+
+    public get landBlendCurvature(): number {
+        return this.terrain?.landBlendCurvature ?? this.options.landBlendCurvature;
+    }
+    public set landBlendCurvature(value: number) {
+        this.options.landBlendCurvature = value;
+        if (this.terrain) this.terrain.landBlendCurvature = value;
+    }
+
+    public get mountainHeight(): number {
+        return this.terrain?.mountainHeight ?? this.options.mountainHeight;
+    }
+    public set mountainHeight(value: number) {
+        this.options.mountainHeight = value;
+        if (this.terrain) this.terrain.mountainHeight = value;
+    }
+
     public get beachWidth(): number {
         return this.terrain?.beachWidth ?? this.options.beachWidth;
     }
@@ -969,6 +1017,10 @@ export class HexMap extends EventEmitter {
 
     public get selectedTile(): Point | null {
         return this.lastSelected;
+    }
+
+    public get size(): number {
+        return this.options.size;
     }
 
     public drawRoutePath(path: Point[]): void {
